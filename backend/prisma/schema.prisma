@@ -36,3 +36,12 @@ model Asistencia {
   servidorId      Int
   servidor        ServidorPublico @relation(fields: [servidorId], references: [id])
 }
+
+// 4. Tabla de Usuarios (Para el acceso al sistema)
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  email     String   @unique
+  password  String   // Aquí guardaremos la contraseña encriptada más adelante
+  rol       String   @default("RH") // Para saber qué permisos tiene
+}
