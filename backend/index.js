@@ -11,9 +11,12 @@ app.use(express.json());
 // --- AQUÍ IMPORTAMOS Y USAMOS TUS NUEVAS RUTAS ---
 const horariosRoutes = require('./routes/horariosRoutes');
 app.use('/api/horarios', horariosRoutes);
+
+const excelRoutes = require('./routes/excelRoutes');
+app.use('/api/excel', excelRoutes);
 // -------------------------------------------------
 
-// Ruta de prueba para saber que el servidor vive
+// Ruta de prueba
 app.get('/api/estado', (req, res) => {
     res.json({ mensaje: "¡El servidor backend está funcionando correctamente!" });
 });

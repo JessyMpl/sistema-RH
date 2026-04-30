@@ -8,3 +8,4 @@ const horariosController = require('../controllers/horariosController');
 router.post('/', horariosController.crearHorario);
 
 module.exports = router;
+
