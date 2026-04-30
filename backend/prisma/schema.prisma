@@ -1,13 +1,38 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// 1. Tabla de Horarios (Para diferenciar L-V de 24x48)
+model Horario {
+  id             Int               @id @default(autoincrement())
+  nombre         String            
+  horaEntrada    String            
+  horaSalida     String            
+  servidores     ServidorPublico[] 
+}
+
+// 2. Tabla del Personal (Los servidores públicos)
+model ServidorPublico {
+  id               Int          @id @default(autoincrement())
+  nombreCompleto   String
+  numeroEmpleado   String       @unique 
+  horarioId        Int          
+  horario          Horario      @relation(fields: [horarioId], references: [id])
+  asistencias      Asistencia[] 
+}
+
+// 3. Tabla de Asistencias (El reporte limpio)
+model Asistencia {
+  id              Int             @id @default(autoincrement())
+  fechaTurno      DateTime        @db.Date 
+  horaEntradaReal DateTime?       
+  horaSalidaReal  DateTime?       
+  minutosRetardo  Int             @default(0) 
+  estatus         String          
+  servidorId      Int
+  servidor        ServidorPublico @relation(fields: [servidorId], references: [id])
 }
