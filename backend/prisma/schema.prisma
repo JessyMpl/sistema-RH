@@ -45,3 +45,5 @@ model Usuario {
   password  String   // Aquí guardaremos la contraseña encriptada más adelante
   rol       String   @default("RH") // Para saber qué permisos tiene
 }
+
+

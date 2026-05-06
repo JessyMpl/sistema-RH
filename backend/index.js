@@ -27,3 +27,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor corriendo sin problemas en el puerto ${PORT}`);
 });
+
+// ... tus otras rutas
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
