@@ -1,19 +1,11 @@
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import SidebarRH from '@/components/SidebarRH.vue'; // <-- Importamos nuestro nuevo componente
 
-const router = useRouter();
-// Esta variable controla qué módulo estamos viendo
 const vistaActiva = ref('reporte'); 
-
 const archivoSeleccionado = ref(null);
 const mensajeStatus = ref('');
 const estaSubiendo = ref(false);
-
-const cerrarSesion = () => {
-  localStorage.removeItem('token');
-  router.push('/');
-};
 
 const seleccionarArchivo = (event) => {
   archivoSeleccionado.value = event.target.files[0];
@@ -53,61 +45,11 @@ const subirExcel = async () => {
 <template>
   <div class="min-h-screen bg-gray-100 flex">
     
-    <!-- MENÚ LATERAL (SIDEBAR) -->
-    <aside class="w-64 bg-gray-800 text-white flex flex-col">
-      <div class="p-6 text-center border-b border-gray-700">
-        <h2 class="text-2xl font-bold text-blue-400">Sistema RH</h2>
-        <p class="text-xs text-gray-400 mt-1">Panel de Administración</p>
-      </div>
-
-      <nav class="flex-1 p-4 space-y-2">
-        <!-- Botón: Reporte (Excel) -->
-        <button 
-          @click="vistaActiva = 'reporte'"
-          :class="['w-full text-left px-4 py-3 rounded-lg transition', vistaActiva === 'reporte' ? 'bg-blue-600' : 'hover:bg-gray-700']"
-        >
-          📄 Procesar Excel
-        </button>
-
-        <!-- Botón: Empleados -->
-        <button 
-          @click="vistaActiva = 'empleados'"
-          :class="['w-full text-left px-4 py-3 rounded-lg transition', vistaActiva === 'empleados' ? 'bg-blue-600' : 'hover:bg-gray-700']"
-        >
-          👥 Gestión de Empleados
-        </button>
-
-        <!-- Botón: Consultas -->
-        <button 
-          @click="vistaActiva = 'consultas'"
-          :class="['w-full text-left px-4 py-3 rounded-lg transition', vistaActiva === 'consultas' ? 'bg-blue-600' : 'hover:bg-gray-700']"
-        >
-          🔍 Incidencias
-        </button>
-
-        <!-- Botón: Historial -->
-        <button 
-          @click="vistaActiva = 'historial'"
-          :class="['w-full text-left px-4 py-3 rounded-lg transition', vistaActiva === 'historial' ? 'bg-blue-600' : 'hover:bg-gray-700']"
-        >
-          🗂️ Historial Quincenal
-        </button>
-
-        <!-- Botón: Mi Perfil -->
-        <button 
-          @click="vistaActiva = 'perfil'"
-          :class="['w-full text-left px-4 py-3 rounded-lg transition', vistaActiva === 'perfil' ? 'bg-blue-600' : 'hover:bg-gray-700']"
-        >
-          ⚙️ Mi Perfil
-        </button>
-      </nav>
-
-      <div class="p-4 border-t border-gray-700">
-        <button @click="cerrarSesion" class="w-full text-left px-4 py-2 text-red-400 hover:bg-gray-700 rounded-lg transition">
-          🚪 Cerrar Sesión
-        </button>
-      </div>
-    </aside>
+    <!-- Aquí ensamblamos la pieza y le pasamos los datos -->
+    <SidebarRH 
+      :vistaActiva="vistaActiva" 
+      @cambiar-vista="(nuevaVista) => vistaActiva = nuevaVista" 
+    />
 
     <!-- ÁREA DE TRABAJO PRINCIPAL -->
     <main class="flex-1 p-8">
@@ -133,7 +75,7 @@ const subirExcel = async () => {
         </div>
       </div>
 
-      <!-- VISTA EN CONSTRUCCIÓN (Para las demás opciones) -->
+      <!-- VISTA EN CONSTRUCCIÓN -->
       <div v-else class="bg-white rounded-lg shadow-md p-10 text-center flex flex-col items-center justify-center">
         <div class="text-6xl mb-4">🚧</div>
         <h1 class="text-2xl font-bold text-gray-800 mb-2">Módulo en Construcción</h1>
