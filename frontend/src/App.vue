@@ -1,11 +1,11 @@
-<script setup></script>
-
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <!-- Esto le dice a Vue que aquí va a cargar las diferentes páginas (Login, Panel, etc.) -->
+  <router-view />
 </template>
 
-<style scoped></style>
+<style>
+/* Aquí ya no necesitamos CSS porque Tailwind hará toda la magia */
+body {
+  background-color: #f3f4f6; /* Un gris muy clarito y elegante para el fondo del sistema */
+}
+</style>
