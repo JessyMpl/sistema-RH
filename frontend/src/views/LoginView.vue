@@ -1,40 +1,34 @@
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router'; // <-- Agregamos esta herramienta
 
 const email = ref('');
 const password = ref('');
+const router = useRouter(); // <-- La activamos
 
 const intentarLogin = async () => {
   try {
-    // 1. Tocamos la puerta del servidor (puerto 3000)
     const respuesta = await fetch('http://localhost:3000/api/auth/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      // 2. Le mandamos lo que escribiste en las cajitas de texto
-      body: JSON.stringify({
-        email: email.value,
-        password: password.value
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.value, password: password.value })
     });
 
-    // 3. Leemos lo que nos contestó el servidor
     const data = await respuesta.json();
 
     if (respuesta.ok) {
-      // Si todo sale bien, guardamos tu "gafete" en la memoria del navegador
+      // Guardamos tu "gafete"
       localStorage.setItem('token', data.token);
-      alert('¡Bienvenida al Sistema RH, ' + data.usuario.nombre + '!');
       
-      // Más adelante, aquí agregaremos el código para enviarte a la pantalla del Excel
+      // ¡Teletransportación al Panel!
+      router.push('/panel');
+      
     } else {
-      // Si la contraseña o correo están mal, mostramos el error
       alert('Error: ' + data.error);
     }
   } catch (error) {
     console.error(error);
-    alert('Error al conectar con el servidor. ¿Está encendido?');
+    alert('Error al conectar con el servidor.');
   }
 };
 </script>
