@@ -1,15 +1,17 @@
 <script setup>
 import { ref } from 'vue';
-import SidebarRH from '@/components/SidebarRH.vue'; // <-- Importamos nuestro nuevo componente
+import SidebarRH from '@/components/SidebarRH.vue';
 
 const vistaActiva = ref('reporte'); 
 const archivoSeleccionado = ref(null);
 const mensajeStatus = ref('');
 const estaSubiendo = ref(false);
+const datosExtraidos = ref(null); // <-- 1. Nueva cajita para guardar los datos
 
 const seleccionarArchivo = (event) => {
   archivoSeleccionado.value = event.target.files[0];
   mensajeStatus.value = '';
+  datosExtraidos.value = null; // Limpiamos la pantalla si seleccionas otro archivo
 };
 
 const subirExcel = async () => {
@@ -28,9 +30,14 @@ const subirExcel = async () => {
       method: 'POST',
       body: formData
     });
+    
     const data = await respuesta.json();
+    
     if (respuesta.ok) {
-      mensajeStatus.value = `✅ ¡Éxito! ${data.mensaje}`;
+      // Le agregamos el total de filas que encontró Node.js
+      mensajeStatus.value = `✅ ¡Éxito! ${data.mensaje} (Filas leídas: ${data.totalRegistros})`;
+      // 2. Guardamos los datos para mostrarlos en la pantalla
+      datosExtraidos.value = data.datos; 
     } else {
       mensajeStatus.value = `❌ Error: ${data.error}`;
     }
@@ -45,20 +52,15 @@ const subirExcel = async () => {
 <template>
   <div class="min-h-screen bg-gray-100 flex">
     
-    <!-- Aquí ensamblamos la pieza y le pasamos los datos -->
     <SidebarRH 
       :vistaActiva="vistaActiva" 
       @cambiar-vista="(nuevaVista) => vistaActiva = nuevaVista" 
     />
 
-    <!-- ÁREA DE TRABAJO PRINCIPAL -->
-    <main class="flex-1 p-8">
-      
-      <!-- VISTA 1: REPORTE (Cargar Excel) -->
-      <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-blue-600">
+    <main class="flex-1 p-8 overflow-y-auto"> <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-blue-600">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Procesar Asistencias (Excel)</h1>
         
-        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-6">
           <p class="text-gray-500 mb-6">Selecciona el archivo Excel (.xlsx, .xls) extraído del checador biométrico.</p>
           <div class="flex flex-col items-center justify-center gap-4">
             <input type="file" accept=".xlsx, .xls" @change="seleccionarArchivo"
@@ -73,9 +75,14 @@ const subirExcel = async () => {
             {{ mensajeStatus }}
           </p>
         </div>
+
+        <div v-if="datosExtraidos" class="bg-gray-800 text-green-400 p-4 rounded-lg overflow-x-auto text-left text-sm font-mono shadow-inner">
+          <h3 class="text-white mb-4 font-bold text-lg border-b border-gray-600 pb-2">Datos extraídos por Node.js:</h3>
+          <pre>{{ datosExtraidos }}</pre>
+        </div>
+
       </div>
 
-      <!-- VISTA EN CONSTRUCCIÓN -->
       <div v-else class="bg-white rounded-lg shadow-md p-10 text-center flex flex-col items-center justify-center">
         <div class="text-6xl mb-4">🚧</div>
         <h1 class="text-2xl font-bold text-gray-800 mb-2">Módulo en Construcción</h1>

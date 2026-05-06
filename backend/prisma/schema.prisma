@@ -6,44 +6,55 @@ datasource db {
   provider = "postgresql"
 }
 
-// 1. Tabla de Horarios (Para diferenciar L-V de 24x48)
+// 1. Tipos de régimen (Aquí vive la lógica de tus macros de Excel)
+enum Regimen {
+  NORMAL    // Para el personal con horario de oficina (Biométrico)
+  ESPECIAL  // Para personal 1x1 o guardias (Lógica de 2 días)
+  LISTA     // Para personal que checa por lista (Marca "LA" automáticamente)
+}
+
+// 2. Tabla de Horarios
 model Horario {
-  id             Int               @id @default(autoincrement())
-  nombre         String            
-  horaEntrada    String            
-  horaSalida     String            
-  servidores     ServidorPublico[] 
+  id              Int               @id @default(autoincrement())
+  nombre          String            // Ejemplo: "Administrativo", "Seguridad 24x48"
+  horaEntrada     String            // "09:00"
+  horaSalida      String            // "18:00"
+  servidores      ServidorPublico[]
 }
 
-// 2. Tabla del Personal (Los servidores públicos)
+// 3. Tabla del Personal (Tus hojas de "horario-especial" y "lista-asistencia")
 model ServidorPublico {
-  id               Int          @id @default(autoincrement())
-  nombreCompleto   String
-  numeroEmpleado   String       @unique 
-  horarioId        Int          
-  horario          Horario      @relation(fields: [horarioId], references: [id])
-  asistencias      Asistencia[] 
+  id              Int               @id @default(autoincrement())
+  nombreCompleto  String
+  numeroEmpleado  String            @unique 
+  departamento    String?           
+  regimen         Regimen           @default(NORMAL)
+  activo          Boolean           @default(true)
+  horarioId       Int
+  horario         Horario           @relation(fields: [horarioId], references: [id])
+  asistencias     Asistencia[]
 }
 
-// 3. Tabla de Asistencias (El reporte limpio)
+// 4. Tabla de Asistencias (Tu hoja de "reporte" depurada)
 model Asistencia {
-  id              Int             @id @default(autoincrement())
-  fechaTurno      DateTime        @db.Date 
-  horaEntradaReal DateTime?       
-  horaSalidaReal  DateTime?       
-  minutosRetardo  Int             @default(0) 
-  estatus         String          
+  id              Int               @id @default(autoincrement())
+  fecha           DateTime          @db.Date
+  entrada         String?           // Almacenamos "08:45"
+  salida          String?           // Almacenamos "18:10"
+  minutosRetardo  Int               @default(0)
+  incidencia      String?           // Para guardar "LA", "FALTA", "RETARDO", etc.
   servidorId      Int
-  servidor        ServidorPublico @relation(fields: [servidorId], references: [id])
+  servidor        ServidorPublico   @relation(fields: [servidorId], references: [id])
+
+  // Esta regla garantiza que no haya registros duplicados el mismo día para la misma persona
+  @@unique([servidorId, fecha])
 }
 
-// 4. Tabla de Usuarios (Para el acceso al sistema)
+// 5. Tabla de Usuarios (Para el acceso al sistema)
 model Usuario {
-  id        Int      @id @default(autoincrement())
-  nombre    String
-  email     String   @unique
-  password  String   // Aquí guardaremos la contraseña encriptada más adelante
-  rol       String   @default("RH") // Para saber qué permisos tiene
+  id       Int      @id @default(autoincrement())
+  nombre   String
+  email    String   @unique
+  password String
+  rol      String   @default("RH")
 }
-
-
