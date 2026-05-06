@@ -76,10 +76,58 @@ const subirExcel = async () => {
           </p>
         </div>
 
-        <div v-if="datosExtraidos" class="bg-gray-800 text-green-400 p-4 rounded-lg overflow-x-auto text-left text-sm font-mono shadow-inner">
-          <h3 class="text-white mb-4 font-bold text-lg border-b border-gray-600 pb-2">Datos extraídos por Node.js:</h3>
-          <pre>{{ datosExtraidos }}</pre>
+      <div v-if="datosExtraidos && datosExtraidos.length > 0" class="mt-8">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-gray-700">Previsualización de Datos en Bruto</h3>
+            <div class="space-x-2">
+              <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-full">
+                {{ datosExtraidos.length }} Registros Extraídos
+              </span>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Servidor Público</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Departamento</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Registro (Fecha/Hora)</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <tr v-for="(item, index) in datosExtraidos.slice(0, 100)" :key="index" class="hover:bg-gray-50 transition">
+                    
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
+                      {{ item.ID || item.id || item.numeroEmpleado || '---' }}
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {{ item.Name || item.nombre || item.nombreCompleto || '---' }}
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {{ item.Department || item.departamento || '---' }}
+                    </td>
+                    
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">
+                      {{ item.Time || item.fecha || item.hora || '---' }}
+                    </td>
+
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <div v-if="datosExtraidos.length > 100" class="bg-gray-50 px-6 py-3 text-center text-sm text-gray-500 border-t border-gray-200">
+              Mostrando los primeros 100 registros de {{ datosExtraidos.length }}. El sistema procesará la totalidad de los datos.
+            </div>
+            
+          </div>
         </div>
+        ```
 
       </div>
 
