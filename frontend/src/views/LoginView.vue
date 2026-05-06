@@ -1,10 +1,11 @@
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router'; // <-- Agregamos esta herramienta
+import { useRouter } from 'vue-router';
+import Swal from 'sweetalert2'; // <-- Importamos la magia visual
 
 const email = ref('');
 const password = ref('');
-const router = useRouter(); // <-- La activamos
+const router = useRouter();
 
 const intentarLogin = async () => {
   try {
@@ -17,18 +18,36 @@ const intentarLogin = async () => {
     const data = await respuesta.json();
 
     if (respuesta.ok) {
-      // Guardamos tu "gafete"
       localStorage.setItem('token', data.token);
       
-      // ¡Teletransportación al Panel!
-      router.push('/panel');
+      // Notificación de éxito con SweetAlert
+      Swal.fire({
+        icon: 'success',
+        title: '¡Bienvenida!',
+        text: 'Has iniciado sesión correctamente.',
+        showConfirmButton: false, // Oculta el botón de "OK"
+        timer: 1500 // Se cierra solo en 1.5 segundos
+      }).then(() => {
+        router.push('/panel');
+      });
       
     } else {
-      alert('Error: ' + data.error);
+      // Notificación de error si la contraseña está mal
+      Swal.fire({
+        icon: 'error',
+        title: 'Error de acceso',
+        text: data.error,
+        confirmButtonColor: '#3b82f6'
+      });
     }
   } catch (error) {
     console.error(error);
-    alert('Error al conectar con el servidor.');
+    Swal.fire({
+      icon: 'error',
+      title: 'Problema de red',
+      text: 'Error al conectar con el servidor. ¿Está encendido Node?',
+      confirmButtonColor: '#3b82f6'
+    });
   }
 };
 </script>
