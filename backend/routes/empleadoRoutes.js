@@ -17,13 +17,21 @@ router.get('/', async (req, res) => {
 // Alta manual
 router.post('/', async (req, res) => {
   const { numeroEmpleado, nombreCompleto, departamento, regimen } = req.body;
+  
   try {
     const nuevo = await prisma.servidorPublico.create({
-      // Forzamos el horarioId en 1 por ahora, asumiendo que ya creaste un horario en Prisma Studio
-      data: { numeroEmpleado, nombreCompleto, departamento, regimen, horarioId: 1 } 
+      data: { 
+        // Obligamos a Node a convertir cualquier valor en Texto (String)
+        numeroEmpleado: String(numeroEmpleado), 
+        nombreCompleto, 
+        departamento, 
+        regimen, 
+        horarioId: 2 
+      } 
     });
     res.json(nuevo);
   } catch (error) {
+    console.error("Error de Prisma:", error); 
     res.status(400).json({ error: 'Error al registrar. Verifica que el ID no esté duplicado.' });
   }
 });
