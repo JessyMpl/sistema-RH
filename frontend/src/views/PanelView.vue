@@ -1,17 +1,18 @@
 <script setup>
 import { ref } from 'vue';
 import SidebarRH from '@/components/SidebarRH.vue';
+import GestionEmpleados from '@/components/GestionEmpleados.vue'; // <-- 1. Importamos tu nuevo módulo
 
 const vistaActiva = ref('reporte'); 
 const archivoSeleccionado = ref(null);
 const mensajeStatus = ref('');
 const estaSubiendo = ref(false);
-const datosExtraidos = ref(null); // <-- 1. Nueva cajita para guardar los datos
+const datosExtraidos = ref(null);
 
 const seleccionarArchivo = (event) => {
   archivoSeleccionado.value = event.target.files[0];
   mensajeStatus.value = '';
-  datosExtraidos.value = null; // Limpiamos la pantalla si seleccionas otro archivo
+  datosExtraidos.value = null; 
 };
 
 const subirExcel = async () => {
@@ -34,9 +35,7 @@ const subirExcel = async () => {
     const data = await respuesta.json();
     
     if (respuesta.ok) {
-      // Le agregamos el total de filas que encontró Node.js
       mensajeStatus.value = `✅ ¡Éxito! ${data.mensaje} (Filas leídas: ${data.totalRegistros})`;
-      // 2. Guardamos los datos para mostrarlos en la pantalla
       datosExtraidos.value = data.datos; 
     } else {
       mensajeStatus.value = `❌ Error: ${data.error}`;
@@ -57,7 +56,9 @@ const subirExcel = async () => {
       @cambiar-vista="(nuevaVista) => vistaActiva = nuevaVista" 
     />
 
-    <main class="flex-1 p-8 overflow-y-auto"> <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-blue-600">
+    <main class="flex-1 p-8 overflow-y-auto"> 
+      
+      <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-blue-600">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Procesar Asistencias (Excel)</h1>
         
         <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-6">
@@ -76,7 +77,7 @@ const subirExcel = async () => {
           </p>
         </div>
 
-      <div v-if="datosExtraidos && datosExtraidos.length > 0" class="mt-8">
+        <div v-if="datosExtraidos && datosExtraidos.length > 0" class="mt-8">
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-xl font-bold text-gray-700">Previsualización de Datos en Bruto</h3>
             <div class="space-x-2">
@@ -99,23 +100,18 @@ const subirExcel = async () => {
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                   <tr v-for="(item, index) in datosExtraidos.slice(0, 100)" :key="index" class="hover:bg-gray-50 transition">
-                    
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
                       {{ item.ID || item.id || item.numeroEmpleado || '---' }}
                     </td>
-                    
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {{ item.Name || item.nombre || item.nombreCompleto || '---' }}
                     </td>
-                    
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {{ item.Department || item.departamento || '---' }}
                     </td>
-                    
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">
                       {{ item.Time || item.fecha || item.hora || '---' }}
                     </td>
-
                   </tr>
                 </tbody>
               </table>
@@ -127,8 +123,11 @@ const subirExcel = async () => {
             
           </div>
         </div>
-        ```
+      </div>
 
+      <div v-else-if="vistaActiva === 'empleados'">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Gestión de Personal</h1>
+        <GestionEmpleados />
       </div>
 
       <div v-else class="bg-white rounded-lg shadow-md p-10 text-center flex flex-col items-center justify-center">

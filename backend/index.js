@@ -14,6 +14,9 @@ app.use('/api/horarios', horariosRoutes);
 
 const excelRoutes = require('./routes/excelRoutes');
 app.use('/api/excel', excelRoutes);
+
+const empleadoRoutes = require('./routes/empleadoRoutes');
+app.use('/api/empleados', empleadoRoutes);
 // -------------------------------------------------
 
 // Ruta de prueba
