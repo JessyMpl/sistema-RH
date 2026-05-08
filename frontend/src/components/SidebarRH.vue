@@ -27,7 +27,7 @@ const cerrarSesion = () => {
     <nav class="flex-1 p-4 space-y-2">
       <button @click="emit('cambiar-vista', 'reporte')"
         :class="['w-full text-left px-4 py-3 rounded-lg transition', vistaActiva === 'reporte' ? 'bg-blue-600' : 'hover:bg-gray-700']">
-        📄 Procesar Excel
+        📄 Procesar Datos
       </button>
 
       <button @click="emit('cambiar-vista', 'empleados')"

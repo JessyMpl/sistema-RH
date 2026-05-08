@@ -35,7 +35,7 @@ const subirExcel = async () => {
     const data = await respuesta.json();
     
     if (respuesta.ok) {
-      mensajeStatus.value = `✅ ¡Éxito! ${data.mensaje} (Filas leídas: ${data.totalRegistros})`;
+     mensajeStatus.value = `✅ ¡Éxito! ${data.mensaje} (Días limpios guardados: ${data.diasProcesados})`;
       datosExtraidos.value = data.datos; 
     } else {
       mensajeStatus.value = `❌ Error: ${data.error}`;
@@ -89,28 +89,40 @@ const subirExcel = async () => {
 
           <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
+              <table class="minw-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Num. Emp</th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Servidor Público</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Departamento</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Registro (Fecha/Hora)</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Fecha</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Entrada</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Salida</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Estatus</th>
                   </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                  <tr v-for="(item, index) in datosExtraidos.slice(0, 100)" :key="index" class="hover:bg-gray-50 transition">
+                  <tr v-for="(item, index) in datosExtraidos" :key="index" class="hover:bg-gray-50 transition">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">
-                      {{ item.ID || item.id || item.numeroEmpleado || '---' }}
+                      {{ item.numEmp }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {{ item.Name || item.nombre || item.nombreCompleto || '---' }}
+                      {{ item.nombre }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ item.Department || item.departamento || '---' }}
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                      {{ item.fecha }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-mono" :class="{'text-red-600 font-bold': item.estatus === 'RETARDO', 'text-gray-700': item.estatus !== 'RETARDO'}">
+                      {{ item.entrada || '---' }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">
-                      {{ item.Time || item.fecha || item.hora || '---' }}
+                      {{ item.salida || 'Sin registro' }}
+                    </td>
+                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <span v-if="item.estatus === 'OK'" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Normal</span>
+                      <span v-else-if="item.estatus === 'RETARDO'" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Retardo ({{ item.minutosRetardo }} min)</span>
+                      <span v-else-if="item.estatus === 'OK_ESPECIAL'" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold">24x48</span>
+                      <span v-else-if="item.estatus === 'NO ENCONTRADO'" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta en Sistema</span>
+                      <span v-else class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs">{{ item.estatus }}</span>
                     </td>
                   </tr>
                 </tbody>

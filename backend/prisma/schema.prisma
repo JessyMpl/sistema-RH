@@ -58,3 +58,4 @@ model Usuario {
   password String
   rol      String   @default("RH")
 }
+
