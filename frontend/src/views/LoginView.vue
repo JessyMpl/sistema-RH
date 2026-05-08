@@ -53,12 +53,20 @@ const intentarLogin = async () => {
 </script>
 
 <template>
+<main> 
+<!-- header-->
+  <header class="bg-inst-primario text-white py-4">
+    <div class="container mx-auto px-4">
+      <img src="@/assets/logo-edomex-semujeres.svg" alt="Logo" class="h-17 w-auto mx-auto ">
+    </div>
+  </header>
 
+<!-- contenedor principal -->
   <div class="min-h-screen flex items-center justify-center">
     <div class="bg-white p-8 rounded-lg shadow-md w-96">
       <!-- Encabezado -->
       <div class="text-center mb-8">
-        <h1 class="text-2xl font-bold text-gray-800">Sistema RH</h1>
+        <h1 class="text-2xl font-bold text-gray-800">Sistema de Asistencia RH</h1>
         <p class="text-sm text-gray-500 mt-2">Ingresa tus credenciales para continuar</p>
       </div>
 
@@ -95,4 +103,6 @@ const intentarLogin = async () => {
       </form>
     </div>
   </div>
+
+  </main>
 </template>
