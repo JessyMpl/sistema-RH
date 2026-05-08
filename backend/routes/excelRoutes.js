@@ -1,3 +1,5 @@
+const exceljs = require('exceljs');
+const path = require('path');
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -276,82 +278,137 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
   }
 });
 
-// --- NUEVA RUTA PARA DESCARGAR LA SÁBANA HORIZONTAL ---
+// --- RUTA PARA DESCARGAR LA SÁBANA OFICIAL (CON PLANTILLA Y COLORES) ---
 router.get('/descargar-reporte', async (req, res) => {
   try {
     const asistencias = await prisma.asistencia.findMany({
       include: { servidor: true },
-      orderBy: [{ fecha: 'asc' }] // Ordenamos por fecha para que las columnas queden en orden
+      orderBy: [{ fecha: 'asc' }]
     });
 
     if (asistencias.length === 0) {
       return res.status(404).json({ error: 'No hay datos para exportar.' });
     }
 
-    // 1. Obtener todas las fechas únicas de la quincena (para usarlas como columnas)
+    // 1. Obtener fechas únicas
     const fechasUnicas = [...new Set(asistencias.map(a => a.fecha.toISOString().split('T')[0]))].sort();
 
-    // 2. Agrupar la información por Empleado (Pivot)
-    const empleadosMap = {};
+    // 2. Calcular título automático (para celda B1)
+    const primeraFecha = new Date(`${fechasUnicas[0]}T12:00:00Z`);
+    const dia = primeraFecha.getDate();
+    const mesIndex = primeraFecha.getMonth();
+    const anio = primeraFecha.getFullYear();
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    
+    const quincena = dia <= 15 ? 'PRIMERA' : 'SEGUNDA';
+    const tituloReporte = `REPORTE ${quincena} QUINCENA DEL MES DE ${meses[mesIndex].toUpperCase()} DEL AÑO ${anio}`;
 
-    asistencias.forEach(a => {
-      const numEmp = a.servidor.numeroEmpleado;
-      
-      // Si el empleado aún no está en nuestra lista, lo creamos con sus datos base
-      if (!empleadosMap[numEmp]) {
-        empleadosMap[numEmp] = {
-          'No. Empleado': numEmp,
-          'Nombre Completo': a.servidor.nombreCompleto,
-          'Departamento': a.servidor.departamento
-        };
-        // Inicializamos todas las columnas de fechas en blanco por si faltó algún día
-        fechasUnicas.forEach(f => empleadosMap[numEmp][f] = '---');
-      }
+    // 3. Cargar tu plantilla oficial
+    const workbook = new exceljs.Workbook();
+    // Asegúrate de que la ruta apunte a la carpeta donde guardaste tu diseño
+    const templatePath = path.join(__dirname, '../plantillas/plantilla_quincenal.xlsx');
+    await workbook.xlsx.readFile(templatePath);
+    
+    const worksheet = workbook.getWorksheet(1); // Tomamos la primera hoja
 
-      const fechaStr = a.fecha.toISOString().split('T')[0];
-      
-      // 3. Formatear lo que dirá la celda del Excel
-      // Si es "LA" (Lista de Asistencia), solo ponemos eso para que se vea limpio
-      let textoCelda = a.incidencia;
-      
-      // Para los demás, armamos un resumen bonito: "09:14 - 18:41 (RETARDO)"
-      if (a.incidencia !== 'LA' && a.incidencia !== 'NO ENCONTRADO') {
-        const ent = a.entrada || '--:--';
-        const sal = a.salida || '--:--';
-        
-        textoCelda = `${ent} a ${sal} [${a.incidencia}]`;
-        
-        // Si tuvo retardo, le agregamos los minutos para que RH lo vea rápido
-        if (a.minutosRetardo > 0) {
-          textoCelda += ` (${a.minutosRetardo}m retraso)`;
-        }
-      }
+    // 4. Llenar los datos de encabezado (Fila 1 y 2)
+    worksheet.getCell('B1').value = tituloReporte;
+    
+    // Fecha y hora actual de generación
+    const fechaGeneracion = new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' });
+    worksheet.getCell('B2').value = fechaGeneracion;
 
-      // Asignamos el texto a la columna del día correspondiente
-      empleadosMap[numEmp][fechaStr] = textoCelda;
+    // 5. Escribir los números de los días en la fila 4
+    // Empezamos en la columna D (índice 4), luego F (6), H (8)...
+    let colIndexDia = 4; 
+    fechasUnicas.forEach(fecha => {
+     const numeroDia = parseInt(fecha.split('-')[2], 10); // Sacamos el puro "16", "17", etc.
+       worksheet.getCell(4, colIndexDia).value = ` ${numeroDia}`;
+       // Opcional: Centrar el texto del día
+       worksheet.getCell(4, colIndexDia).alignment = { horizontal: 'center' };
+       colIndexDia += 2; // Brincamos de 2 en 2 por la Entrada y Salida
     });
 
-    // 4. Convertimos el mapa a un arreglo y lo ordenamos alfabéticamente
-    const datosExcel = Object.values(empleadosMap).sort((a, b) => 
-      a['Nombre Completo'].localeCompare(b['Nombre Completo'])
-    );
+    // 6. Agrupar la información de los empleados
+    const empleadosMap = {};
+    asistencias.forEach(a => {
+      const numEmp = a.servidor.numeroEmpleado;
+      if (!empleadosMap[numEmp]) {
+        empleadosMap[numEmp] = {
+          numEmp,
+          nombre: a.servidor.nombreCompleto,
+          departamento: a.servidor.departamento,
+          asistencias: {}
+        };
+      }
+      empleadosMap[numEmp].asistencias[a.fecha.toISOString().split('T')[0]] = a;
+    });
 
-    // Creamos el libro y la hoja de Excel
-    const wb = xlsx.utils.book_new();
-    const ws = xlsx.utils.json_to_sheet(datosExcel);
-    xlsx.utils.book_append_sheet(wb, ws, 'Sábana Quincenal');
+    const empleadosArr = Object.values(empleadosMap).sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-    // Generamos el archivo
-    const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    // 7. Vaciar a los empleados a partir de la fila 5
+    let filaActual = 5;
 
-    res.setHeader('Content-Disposition', 'attachment; filename=Sabana_Quincenal_Horizontal.xlsx');
-    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.send(buffer);
+    empleadosArr.forEach(emp => {
+      worksheet.getCell(`A${filaActual}`).value = emp.numEmp;
+      worksheet.getCell(`B${filaActual}`).value = emp.departamento;
+      worksheet.getCell(`C${filaActual}`).value = emp.nombre;
+
+      let colIdx = 4; // Empezamos a llenar checadas desde la columna D (Entrada)
+      
+      fechasUnicas.forEach(fecha => {
+        const reg = emp.asistencias[fecha];
+        let entradaTexto = '---';
+        let salidaTexto = '---';
+        let tieneRetardo = false;
+
+        if (reg) {
+          if (reg.incidencia === 'LA') {
+            entradaTexto = 'LA';
+            salidaTexto = 'LA';
+          } else {
+            entradaTexto = reg.entrada || '---';
+            salidaTexto = reg.salida || '---';
+            
+            // Si hay retardo, le ponemos el texto y activamos la bandera
+            if (reg.minutosRetardo > 0) {
+              tieneRetardo = true;
+            }
+          }
+        }
+
+        const celdaEntrada = worksheet.getCell(filaActual, colIdx);
+        const celdaSalida = worksheet.getCell(filaActual, colIdx + 1);
+
+        celdaEntrada.value = entradaTexto;
+        celdaSalida.value = salidaTexto;
+
+        // Centramos el texto de las horas
+        celdaEntrada.alignment = { horizontal: 'center' };
+        celdaSalida.alignment = { horizontal: 'center' };
+
+        // 🎨 ¡MAGIA!: Si tiene retardo, pintamos la letra de rojo intenso y negritas
+        if (tieneRetardo) {
+          celdaEntrada.font = { color: { argb: 'FFCC0000' }, bold: true };
+        }
+
+        colIdx += 2; // Siguiente día
+      });
+
+      filaActual++; // Bajamos a la siguiente fila para el próximo empleado
+    });
+
+    // 8. Mandar el archivo de vuelta al navegador
+    res.setHeader('Content-Disposition', 'attachment; filename=Reporte_Asistencia_Oficial.xlsx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    
+    // Escribimos directamente en la respuesta (res)
+    await workbook.xlsx.write(res);
+    res.end();
 
   } catch (error) {
-    console.error("Error al generar Excel:", error);
-    res.status(500).json({ error: 'No se pudo generar el archivo.' });
+    console.error("Error al generar Excel con plantilla:", error);
+    res.status(500).json({ error: 'No se pudo generar el archivo oficial.' });
   }
 });
-
 module.exports = router;
