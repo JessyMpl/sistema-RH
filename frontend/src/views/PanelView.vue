@@ -99,8 +99,8 @@ const datosPivotados = computed(() => {
     diasSabana.value.forEach(fecha => {
       const reg = emp.asistencias[fecha];
       
-      // 1. Contar Faltas de Puntualidad (Retardos)
-      if (reg && reg.estatus === 'RETARDO') {
+      // 1. Contar Faltas de Puntualidad (Incluye Retardos y Retardos con Omisión)
+      if (reg && reg.estatus.includes('RETARDO')) {
         faltasPuntualidad++;
       }
 
@@ -112,8 +112,6 @@ const datosPivotados = computed(() => {
       if (!reg && !esFinSemana) {
         faltasAsistencia++;
       }
-      
-      // Nota: Los "LA" (Lista) no suman falta porque el registro EXISTE
     });
 
     return { 
@@ -199,18 +197,20 @@ const getDia = (fechaString) => {
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600">{{ item.numEmp }}</td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ item.nombre }}</td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{{ item.fecha }}</td>
-                      <td class="px-6 py-4 whitespace-nowrap text-sm font-mono" :class="{'text-red-600 font-bold': item.estatus === 'RETARDO', 'text-gray-700': item.estatus !== 'RETARDO'}">
-                        {{ item.entrada || '---' }}
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-mono" :class="{'text-red-600 font-bold': item.estatus.includes('RETARDO'), 'text-gray-700': !item.estatus.includes('RETARDO')}">
+                        {{ item.entrada || 'SR' }}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">
-                        {{ item.salida || '---' }}
+                        {{ item.salida || 'SR' }}
                       </td>
                       <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <span v-if="item.estatus === 'OK'" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Normal</span>
-                        <span v-else-if="item.estatus === 'RETARDO'" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Retardo ({{ item.minutosRetardo }} min)</span>
+                        <span v-else-if="item.estatus.includes('RETARDO')" class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">Retardo ({{ item.minutosRetardo }} min)</span>
                         <span v-else-if="item.estatus === 'OK_ESPECIAL'" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold">24x48</span>
                         <span v-else-if="item.estatus === 'NO ENCONTRADO'" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta en Sistema</span>
                         <span v-else-if="item.estatus === 'LA'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Lista</span>
+                        <span v-else-if="item.estatus === 'OMISION_E'" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Omisión Entrada</span>
+                        <span v-else-if="item.estatus === 'OMISION_S'" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Omisión Salida</span>
                         <span v-else class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs">{{ item.estatus }}</span>
                       </td>
                     </tr>
@@ -222,54 +222,54 @@ const getDia = (fechaString) => {
 
           <div v-if="vistaActual === 'sabana'">
             <div class="mb-4 bg-gray-200 py-3 rounded-t-lg border-b-2 border-gray-300 shadow-sm">
-              <h2 class="text-lg font-black text-gray-800 text-center tracking-wide">
+              <h2 class="text-lg font-bold text-gray-800 text-center tracking-wide">
                 {{ tituloReporte }}
               </h2>
             </div>
 
             <div class="overflow-x-auto bg-white shadow ring-1 ring-black ring-opacity-5 rounded-b-lg pb-4">
-            <table class="min-w-full border-collapse">
+              <table class="min-w-full border-collapse">
                 <thead class="bg-gray-100">
                   <tr>
-                    <th rowspan="2" class="sticky left-0 z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-sm font-bold text-gray-900 border border-gray-300">
+                    <th rowspan="2" class="sticky left-0 z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border border-gray-300 shadow-[1px_0_0_0_#d1d5db]">
                       Num
                     </th>
-                    <th rowspan="2" class="sticky left-[60px] z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-sm font-bold text-gray-900 border border-gray-300 min-w-[180px]">
+                    <th rowspan="2" class="sticky left-[60px] z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[180px] shadow-[1px_0_0_0_#d1d5db]">
                       Área de Adscripción
                     </th>
-                    <th rowspan="2" class="sticky left-[240px] z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-sm font-bold text-gray-900 border border-gray-300 min-w-[250px]">
+                    <th rowspan="2" class="sticky left-[240px] z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[250px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]">
                       Servidor Público
                     </th>
-                    <th v-for="fecha in diasSabana" :key="'head-'+fecha" colspan="2" class="py-1 text-center text-lg font-black text-red-900 border border-gray-300 bg-gray-200">
+                    <th v-for="fecha in diasSabana" :key="'head-'+fecha" colspan="2" class="py-1 text-center text-sm font-bold text-gray-800 border border-gray-300 bg-gray-200">
                       {{ getDia(fecha) }}
                     </th>
                     
-                    <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-black text-gray-900 border border-gray-300 w-24 leading-tight">
-                      TOTAL FALTAS DE <br> PUNTUALIDAD
+                    <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">
+                      FALTAS DE <br> PUNTUALIDAD
                     </th>
-                    <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-black text-gray-900 border border-gray-300 w-24 leading-tight">
-                      TOTAL FALTAS DE <br> ASISTENCIA
+                    <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">
+                      FALTAS DE <br> ASISTENCIA
                     </th>
                   </tr>
 
                   <tr>
                     <template v-for="fecha in diasSabana" :key="'sub-'+fecha">
-                      <th class="py-1 text-center text-sm font-black text-red-800 border border-gray-300 bg-gray-100 w-14">E</th>
-                      <th class="py-1 text-center text-sm font-black text-red-800 border border-gray-300 bg-gray-100 w-14">S</th>
+                      <th class="py-1 px-2 text-center text-xs font-bold text-gray-600 border border-gray-300 bg-gray-100 min-w-[45px]">E</th>
+                      <th class="py-1 px-2 text-center text-xs font-bold text-gray-600 border border-gray-300 bg-gray-100 min-w-[45px]">S</th>
                     </template>
                   </tr>
                 </thead>
                 
                 <tbody class="bg-white">
-                  <tr v-for="(emp, index) in datosPivotados" :key="emp.numEmp" class="hover:bg-blue-50 transition">
+                  <tr v-for="(emp, index) in datosPivotados" :key="emp.numEmp" class="hover:bg-blue-50 transition duration-150">
                     
-                    <td class="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-sm font-mono text-gray-600 border border-gray-200 text-center" :class="{'bg-gray-50': index % 2 === 0}">
+                    <td class="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-sm text-gray-600 border border-gray-200 text-center shadow-[1px_0_0_0_#e5e7eb] tabular-nums" :class="{'bg-gray-50': index % 2 === 0}">
                       {{ emp.numEmp }}
                     </td>
-                    <td class="sticky left-[60px] z-10 bg-white py-2 pl-4 pr-3 text-xs font-semibold text-gray-700 border border-gray-200 truncate max-w-[180px]" :class="{'bg-gray-50': index % 2 === 0}" :title="emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área'">
+                    <td class="sticky left-[60px] z-10 bg-white py-2 pl-4 pr-3 text-xs text-gray-700 border border-gray-200 truncate max-w-[180px] shadow-[1px_0_0_0_#e5e7eb]" :class="{'bg-gray-50': index % 2 === 0}" :title="emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área'">
                       {{ emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área' }}
                     </td>
-                    <td class="sticky left-[240px] z-10 bg-white py-2 pl-4 pr-3 text-sm font-bold text-gray-900 border border-gray-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" :class="{'bg-gray-50': index % 2 === 0}">
+                    <td class="sticky left-[240px] z-10 bg-white py-2 pl-4 pr-3 text-sm font-medium text-gray-900 border border-gray-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" :class="{'bg-gray-50': index % 2 === 0}">
                       {{ emp.nombre }}
                     </td>
                     
@@ -277,33 +277,42 @@ const getDia = (fechaString) => {
                       <template v-if="emp.asistencias[fecha]">
                         
                         <td colspan="2" v-if="emp.asistencias[fecha].estatus === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50">
-                          <span class="font-bold text-blue-700 text-sm">LA</span>
+                          <span class="font-bold text-blue-700 text-sm tracking-widest">LA</span>
                         </td>
                         
                         <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50">
-                          <span class="text-xs font-bold text-red-600 tracking-wider">FALTA BD</span>
+                          <span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span>
                         </td>
                         
-                        <template v-else>
-                          <td class="py-2 text-center border border-gray-200 align-middle text-sm font-mono" :class="{'text-red-600 font-bold bg-red-50': emp.asistencias[fecha].estatus === 'RETARDO', 'text-gray-800': emp.asistencias[fecha].estatus !== 'RETARDO'}">
-                            {{ emp.asistencias[fecha].entrada || '---' }}
+                      <template v-else>
+                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" 
+                              :class="{
+                                'text-red-600 font-bold bg-red-50': emp.asistencias[fecha].estatus.includes('RETARDO'), 
+                                'text-orange-600 font-bold bg-orange-50': emp.asistencias[fecha].estatus === 'OMISION_E',
+                                'text-gray-700': !emp.asistencias[fecha].estatus.includes('RETARDO') && emp.asistencias[fecha].estatus !== 'OMISION_E'
+                              }">
+                            {{ emp.asistencias[fecha].entrada || (emp.asistencias[fecha].estatus === 'OK_ESPECIAL' ? '---' : 'SR') }}
                           </td>
-                          <td class="py-2 text-center border border-gray-200 align-middle text-sm font-mono text-gray-600 bg-gray-50/30">
-                            {{ emp.asistencias[fecha].salida || '---' }}
+                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors"
+                              :class="{
+                                'text-orange-600 font-bold bg-orange-50': emp.asistencias[fecha].estatus === 'OMISION_S' || emp.asistencias[fecha].estatus === 'RETARDO_Y_OMISION',
+                                'text-gray-500 bg-gray-50/30': emp.asistencias[fecha].estatus !== 'OMISION_S' && emp.asistencias[fecha].estatus !== 'RETARDO_Y_OMISION'
+                              }">
+                            {{ emp.asistencias[fecha].salida || (emp.asistencias[fecha].estatus === 'OK_ESPECIAL' ? '---' : 'SR') }}
                           </td>
                         </template>
                         
                       </template>
                       
                       <td colspan="2" v-else class="py-2 text-center border border-gray-200 align-middle bg-gray-50">
-                        <span class="text-gray-300 font-black">-</span>
+                        <span class="text-gray-300 font-bold">-</span>
                       </td>
                     </template>
                     
-                    <td class="py-2 text-center border border-gray-300 bg-orange-50 font-black text-orange-700 text-sm">
+                    <td class="py-2 text-center border border-gray-300 bg-orange-50 font-bold text-orange-700 text-sm tabular-nums">
                       {{ emp.totalPuntualidad > 0 ? emp.totalPuntualidad : '-' }}
                     </td>
-                    <td class="py-2 text-center border border-gray-300 bg-red-50 font-black text-red-700 text-sm">
+                    <td class="py-2 text-center border border-gray-300 bg-red-50 font-bold text-red-700 text-sm tabular-nums">
                       {{ emp.totalAsistencia > 0 ? emp.totalAsistencia : '-' }}
                     </td>
                     

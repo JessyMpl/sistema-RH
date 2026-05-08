@@ -78,21 +78,46 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
       const fechaAyer = ayer.toISOString().split('T')[0]; 
       const llaveAyer = `${numEmp}_${fechaAyer}`;
 
+      // --- INICIO DE NUEVA LÓGICA NORMAL CON OMISIONES ---
       if (empleado.regimen === 'NORMAL') {
-        if (!salidaFinal && horas.length === 1) salidaFinal = null; 
         
-        if (empleado.horario && empleado.horario.horaEntrada) {
+        // REGLA DE OMISIÓN: Si solo hay 1 checada, descubrimos si es Entrada o Salida
+        if (horas.length === 1) {
+          const horaNum = parseInt(primeraChecada.split(':')[0], 10);
+          
+          if (horaNum >= 14) { 
+            // Si checó a las 14:00 (2:00 PM) o más tarde, seguro es su Salida
+            entradaFinal = null;
+            salidaFinal = primeraChecada;
+            estatus = "OMISION_E"; // Omisión de Entrada
+          } else {
+            // Si checó antes de las 14:00, es su Entrada
+            entradaFinal = primeraChecada;
+            salidaFinal = null;
+            estatus = "OMISION_S"; // Omisión de Salida
+          }
+        } else {
+          // Si hay 2 o más checadas, la última es la salida
+          salidaFinal = ultimaChecada;
+        }
+
+        // CÁLCULO DE RETARDO (Solo si detectamos que sí hay una Entrada)
+        if (entradaFinal && empleado.horario && empleado.horario.horaEntrada) {
           const [hEntrada, mEntrada] = empleado.horario.horaEntrada.split(':').map(Number);
           const [hReal, mReal] = entradaFinal.split(':').map(Number);
+          
           const totalMinutosOficial = (hEntrada * 60) + mEntrada;
           const totalMinutosReal = (hReal * 60) + mReal;
 
           if (totalMinutosReal >= totalMinutosOficial + 11) {
-            estatus = "RETARDO";
+            // Si tiene Omisión de Salida y además llegó tarde, guardamos ambos estatus
+            estatus = estatus === "OMISION_S" ? "RETARDO_Y_OMISION" : "RETARDO";
             minutosRetardo = totalMinutosReal - totalMinutosOficial;
           }
         }
-      } else if (empleado.regimen === 'ESPECIAL') {
+      } 
+      // --- FIN DE NUEVA LÓGICA NORMAL ---
+      else if (empleado.regimen === 'ESPECIAL') {
         estatus = "OK_ESPECIAL";
         
         if (registrosPorDia[llaveAyer]) {
@@ -112,11 +137,10 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
         create: { servidorId: empleado.id, fecha: fechaParaPrisma, entrada: entradaFinal, salida: salidaFinal, minutosRetardo, incidencia: estatus }
       });
 
-      // AQUÍ ESTÁ EL CAMBIO PARA LOS DEL BIOMÉTRICO
       resultadosProcesados.push({ 
         numEmp, 
         nombre: empleado.nombreCompleto, 
-        departamento: empleado.departamento, // <-- Ahora sí, no se nos escapa
+        departamento: empleado.departamento, 
         fecha, 
         entrada: entradaFinal, 
         salida: salidaFinal, 
