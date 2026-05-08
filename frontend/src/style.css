@@ -1,1 +1,16 @@
+/* 1. Traemos la fuente oficial desde Google Fonts (Ejemplo: Montserrat) */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
+
 @import "tailwindcss";
+
+@theme {
+  /* --- Colores Institucionales --- */
+  --color-inst-primario: #6B1C3A;
+  --color-inst-secundario: #BC955C;
+  --color-inst-gris: #4A4A49;
+  --color-inst-fondo: #F4F6F8;
+
+  /* --- Tipografía Institucional --- */
+  /* Al sobreescribir --font-sans, TODO tu sistema usará esta fuente por defecto */
+  --font-sans: 'Montserrat', sans-serif;
+}

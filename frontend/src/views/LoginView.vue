@@ -53,6 +53,7 @@ const intentarLogin = async () => {
 </script>
 
 <template>
+
   <div class="min-h-screen flex items-center justify-center">
     <div class="bg-white p-8 rounded-lg shadow-md w-96">
       <!-- Encabezado -->
@@ -87,7 +88,7 @@ const intentarLogin = async () => {
 
         <button 
           type="submit" 
-          class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300"
+          class="w-full bg-inst-primario text-white font-bold py-2 px-4 rounded-md hover:bg-inst-secundario transition duration-300"
         >
           Iniciar Sesión
         </button>
