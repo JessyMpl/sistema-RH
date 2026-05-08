@@ -176,8 +176,8 @@ const getDia = (fechaString) => {
 
     <main class="flex-1 p-8 overflow-y-auto"> 
       
-      <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-blue-600">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Procesar Asistencias (Excel)</h1>
+      <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-inst-primario">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Procesar Datos del Biometrico</h1>
         
         <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-6">
           <p class="text-gray-500 mb-6">Selecciona el archivo Excel (.xlsx, .xls) extraído del checador biométrico.</p>
@@ -186,8 +186,8 @@ const getDia = (fechaString) => {
               class="block w-full max-w-sm text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
             />
             <button @click="subirExcel" :disabled="estaSubiendo"
-              class="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-2 px-6 rounded-md shadow-sm transition">
-              {{ estaSubiendo ? 'Procesando...' : 'Subir y Procesar Excel' }}
+              class="mt-4 bg-inst-primario hover:bg-inst-secundario disabled:bg-blue-400 text-white font-bold py-2 px-6 rounded-md shadow-sm transition">
+              {{ estaSubiendo ? 'Procesando...' : 'Subir y Procesar ' }}
             </button>
           </div>
           <p v-if="mensajeStatus" class="mt-4 font-medium" :class="{'text-green-600': mensajeStatus.includes('✅'), 'text-red-600': mensajeStatus.includes('❌') || mensajeStatus.includes('⚠️'), 'text-blue-600': mensajeStatus.includes('⏳')}">

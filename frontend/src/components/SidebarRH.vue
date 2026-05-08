@@ -21,7 +21,7 @@ const cerrarSesion = () => {
   <aside class="w-64 bg-inst-primario text-white flex flex-col min-h-screen">
     <div class="p-6 text-center border-b border-white/20">
       <h2 class="text-2xl font-bold text-white">Sistema Control de Asistencia</h2>
-      <p class="text-xs text-white mt-1">Panel de Administración</p>
+      <p class="text-xs text-white mt-1 ">Panel de Administración</p>
     </div>
 
    <nav class="flex-1 p-4 space-y-2">
@@ -57,9 +57,9 @@ const cerrarSesion = () => {
     </nav>
 
     <div class="p-4 border-t border-white/20">
-      <button @click="cerrarSesion" class="w-full flex items-center px-4 py-2 text-white hover:bg-inst-secundario hover:text-white rounded-lg transition">
+      <button @click="cerrarSesion" class="w-full flex items-center px-4 py-2 text-white rounded-lg transition">
         <i class="fa-solid fa-arrow-right-from-bracket w-6 text-center mr-2 text-lg"></i>
-        <span>Cerrar Sesión</span>
+        <span class="hover:underline ">Cerrar Sesión</span>
       </button>
     </div>
   </aside>
