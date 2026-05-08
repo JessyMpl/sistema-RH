@@ -112,8 +112,16 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
         create: { servidorId: empleado.id, fecha: fechaParaPrisma, entrada: entradaFinal, salida: salidaFinal, minutosRetardo, incidencia: estatus }
       });
 
+      // AQUÍ ESTÁ EL CAMBIO PARA LOS DEL BIOMÉTRICO
       resultadosProcesados.push({ 
-        numEmp, nombre: empleado.nombreCompleto, fecha, entrada: entradaFinal, salida: salidaFinal, estatus, minutosRetardo
+        numEmp, 
+        nombre: empleado.nombreCompleto, 
+        departamento: empleado.departamento, // <-- Ahora sí, no se nos escapa
+        fecha, 
+        entrada: entradaFinal, 
+        salida: salidaFinal, 
+        estatus, 
+        minutosRetardo
       });
     }
 
@@ -121,7 +129,6 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
     const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
     
     if (fechasUnicas.length > 0) {
-      // Sacamos el rango de la quincena
       const fechasObj = fechasUnicas.map(f => new Date(`${f}T12:00:00Z`));
       const fechaMin = new Date(Math.min(...fechasObj));
       const fechaMax = new Date(Math.max(...fechasObj));
@@ -129,7 +136,7 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
       const empleadosLista = empleados.filter(e => e.regimen === 'LISTA');
 
       for (let d = new Date(fechaMin); d <= fechaMax; d.setDate(d.getDate() + 1)) {
-        const diaSemana = d.getDay(); // 0 = Domingo, 6 = Sábado
+        const diaSemana = d.getDay(); 
         
         if (diaSemana !== 0 && diaSemana !== 6) { 
           const fechaStr = d.toISOString().split('T')[0];
@@ -142,10 +149,10 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
               create: { servidorId: emp.id, fecha: fechaParaPrisma, entrada: null, salida: null, minutosRetardo: 0, incidencia: "LA" }
             });
 
-            // Lo metemos al arreglo visual para que lo veas en la tabla antes de hacer la sábana
             resultadosProcesados.push({
               numEmp: emp.numeroEmpleado,
               nombre: emp.nombreCompleto,
+              departamento: emp.departamento,
               fecha: fechaStr,
               entrada: '---',
               salida: '---',
@@ -157,7 +164,6 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
       }
     }
 
-    // Opcional: Ordenar resultados por nombre y luego por fecha para que se vea bonito
     resultadosProcesados.sort((a, b) => a.nombre.localeCompare(b.nombre) || a.fecha.localeCompare(b.fecha));
 
     res.json({
