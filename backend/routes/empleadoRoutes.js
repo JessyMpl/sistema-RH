@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 2. Alta manual (¡Ya actualizado para recibir el horarioId de tu pantalla!)
+// 2. Alta manual
 router.post('/', async (req, res) => {
   const { numeroEmpleado, nombreCompleto, departamento, regimen, horarioId } = req.body;
   
@@ -31,7 +31,7 @@ router.post('/', async (req, res) => {
         nombreCompleto, 
         departamento, 
         regimen, 
-        horarioId: parseInt(horarioId) // <-- Ahora guarda el ID real que eliges en Vue
+        horarioId: parseInt(horarioId) 
       } 
     });
     res.json(nuevo);
@@ -43,60 +43,74 @@ router.post('/', async (req, res) => {
 
 // 3. IMPORTACIÓN MASIVA DESDE EXCEL
 router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
-  // Si no llega el archivo, mandamos error
   if (!req.file) {
     return res.status(400).json({ error: 'No se subió ningún archivo' });
   }
 
   try {
-    // Leemos el archivo temporal que subió Multer
     const workbook = xlsx.readFile(req.file.path);
-    const sheetName = workbook.SheetNames[0]; // Tomamos la primera hoja del Excel
+    const sheetName = workbook.SheetNames[0]; 
     const dataExcel = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-    //ESTA LINEA ES PARA VER EN LA CONSOLA CÓMO ESTÁ LEYENDO LOS DATOS, ASÍ PUEDES AJUSTAR LOS NOMBRES DE LAS COLUMNAS EN EL CÓDIGo SI ES NECESARIO
-   // console.log("Lo que lee de la primera fila:", dataExcel[0]);
 
     let registrados = 0;
 
-for (const fila of dataExcel) {
+    for (const fila of dataExcel) {
       // 1. Leemos los datos en bruto
       const rawNumEmp = fila['ID'] || fila['NumeroEmpleado'] || fila['numeroEmpleado'];
       const rawNombre = fila['NOMBRE'] || fila['Nombre'] || fila['nombreCompleto'] || fila['Name'];
       const rawDepto = fila['DEPARTAMENTO'] || fila['Departamento'] || fila['departamento'];
       const rawRegimen = fila['REGIMEN'] || fila['Regimen'] || fila['regimen'] || 'NORMAL';
       
+      // NUEVO: Buscamos la columna de entrada (para diferenciar a los especiales)
+      const rawEntrada = fila['ENTRADA'] || fila['Entrada'] || fila['entrada'] || ''; 
+      
       if (!rawNumEmp || !rawNombre) continue;
 
-      // 2. Limpiamos los espacios en blanco accidentales (.trim) y convertimos a texto
+      // 2. Limpiamos los datos
       const numEmpLimpio = String(rawNumEmp).trim();
       const nombreLimpio = String(rawNombre).trim();
       const deptoLimpio = rawDepto ? String(rawDepto).trim() : null;
       const regimenLimpio = String(rawRegimen).trim().toUpperCase();
+      const entradaLimpia = String(rawEntrada).trim();
 
-      // upsert: Si el empleado existe, lo actualiza. Si no existe, lo crea.
+      // 3. LÓGICA DE HORARIOS DINÁMICOS BASADA EN NEON
+      let horarioIdCalculado = 2; // Por defecto: NORMAL (ID 2)
+
+      if (regimenLimpio === 'LISTA') {
+        horarioIdCalculado = 3; // ID 3 para Lista de Asistencia
+      } else if (regimenLimpio === 'ESPECIAL') {
+        // Si en el Excel dice 7, le asignamos el ID 1 (Turno de las 7)
+        if (entradaLimpia.includes('7')) {
+          horarioIdCalculado = 1; 
+        } else {
+          // Si no dice 7, le asignamos el ID 4 (Turno de las 9)
+          horarioIdCalculado = 4; 
+        }
+      }
+
+      // 4. upsert: Si el empleado existe, lo actualiza. Si no existe, lo crea.
       await prisma.servidorPublico.upsert({
         where: { numeroEmpleado: numEmpLimpio },
         update: {
           nombreCompleto: nombreLimpio,
           departamento: deptoLimpio,
-          regimen: regimenLimpio
+          regimen: regimenLimpio,
+          horarioId: horarioIdCalculado // Corrige a los que tenían mal su ID
         },
         create: {
           numeroEmpleado: numEmpLimpio,
           nombreCompleto: nombreLimpio,
           departamento: deptoLimpio,
           regimen: regimenLimpio,
-          horarioId: 2 // Por defecto a la carga masiva
+          horarioId: horarioIdCalculado // Asigna el correcto a los nuevos
         }
       });
       registrados++;
     }
 
-    // Borramos el archivo Excel temporal de la carpeta uploads para no llenar el servidor
+    // Borramos el archivo Excel temporal
     fs.unlinkSync(req.file.path);
 
-    // Respondemos con éxito al frontend
     res.json({ mensaje: `Se procesaron y guardaron ${registrados} servidores públicos exitosamente.` });
 
   } catch (error) {
