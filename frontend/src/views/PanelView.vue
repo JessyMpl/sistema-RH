@@ -284,21 +284,21 @@ const getDia = (fechaString) => {
                           <span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span>
                         </td>
                         
-                      <template v-else>
+                    <template v-else>
                           <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" 
                               :class="{
                                 'text-red-600 font-bold bg-red-50': emp.asistencias[fecha].estatus.includes('RETARDO'), 
                                 'text-orange-600 font-bold bg-orange-50': emp.asistencias[fecha].estatus === 'OMISION_E',
                                 'text-gray-700': !emp.asistencias[fecha].estatus.includes('RETARDO') && emp.asistencias[fecha].estatus !== 'OMISION_E'
                               }">
-                            {{ emp.asistencias[fecha].entrada || (emp.asistencias[fecha].estatus === 'OK_ESPECIAL' ? '---' : 'SR') }}
+                            {{ emp.asistencias[fecha].entrada || (emp.asistencias[fecha].estatus.includes('ESPECIAL') ? '---' : 'SR') }}
                           </td>
                           <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors"
                               :class="{
                                 'text-orange-600 font-bold bg-orange-50': emp.asistencias[fecha].estatus === 'OMISION_S' || emp.asistencias[fecha].estatus === 'RETARDO_Y_OMISION',
                                 'text-gray-500 bg-gray-50/30': emp.asistencias[fecha].estatus !== 'OMISION_S' && emp.asistencias[fecha].estatus !== 'RETARDO_Y_OMISION'
                               }">
-                            {{ emp.asistencias[fecha].salida || (emp.asistencias[fecha].estatus === 'OK_ESPECIAL' ? '---' : 'SR') }}
+                            {{ emp.asistencias[fecha].salida || (emp.asistencias[fecha].estatus.includes('ESPECIAL') ? '---' : 'SR') }}
                           </td>
                         </template>
                         

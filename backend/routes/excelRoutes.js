@@ -117,17 +117,91 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
         }
       } 
       // --- FIN DE NUEVA LÓGICA NORMAL ---
+      // --- INICIO DE LÓGICA DE TURNOS Y RETARDOS ---
+   // --- INICIO DE LÓGICA LIMPIA DE TURNOS Y RETARDOS ---
+      let calcularRetardo = false;
+
+      if (empleado.regimen === 'NORMAL') {
+        if (horas.length === 1) {
+          const horaNum = parseInt(primeraChecada.split(':')[0], 10);
+          if (horaNum >= 14) { 
+            entradaFinal = null;
+            salidaFinal = primeraChecada;
+            estatus = "OMISION_E"; 
+          } else {
+            entradaFinal = primeraChecada;
+            salidaFinal = null;
+            estatus = "OMISION_S"; 
+          }
+        } else {
+          entradaFinal = primeraChecada;
+          salidaFinal = ultimaChecada;
+        }
+        calcularRetardo = true;
+      } 
       else if (empleado.regimen === 'ESPECIAL') {
         estatus = "OK_ESPECIAL";
-        
         if (registrosPorDia[llaveAyer]) {
+          // Día 2: Es su salida (no calculamos retardo aquí)
           entradaFinal = null; 
           salidaFinal = ultimaChecada || primeraChecada; 
         } else {
+          // Día 1: Es su entrada (Sí le aplicamos la ley de retardos)
           entradaFinal = primeraChecada;
           salidaFinal = null; 
+          calcularRetardo = true; 
         }
       }
+
+      // --- CÁLCULO UNIVERSAL DE RETARDOS (Ley de 10 minutos) ---
+      if (calcularRetardo && entradaFinal) {
+        
+        // 1. Buscamos su hora oficial en la BD
+        let horaOficial = empleado.horario?.horaEntrada;
+
+        // 2. Si está en blanco, el sistema deduce el turno (7 o 9)
+        if (!horaOficial) {
+           const horaChecada = parseInt(entradaFinal.split(':')[0], 10);
+           // Si checó a las 6, 7 u 8, es del turno de las 7:00
+           if (horaChecada <= 8) {
+               horaOficial = '07:00';
+           } else {
+               // Si checó más tarde, es del turno de las 9:00
+               horaOficial = '09:00';
+           }
+        }
+
+        // 3. Hacemos las matemáticas de los 10 minutos
+        const [hEntrada, mEntrada] = horaOficial.split(':').map(Number);
+        const [hReal, mReal] = entradaFinal.split(':').map(Number);
+        
+        const totalMinutosOficial = (hEntrada * 60) + mEntrada;
+        const totalMinutosReal = (hReal * 60) + mReal;
+
+        const limiteTolerancia = totalMinutosOficial + 10;
+        if (empleado.regimen === 'ESPECIAL') {
+          console.log(`--- REPORTE VIRI ---`);
+          console.log(`Nombre: ${empleado.nombreCompleto}`);
+          console.log(`Hora Oficial Base: ${horaOficial}`);
+          console.log(`Hora Real Checada: ${entradaFinal}`);
+          console.log(`Límite (con gracia): ${limiteTolerancia} min`);
+          console.log(`Real en minutos: ${totalMinutosReal} min`);
+          console.log(`¿Hay Retardo?: ${totalMinutosReal > limiteTolerancia}`);
+        }
+
+        if (totalMinutosReal > limiteTolerancia) {
+          // Calculamos los minutos exactos pasándose de la tolerancia
+          minutosRetardo = totalMinutosReal - limiteTolerancia;
+          
+          if (empleado.regimen === 'NORMAL') {
+            estatus = estatus === "OMISION_S" ? "RETARDO_Y_OMISION" : "RETARDO";
+          } else if (empleado.regimen === 'ESPECIAL') {
+            estatus = "RETARDO_ESPECIAL";
+          }
+        }
+      }
+      // --- FIN DE LÓGICA ---
+      // --- FIN DE LÓGICA ---
 
       const fechaParaPrisma = new Date(`${fecha}T00:00:00Z`);
 
