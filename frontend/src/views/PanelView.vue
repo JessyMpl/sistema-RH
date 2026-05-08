@@ -50,6 +50,41 @@ const subirExcel = async () => {
     estaSubiendo.value = false;
   }
 };
+// --- FUNCIÓN PARA DESCARGAR EL EXCEL ---
+const descargarExcel = async () => {
+  try {
+    // Llamamos al endpoint que creamos en el backend
+    const respuesta = await fetch('http://localhost:3000/api/excel/descargar-reporte', {
+      method: 'GET',
+    });
+
+    if (!respuesta.ok) throw new Error('Error al generar el archivo');
+
+    // Convertimos la respuesta en un "blob" (archivo binario)
+    const blob = await respuesta.blob();
+
+    // Creamos un link temporal en el navegador para forzar la descarga
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    // Le ponemos nombre al archivo que se descargará
+    link.setAttribute('download', 'Sabana_Quincenal_Secretaria.xlsx');
+    
+    document.body.appendChild(link);
+    link.click();
+
+    // Limpiamos el link y la memoria
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error("Error al bajar el Excel:", error);
+    alert("❌ Hubo un problema al descargar el reporte.");
+  }
+};
+
+
 
 // --- LÓGICA DE LA SÁBANA QUINCENAL ---
 
@@ -127,6 +162,8 @@ const getDia = (fechaString) => {
   const partes = fechaString.split('-');
   return parseInt(partes[2], 10);
 };
+
+
 </script>
 
 <template>
@@ -221,6 +258,13 @@ const getDia = (fechaString) => {
           </div>
 
           <div v-if="vistaActual === 'sabana'">
+            <!--boton de descarga-->
+         <div class="flex justify-end mb-6">
+          <button v-if="datosExtraidos" @click="descargarExcel"  class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out">
+          Descargar Reporte
+          </button>
+        </div>
+  <!--fin boton descarga-->
             <div class="mb-4 bg-gray-200 py-3 rounded-t-lg border-b-2 border-gray-300 shadow-sm">
               <h2 class="text-lg font-bold text-gray-800 text-center tracking-wide">
                 {{ tituloReporte }}

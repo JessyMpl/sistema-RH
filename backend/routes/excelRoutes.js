@@ -276,4 +276,82 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
   }
 });
 
+// --- NUEVA RUTA PARA DESCARGAR LA SÁBANA HORIZONTAL ---
+router.get('/descargar-reporte', async (req, res) => {
+  try {
+    const asistencias = await prisma.asistencia.findMany({
+      include: { servidor: true },
+      orderBy: [{ fecha: 'asc' }] // Ordenamos por fecha para que las columnas queden en orden
+    });
+
+    if (asistencias.length === 0) {
+      return res.status(404).json({ error: 'No hay datos para exportar.' });
+    }
+
+    // 1. Obtener todas las fechas únicas de la quincena (para usarlas como columnas)
+    const fechasUnicas = [...new Set(asistencias.map(a => a.fecha.toISOString().split('T')[0]))].sort();
+
+    // 2. Agrupar la información por Empleado (Pivot)
+    const empleadosMap = {};
+
+    asistencias.forEach(a => {
+      const numEmp = a.servidor.numeroEmpleado;
+      
+      // Si el empleado aún no está en nuestra lista, lo creamos con sus datos base
+      if (!empleadosMap[numEmp]) {
+        empleadosMap[numEmp] = {
+          'No. Empleado': numEmp,
+          'Nombre Completo': a.servidor.nombreCompleto,
+          'Departamento': a.servidor.departamento
+        };
+        // Inicializamos todas las columnas de fechas en blanco por si faltó algún día
+        fechasUnicas.forEach(f => empleadosMap[numEmp][f] = '---');
+      }
+
+      const fechaStr = a.fecha.toISOString().split('T')[0];
+      
+      // 3. Formatear lo que dirá la celda del Excel
+      // Si es "LA" (Lista de Asistencia), solo ponemos eso para que se vea limpio
+      let textoCelda = a.incidencia;
+      
+      // Para los demás, armamos un resumen bonito: "09:14 - 18:41 (RETARDO)"
+      if (a.incidencia !== 'LA' && a.incidencia !== 'NO ENCONTRADO') {
+        const ent = a.entrada || '--:--';
+        const sal = a.salida || '--:--';
+        
+        textoCelda = `${ent} a ${sal} [${a.incidencia}]`;
+        
+        // Si tuvo retardo, le agregamos los minutos para que RH lo vea rápido
+        if (a.minutosRetardo > 0) {
+          textoCelda += ` (${a.minutosRetardo}m retraso)`;
+        }
+      }
+
+      // Asignamos el texto a la columna del día correspondiente
+      empleadosMap[numEmp][fechaStr] = textoCelda;
+    });
+
+    // 4. Convertimos el mapa a un arreglo y lo ordenamos alfabéticamente
+    const datosExcel = Object.values(empleadosMap).sort((a, b) => 
+      a['Nombre Completo'].localeCompare(b['Nombre Completo'])
+    );
+
+    // Creamos el libro y la hoja de Excel
+    const wb = xlsx.utils.book_new();
+    const ws = xlsx.utils.json_to_sheet(datosExcel);
+    xlsx.utils.book_append_sheet(wb, ws, 'Sábana Quincenal');
+
+    // Generamos el archivo
+    const buffer = xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename=Sabana_Quincenal_Horizontal.xlsx');
+    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+
+  } catch (error) {
+    console.error("Error al generar Excel:", error);
+    res.status(500).json({ error: 'No se pudo generar el archivo.' });
+  }
+});
+
 module.exports = router;
