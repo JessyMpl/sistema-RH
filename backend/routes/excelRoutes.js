@@ -323,7 +323,7 @@ router.get('/descargar-reporte', async (req, res) => {
     let colIndexDia = 4; 
     fechasUnicas.forEach(fecha => {
      const numeroDia = parseInt(fecha.split('-')[2], 10); // Sacamos el puro "16", "17", etc.
-       worksheet.getCell(4, colIndexDia).value = ` ${numeroDia}`;
+       worksheet.getCell(4, colIndexDia).value = numeroDia;
        // Opcional: Centrar el texto del día
        worksheet.getCell(4, colIndexDia).alignment = { horizontal: 'center' };
        colIndexDia += 2; // Brincamos de 2 en 2 por la Entrada y Salida
