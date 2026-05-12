@@ -11,6 +11,7 @@ enum Regimen {
   NORMAL    // Para el personal con horario de oficina (Biométrico)
   ESPECIAL  // Para personal 1x1 o guardias (Lógica de 2 días)
   LISTA     // Para personal que checa por lista (Marca "LA" automáticamente)
+  EXENTO    // Para el personal que no registra asistencia por ninguna 
 }
 
 // 2. Tabla de Horarios
