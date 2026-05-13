@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'; 
+import Swal from 'sweetalert2'; // 👈 1. Importamos la magia de SweetAlert
 import SidebarRH from '@/components/SidebarRH.vue';
 import GestionEmpleados from '@/components/GestionEmpleados.vue';
 
@@ -19,16 +20,34 @@ const seleccionarArchivo = (event) => {
   vistaActual.value = 'validacion'; 
 };
 
+// 2. 🚀 FUNCIÓN SUBIREXCEL MEJORADA CON SWEETALERT
 const subirExcel = async () => {
   if (!archivoSeleccionado.value) {
-    mensajeStatus.value = '⚠️ Por favor, selecciona un archivo Excel primero.';
+    Swal.fire({
+      icon: 'warning',
+      title: '¡Falta el archivo!',
+      text: 'Por favor, selecciona un archivo Excel primero.',
+      confirmButtonColor: '#902c3e' // Tu guinda institucional
+    });
     return;
   }
+  
   estaSubiendo.value = true;
-  mensajeStatus.value = '⏳ Subiendo y procesando archivo...';
+  mensajeStatus.value = ''; // Limpiamos el texto viejito
   
   const formData = new FormData();
   formData.append('archivoExcel', archivoSeleccionado.value);
+
+  // Lanzamos el spinner bloqueando la pantalla
+  Swal.fire({
+    title: '¡Cruzando datos! ⚙️',
+    html: 'Analizando horarios y calculando retardos.<br><br><b>Esto tomará unos segundos, por favor no cierres la ventana.</b>',
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
 
   try {
     const respuesta = await fetch('http://localhost:3000/api/excel/subir-asistencias', {
@@ -39,17 +58,39 @@ const subirExcel = async () => {
     const data = await respuesta.json();
     
     if (respuesta.ok) {
-     mensajeStatus.value = `✅ ¡Éxito! ${data.mensaje} (Días limpios guardados: ${data.diasProcesados})`;
+      // Éxito: Quitamos spinner y ponemos palomita
+      Swal.fire({
+        icon: 'success',
+        title: '¡Magia terminada!',
+        text: `¡Éxito! ${data.mensaje} (Días limpios procesados: ${data.diasProcesados})`,
+        confirmButtonColor: '#902c3e'
+      });
+      
       datosExtraidos.value = data.datos; 
+      vistaActual.value = 'validacion'; // Nos aseguramos de mandarlos a la tabla
     } else {
-      mensajeStatus.value = `❌ Error: ${data.error}`;
+      // Error del backend (ej. mal formato)
+      Swal.fire({
+        icon: 'error',
+        title: '¡Ups!',
+        text: data.error || 'Hubo un error al procesar el archivo.',
+        confirmButtonColor: '#902c3e'
+      });
     }
   } catch (error) {
-    mensajeStatus.value = '❌ Error al conectar con el servidor.';
+    // Error de red/servidor caído
+    Swal.fire({
+      icon: 'error',
+      title: 'Error de conexión',
+      text: 'No se pudo contactar al servidor. Verifica que esté encendido.',
+      confirmButtonColor: '#902c3e'
+    });
   } finally {
     estaSubiendo.value = false;
   }
 };
+
+// ... tu código de descargarExcel y lo demás sigue intacto hacia abajo ...
 // --- FUNCIÓN PARA DESCARGAR EL EXCEL ---
 const descargarExcel = async () => {
   try {
