@@ -8,7 +8,10 @@ const prisma = require('../config/db');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res) => {
+// ==============================================================================
+// 1. RUTA DE VISTA PREVIA (Lee el Excel, calcula, pero NO guarda en BD)
+// ==============================================================================
+router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No se envió ningún archivo.' });
 
@@ -19,7 +22,7 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
     const empleados = await prisma.servidorPublico.findMany({ include: { horario: true } });
     const registrosPorDia = {};
 
-    // 1. AGRUPAR Y LIMPIAR EL BIOMÉTRICO
+    // AGRUPAR Y LIMPIAR EL BIOMÉTRICO
     rawData.forEach(fila => {
       let rawId = fila['Person ID'] || fila.ID || fila.id || fila.numeroEmpleado;
       const numEmp = String(rawId || '').replace(/['"]/g, '').trim();
@@ -51,12 +54,10 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
       }
     });
 
-    const resultadosProcesados = [];
-    
-    // 💡 AHORA SÍ: GUARDAMOS SOLO TEXTO PLANO PARA NO MATAR LA MEMORIA RAM
-    const datosAProcesar = [];
+    const resultadosProcesados = []; // Lo que verá el usuario en la tabla
+    const datosAProcesar = [];       // Los datos crudos que luego enviaremos a guardar
 
-    // 2. PROCESAR BIOMÉTRICO (NORMALES Y ESPECIALES)
+    // PROCESAR BIOMÉTRICO (NORMALES Y ESPECIALES)
     for (const llave in registrosPorDia) {
       const { numEmp, fecha, horas } = registrosPorDia[llave];
       const empleado = empleados.find(e => String(e.numeroEmpleado).trim() === numEmp);
@@ -148,7 +149,6 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
 
       const fechaParaPrisma = new Date(`${fecha}T00:00:00Z`);
 
-      // 💡 Guardamos solo un objeto de texto plano, la memoria RAM descansa
       datosAProcesar.push({
         servidorId: empleado.id,
         fechaParaPrisma,
@@ -170,7 +170,7 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
       });
     }
 
-    // 3. AUTO-GENERAR LISTA DE ASISTENCIA (LUNES A VIERNES)
+    // AUTO-GENERAR LISTA DE ASISTENCIA (LUNES A VIERNES)
     const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
     
     if (fechasUnicas.length > 0) {
@@ -188,8 +188,6 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
           const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
 
           for (const emp of empleadosLista) {
-            
-            // 💡 Igual aquí, solo texto plano
             datosAProcesar.push({
               servidorId: emp.id,
               fechaParaPrisma,
@@ -214,41 +212,74 @@ router.post('/subir-asistencias', upload.single('archivoExcel'), async (req, res
       }
     }
 
-    // 💡 ¡AHORA SÍ! PROCESAMIENTO POR LOTES INTELIGENTE
-    const TAMANO_LOTE = 200; 
-    for (let i = 0; i < datosAProcesar.length; i += TAMANO_LOTE) {
-      // Agarramos 200 datos de texto
-      const loteDatos = datosAProcesar.slice(i, i + TAMANO_LOTE);
-      
-      // Armamos las instrucciones de Prisma SOLO para estos 200, justo antes de mandarlas
-      const operacionesLote = loteDatos.map(dato => 
-        prisma.asistencia.upsert({
-          where: { servidorId_fecha: { servidorId: dato.servidorId, fecha: dato.fechaParaPrisma } },
-          update: { entrada: dato.entradaFinal, salida: dato.salidaFinal, minutosRetardo: dato.minutosRetardo, incidencia: dato.estatus },
-          create: { servidorId: dato.servidorId, fecha: dato.fechaParaPrisma, entrada: dato.entradaFinal, salida: dato.salidaFinal, minutosRetardo: dato.minutosRetardo, incidencia: dato.estatus }
-        })
-      );
-
-      // Enviamos el lote a Neon (60 segundos de paciencia max)
-      await prisma.$transaction(operacionesLote, { timeout: 60000 });
-    }
-
     resultadosProcesados.sort((a, b) => a.nombre.localeCompare(b.nombre) || a.fecha.localeCompare(b.fecha));
 
+    // 💡 IMPORTANTE: Devolvemos los datos visuales Y los datos listos para guardar
     res.json({
-      mensaje: '¡Motor de Cruce ejecutado exitosamente!',
+      mensaje: '¡Datos analizados listos para revisión!',
       diasProcesados: fechasUnicas.length,
-      datos: resultadosProcesados 
+      datosVisuales: resultadosProcesados,
+      datosParaGuardar: datosAProcesar 
     });
 
   } catch (error) {
-    console.error("Error procesando biométrico:", error);
-    res.status(500).json({ error: 'Hubo un error al intentar procesar las asistencias.' });
+    console.error("Error previsualizando biométrico:", error);
+    res.status(500).json({ error: 'Hubo un error al intentar leer el Excel.' });
   }
 });
 
 
-// --- RUTA PARA DESCARGAR LA SÁBANA OFICIAL ---
+// ==============================================================================
+// 2. RUTA DE CONFIRMACIÓN (Recibe los datos aprobados y usa SQL Nivel Dios)
+// ==============================================================================
+router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req, res) => {
+  try {
+    const { datosParaGuardar } = req.body;
+
+    if (!datosParaGuardar || datosParaGuardar.length === 0) {
+      return res.status(400).json({ error: 'No se recibieron datos para guardar.' });
+    }
+
+    const TAMANO_LOTE = 1000; 
+
+    for (let i = 0; i < datosParaGuardar.length; i += TAMANO_LOTE) {
+      const loteDatos = datosParaGuardar.slice(i, i + TAMANO_LOTE);
+      
+      const values = loteDatos.map(dato => {
+        const entrada = dato.entradaFinal ? `'${dato.entradaFinal}'` : 'NULL';
+        const salida = dato.salidaFinal ? `'${dato.salidaFinal}'` : 'NULL';
+        const incidencia = `'${dato.estatus}'`;
+        // Aseguramos que la fecha se procese correctamente desde el JSON
+        const fechaStr = new Date(dato.fechaParaPrisma).toISOString(); 
+        
+        return `(${dato.servidorId}, '${fechaStr}'::timestamp, ${entrada}, ${salida}, ${dato.minutosRetardo}, ${incidencia})`;
+      }).join(',\n');
+
+      const query = `
+        INSERT INTO "Asistencia" ("servidorId", "fecha", "entrada", "salida", "minutosRetardo", "incidencia")
+        VALUES ${values}
+        ON CONFLICT ("servidorId", "fecha") DO UPDATE SET
+          "entrada" = EXCLUDED."entrada",
+          "salida" = EXCLUDED."salida",
+          "minutosRetardo" = EXCLUDED."minutosRetardo",
+          "incidencia" = EXCLUDED."incidencia";
+      `;
+
+      await prisma.$executeRawUnsafe(query);
+    }
+
+    res.json({ mensaje: '¡Datos guardados exitosamente en la base de datos!' });
+
+  } catch (error) {
+    console.error("Error guardando en BD:", error);
+    res.status(500).json({ error: 'Hubo un error al guardar los datos en el servidor.' });
+  }
+});
+
+
+// ==============================================================================
+// 3. RUTA PARA DESCARGAR LA SÁBANA OFICIAL (Intacta)
+// ==============================================================================
 router.get('/descargar-reporte', async (req, res) => {
   try {
     const asistencias = await prisma.asistencia.findMany({
@@ -385,4 +416,5 @@ router.get('/descargar-reporte', async (req, res) => {
     res.status(500).json({ error: 'No se pudo generar el archivo oficial.' });
   }
 });
+
 module.exports = router;
