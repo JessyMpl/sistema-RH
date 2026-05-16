@@ -6,9 +6,11 @@ const app = express();
 
 // Middlewares
 app.use(cors()); 
-app.use(express.json()); 
+// 💡 AQUÍ AGRANDAMOS EL BUZÓN A 50 MEGA BYTES 📦
+app.use(express.json({ limit: '50mb' })); 
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// --- AQUÍ IMPORTAMOS Y USAMOS TUS NUEVAS RUTAS ---
+// --- AQUÍ IMPORTAMOS Y USAMOS TUS RUTAS ---
 const horariosRoutes = require('./routes/horariosRoutes');
 app.use('/api/horarios', horariosRoutes);
 
@@ -17,6 +19,11 @@ app.use('/api/excel', excelRoutes);
 
 const empleadoRoutes = require('./routes/empleadoRoutes');
 app.use('/api/empleados', empleadoRoutes);
+
+// 💡 Aproveché para agrupar tus authRoutes aquí arriba con las demás
+// (Es mejor práctica cargar todas las rutas antes de encender el servidor)
+const authRoutes = require('./routes/authRoutes');
+app.use('/api/auth', authRoutes);
 // -------------------------------------------------
 
 // Ruta de prueba
@@ -30,7 +37,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor corriendo sin problemas en el puerto ${PORT}`);
 });
-
-// ... tus otras rutas
-const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
