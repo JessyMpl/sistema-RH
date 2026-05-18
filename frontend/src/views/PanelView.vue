@@ -253,6 +253,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                   <span v-else-if="item.estatus === 'OK_ESPECIAL'" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold">Especial</span>
                   <span v-else-if="item.estatus === 'NO ENCONTRADO'" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta en BD</span>
                   <span v-else-if="item.estatus === 'LA'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Lista</span>
+                    <span v-else-if="item.estatus === 'EXENTO'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Exento</span>
                   <span v-else-if="item.estatus === 'OMISION_E'" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Omisión Entrada</span>
                   <span v-else-if="item.estatus === 'OMISION_S'" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Omisión Salida</span>
                   <span v-else class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs">{{ item.estatus }}</span>
