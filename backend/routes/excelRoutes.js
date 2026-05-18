@@ -22,7 +22,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
     const empleados = await prisma.servidorPublico.findMany({ include: { horario: true } });
     const registrosPorDia = {};
 
-    // AGRUPAR Y LIMPIAR EL BIOMÉTRICO
     rawData.forEach(fila => {
       let rawId = fila['Person ID'] || fila.ID || fila.id || fila.numeroEmpleado;
       const numEmp = String(rawId || '').replace(/['"]/g, '').trim();
@@ -58,12 +57,10 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
     const resultadosProcesados = []; 
     const datosAProcesar = [];       
 
-    // PROCESAR BIOMÉTRICO (NORMALES Y ESPECIALES)
     for (const llave in registrosPorDia) {
       const { numEmp, fecha, horas } = registrosPorDia[llave];
       const empleado = empleados.find(e => String(e.numeroEmpleado).trim() === numEmp);
       
-      // CAMBIO 1: Eliminamos checadas duplicadas y ordenamos
       const horasUnicas = [...new Set(horas)].sort(); 
       let primeraChecada = horasUnicas[0];
       let ultimaChecada = horasUnicas.length > 1 ? horasUnicas[horasUnicas.length - 1] : null;
@@ -88,7 +85,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
       let calcularRetardo = false;
       
-      // Limpieza del regimen de la Base de Datos
       const regimenDB = String(empleado.regimen || '').toUpperCase().trim();
 
       if (regimenDB === 'NORMAL') {
@@ -105,7 +101,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             estatus = "OMISION_S"; 
           }
         } else {
-          // CAMBIO 2: Logica inteligente para multiples checadas
           const horaUltima = parseInt(ultimaChecada.split(':')[0], 10);
 
           if (horaPrimera >= 14) {
@@ -199,7 +194,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       });
     }
 
-    // AUTO-GENERAR LISTA DE ASISTENCIA Y PERSONAL EXENTO (LUNES A VIERNES)
     const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
     
     if (fechasUnicas.length > 0) {
@@ -220,7 +214,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
           const fechaStr = d.toISOString().split('T')[0];
           const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
 
-          // Auto-generar para personal de Lista
           for (const emp of empleadosLista) {
             datosAProcesar.push({
               servidorId: emp.id,
@@ -243,7 +236,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             });
           }
 
-          // Auto-generar para personal Exento
           for (const emp of empleadosExento) {
             datosAProcesar.push({
               servidorId: emp.id,
@@ -283,7 +275,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
     res.status(500).json({ error: 'Hubo un error al intentar leer el Excel.' });
   }
 });
-
 
 // ==============================================================================
 // 2. RUTA DE CONFIRMACIÓN (Recibe los datos aprobados y usa SQL Nivel Dios)
@@ -331,9 +322,8 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
   }
 });
 
-
 // ==============================================================================
-// 3. RUTA PARA DESCARGAR LA SÁBANA OFICIAL
+// 3. RUTA PARA DESCARGAR LA SÁBANA OFICIAL (ACTUALIZADA CON SUMATORIAS)
 // ==============================================================================
 router.get('/descargar-reporte', async (req, res) => {
   try {
@@ -374,6 +364,18 @@ router.get('/descargar-reporte', async (req, res) => {
        colIndexDia += 2; 
     });
 
+    worksheet.getCell(4, colIndexDia).value = 'FALTAS DE PUNTUALIDAD';
+    worksheet.getCell(4, colIndexDia).font = { bold: true, size: 9 };
+    worksheet.getCell(4, colIndexDia).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+    worksheet.getCell(4, colIndexDia + 1).value = 'FALTAS DE ASISTENCIA';
+    worksheet.getCell(4, colIndexDia + 1).font = { bold: true, size: 9 };
+    worksheet.getCell(4, colIndexDia + 1).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
+    worksheet.getCell(4, colIndexDia + 2).value = 'TOTAL MINUTOS RETARDO';
+    worksheet.getCell(4, colIndexDia + 2).font = { bold: true, size: 9 };
+    worksheet.getCell(4, colIndexDia + 2).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+
     const empleadosMap = {};
     asistencias.forEach(a => {
       const numEmp = a.servidor.numeroEmpleado;
@@ -401,6 +403,10 @@ router.get('/descargar-reporte', async (req, res) => {
 
       let colIdx = 4; 
       
+      let totalPuntualidad = 0;
+      let totalAsistencia = 0;
+      let totalMinutos = 0;
+      
       fechasUnicas.forEach(fecha => {
         const reg = emp.asistencias[fecha];
         let entradaTexto = '---';
@@ -419,7 +425,14 @@ router.get('/descargar-reporte', async (req, res) => {
             entradaTexto = reg.entrada || '---';
             salidaTexto = reg.salida || '---';
             
-            if (reg.minutosRetardo > 0) tieneRetardo = true;
+            if (reg.incidencia && reg.incidencia.includes('RETARDO')) {
+              tieneRetardo = true;
+              totalPuntualidad++;
+            }
+
+            if (reg.minutosRetardo && reg.minutosRetardo > 0) {
+              totalMinutos += Number(reg.minutosRetardo);
+            }
           }
         } else {
           const fechaObj = new Date(`${fecha}T12:00:00Z`);
@@ -434,6 +447,7 @@ router.get('/descargar-reporte', async (req, res) => {
             entradaTexto = 'SR';
             salidaTexto = 'SR';
             esFalta = true;
+            totalAsistencia++;
           } else if (emp.horarioId === 3 || regimenC === 'LISTA') {
              entradaTexto = 'LA';
              salidaTexto = 'LA';
@@ -464,6 +478,15 @@ router.get('/descargar-reporte', async (req, res) => {
 
         colIdx += 2; 
       });
+
+      worksheet.getCell(filaActual, colIdx).value = totalPuntualidad > 0 ? totalPuntualidad : '-';
+      worksheet.getCell(filaActual, colIdx).alignment = { horizontal: 'center' };
+
+      worksheet.getCell(filaActual, colIdx + 1).value = totalAsistencia > 0 ? totalAsistencia : '-';
+      worksheet.getCell(filaActual, colIdx + 1).alignment = { horizontal: 'center' };
+
+      worksheet.getCell(filaActual, colIdx + 2).value = totalMinutos > 0 ? totalMinutos : '-';
+      worksheet.getCell(filaActual, colIdx + 2).alignment = { horizontal: 'center' };
 
       filaActual++; 
     });

@@ -166,18 +166,36 @@ const datosPivotados = computed(() => {
   return Object.values(empleadosMap).map(emp => {
     let faltasPuntualidad = 0;
     let faltasAsistencia = 0;
+    let totalMinutos = 0; 
+    
     diasSabana.value.forEach(fecha => {
       const reg = emp.asistencias[fecha];
-      if (reg && reg.estatus.includes('RETARDO')) faltasPuntualidad++;
+      
+      if (reg) {
+        if (reg.estatus.includes('RETARDO')) faltasPuntualidad++;
+        
+        if (reg.minutosRetardo && reg.minutosRetardo > 0) {
+          totalMinutos += Number(reg.minutosRetardo);
+        }
+      }
+      
       const d = new Date(`${fecha}T12:00:00Z`);
       const esFinSemana = (d.getDay() === 0 || d.getDay() === 6);
       if (!reg && !esFinSemana) faltasAsistencia++;
     });
-    return { ...emp, totalPuntualidad: faltasPuntualidad, totalAsistencia: faltasAsistencia };
+    
+    return { 
+      ...emp, 
+      totalPuntualidad: faltasPuntualidad, 
+      totalAsistencia: faltasAsistencia,
+      totalMinutos: totalMinutos 
+    };
   }).sort((a, b) => a.nombre.localeCompare(b.nombre));
 });
 
 const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
+
+
 </script>
 
 <template>
@@ -262,7 +280,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
 
             </div>
           </div>
-
+            <!-- SABA QUINCENAL -->
           <div v-if="vistaActual === 'sabana'">
             <div class="flex justify-end mb-6">
               <button v-if="datosExtraidos" @click="descargarExcel" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out">
@@ -283,6 +301,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                     <th v-for="fecha in diasSabana" :key="'head-'+fecha" colspan="2" class="py-1 text-center text-sm font-bold text-gray-800 border border-gray-300 bg-gray-200">{{ getDia(fecha) }}</th>
                     <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">FALTAS DE <br> PUNTUALIDAD</th>
                     <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">FALTAS DE <br> ASISTENCIA</th>
+                    <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">TOTAL MINUTOS <br> RETARDO</th>
                   </tr>
                   <tr>
                     <template v-for="fecha in diasSabana" :key="'sub-'+fecha">
@@ -313,11 +332,13 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                     </template>
                     <td class="py-2 text-center border border-gray-300 bg-orange-50 font-bold text-orange-700 text-sm tabular-nums">{{ emp.totalPuntualidad > 0 ? emp.totalPuntualidad : '-' }}</td>
                     <td class="py-2 text-center border border-gray-300 bg-red-50 font-bold text-red-700 text-sm tabular-nums">{{ emp.totalAsistencia > 0 ? emp.totalAsistencia : '-' }}</td>
+                    <td class="py-2 text-center border border-gray-300 bg-yellow-50 font-bold text-yellow-700 text-sm tabular-nums">{{ emp.totalMinutos > 0 ? emp.totalMinutos : '-' }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
+              <!-- SABA QUINCENAL -->
         </div>
       </div>
       <div v-else-if="vistaActiva === 'empleados'">
