@@ -504,3 +504,59 @@ router.get('/descargar-reporte', async (req, res) => {
 });
 
 module.exports = router;
+
+
+// ==============================================================================
+// 4. RUTA PARA CONSULTAR INCIDENCIAS POR RANGO DE FECHAS (MÓDULO DE INCIDENCIAS)
+// ==============================================================================
+router.get('/consultar-incidencias', async (req, res) => {
+  try {
+    const { inicio, fin } = req.query;
+
+    if (!inicio || !fin) {
+      return res.status(400).json({ error: 'Por favor, proporciona fecha de inicio y fin.' });
+    }
+
+    // Convertimos las fechas recibidas a formatos válidos para la BD
+    const fechaInicio = new Date(`${inicio}T00:00:00Z`);
+    const fechaFin = new Date(`${fin}T23:59:59Z`);
+
+    // Buscamos los registros en el rango de fechas cuyo estatus sea una incidencia
+    const registros = await prisma.asistencia.findMany({
+      where: {
+        fecha: {
+          gte: fechaInicio,
+          lte: fechaFin
+        },
+        incidencia: {
+          in: ['RETARDO', 'RETARDO_ESPECIAL', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION']
+        }
+      },
+      include: {
+        servidor: true // Incluye los datos del empleado (Nombre, ID, Departamento)
+      },
+      orderBy: [
+        { fecha: 'asc' }
+      ]
+    });
+
+    // Mapeamos los datos para enviarle al frontend una estructura limpia
+    const resultado = registros.map(reg => ({
+      id: reg.id,
+      numEmp: reg.servidor.numeroEmpleado,
+      nombre: reg.servidor.nombreCompleto,
+      departamento: reg.servidor.departamento,
+      fecha: reg.fecha.toISOString().split('T')[0],
+      entrada: reg.entrada || 'SR',
+      salida: reg.salida || 'SR',
+      estatus: reg.incidencia,
+      minutosRetardo: reg.minutosRetardo
+    }));
+
+    res.json(resultado);
+
+  } catch (error) {
+    console.error("Error consultando incidencias:", error);
+    res.status(500).json({ error: 'Hubo un error al consultar las incidencias.' });
+  }
+});

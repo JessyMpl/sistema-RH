@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import Swal from 'sweetalert2'; 
 import SidebarRH from '@/components/SidebarRH.vue';
 import GestionEmpleados from '@/components/GestionEmpleados.vue';
+import Incidencias from '@/components/incidencias.vue';
 
 const vistaActiva = ref('reporte'); 
 const archivoSeleccionado = ref(null);
@@ -344,6 +345,12 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
       <div v-else-if="vistaActiva === 'empleados'">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Gestión de Personal</h1>
         <GestionEmpleados />
+      </div>
+
+
+      <div v-else-if="vistaActiva === 'incidencias'">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Incidencias</h1>
+        <Incidencias />
       </div>
     </main>
   </div>
