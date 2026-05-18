@@ -3,10 +3,23 @@ import { ref, onMounted } from 'vue';
 import Swal from 'sweetalert2';
 
 const empleados = ref([]);
-const horarios = ref([]); // <-- 1. Cajita para guardar los horarios de la BD
+const horarios = ref([]); 
 const vistaInterna = ref('lista'); 
 
-// 2. Agregamos horarioId al formulario
+// --- CAMBIO 1: Variables para la nueva tabla dinamica y el buscador ---
+// Variable para almacenar el texto que se escriba en el buscador por nombre
+const searchValue = ref('');
+
+// Definicion de las columnas que requiere vue3-easy-data-table
+// "text" es el titulo visible y "value" es el campo exacto de la base de datos
+const headers = [
+  { text: "ID", value: "numeroEmpleado", sortable: true },
+  { text: "Nombre Completo", value: "nombreCompleto", sortable: true },
+  { text: "Departamento", value: "departamento", sortable: true },
+  { text: "Tipo de Horario", value: "regimen" }
+];
+// ----------------------------------------------------------------------
+
 const formulario = ref({ 
   numeroEmpleado: '', 
   nombreCompleto: '', 
@@ -15,29 +28,27 @@ const formulario = ref({
   horarioId: '' 
 });
 
-// -- FUNCIONES PARA CARGAR DATOS --
 const cargarEmpleados = async () => {
   try {
     const res = await fetch('http://localhost:3000/api/empleados');
     empleados.value = await res.json();
   } catch (error) {
-    console.error('Error cargando catálogo', error);
+    console.error('Error cargando catalogo', error);
   }
 };
 
 const cargarHorarios = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/horarios'); // Ruta que crearemos en Node
+    const res = await fetch('http://localhost:3000/api/horarios'); 
     horarios.value = await res.json();
   } catch (error) {
     console.error('Error cargando horarios', error);
   }
 };
 
-// -- FUNCIÓN: REGISTRO MANUAL --
 const guardarManual = async () => {
   if (!formulario.value.horarioId) {
-    Swal.fire('Atención', 'Por favor selecciona un Horario.', 'warning');
+    Swal.fire('Atencion', 'Por favor selecciona un Horario.', 'warning');
     return;
   }
 
@@ -50,8 +61,8 @@ const guardarManual = async () => {
     
     if (res.ok) {
       Swal.fire({
-        title: '¡Registro Exitoso!',
-        text: 'El servidor público ha sido guardado en la base de datos.',
+        title: 'Registro Exitoso!',
+        text: 'El servidor publico ha sido guardado en la base de datos.',
         icon: 'success',
         confirmButtonColor: '#2563eb', 
         confirmButtonText: 'Aceptar'
@@ -61,14 +72,13 @@ const guardarManual = async () => {
       cargarEmpleados();
       vistaInterna.value = 'lista';
     } else {
-      Swal.fire({ title: 'Error', text: 'No se pudo guardar. Verifica que el ID no esté duplicado.', icon: 'error', confirmButtonColor: '#ef4444' });
+      Swal.fire({ title: 'Error', text: 'No se pudo guardar. Verifica que el ID no este duplicado.', icon: 'error', confirmButtonColor: '#ef4444' });
     }
   } catch (error) {
-    Swal.fire('Error de conexión', 'No se pudo conectar con el servidor', 'error');
+    Swal.fire('Error de conexion', 'No se pudo conectar con el servidor', 'error');
   }
 };
 
-// -- FUNCIONES: IMPORTACIÓN MASIVA EXCEL --
 const archivoCatalogo = ref(null);
 const importando = ref(false);
 
@@ -78,7 +88,7 @@ const seleccionarArchivoCatalogo = (event) => {
 
 const procesarImportacion = async () => {
   if (!archivoCatalogo.value) {
-    Swal.fire('Atención', 'Selecciona un archivo Excel.', 'warning');
+    Swal.fire('Atencion', 'Selecciona un archivo Excel.', 'warning');
     return;
   }
 
@@ -91,7 +101,7 @@ const procesarImportacion = async () => {
     const data = await res.json();
 
     if (res.ok) {
-      Swal.fire({ title: '¡Catálogo Importado!', text: data.mensaje, icon: 'success', confirmButtonColor: '#16a34a' });
+      Swal.fire({ title: 'Catalogo Importado!', text: data.mensaje, icon: 'success', confirmButtonColor: '#16a34a' });
       archivoCatalogo.value = null;
       cargarEmpleados();
       vistaInterna.value = 'lista';
@@ -105,12 +115,12 @@ const procesarImportacion = async () => {
   }
 };
 
-// -- AL CARGAR LA PANTALLA --
 onMounted(() => {
   cargarEmpleados();
-  cargarHorarios(); // Cargamos los horarios automáticamente
+  cargarHorarios(); 
 });
 </script>
+
 <template>
   <div class="space-y-6">
     <div class="flex space-x-4 mb-6">
@@ -119,35 +129,46 @@ onMounted(() => {
       <button @click="vistaInterna = 'importar'" :class="vistaInterna === 'importar' ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">📥 Importar Excel</button>
     </div>
 
-    <div v-if="vistaInterna === 'lista'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID</th>
-            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nombre Completo</th>
-            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Departamento</th>
-            <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Horario</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200">
-          <tr v-for="emp in empleados" :key="emp.id" class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm font-mono text-gray-600">{{ emp.numeroEmpleado }}</td>
-            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ emp.nombreCompleto }}</td>
-            <td class="px-6 py-4 text-sm text-gray-500">{{ emp.departamento }}</td>
-            <td class="px-6 py-4">
-              <span :class="{
-                'bg-blue-100 text-blue-800': emp.regimen === 'NORMAL',
-                'bg-purple-100 text-purple-800': emp.regimen === 'ESPECIAL',
-                'bg-orange-100 text-orange-800': emp.regimen === 'LISTA'
-              }" class="px-2 py-1 text-xs font-bold rounded-full">{{ emp.regimen }}</span>
-            </td>
-          </tr>
-          <tr v-if="empleados.length === 0">
-            <td colspan="4" class="px-6 py-8 text-center text-gray-500 italic">No hay personal registrado.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <div v-if="vistaInterna === 'lista'" class="space-y-4">
+      
+      <div class="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+        <div class="w-full max-w-md">
+          <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar Servidor Público</label>
+          <input 
+            v-model="searchValue" 
+            type="text" 
+            placeholder="Escribe el nombre para filtrar..." 
+            class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 transition shadow-sm text-sm"
+          />
+        </div>
+        <div class="text-sm text-gray-500 font-medium">
+          Total: <span class="font-bold text-gray-800">{{ empleados.length }}</span> registros
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2">
+        <EasyDataTable
+          :headers="headers"
+          :items="empleados"
+          :search-value="searchValue"
+          :rows-per-page="25"
+          buttons-pagination
+          theme-color="#2563eb"
+          table-class-name="img-strattia-style"
+        >
+          <template #item-regimen="emp">
+            <span :class="{
+              'bg-blue-100 text-blue-800': emp.regimen === 'NORMAL',
+              'bg-purple-100 text-purple-800': emp.regimen === 'ESPECIAL',
+              'bg-orange-100 text-orange-800': emp.regimen === 'LISTA',
+              'bg-gray-100 text-gray-800': emp.regimen === 'EXENTO'
+            }" class="px-2 py-1 text-xs font-bold rounded-full">
+              {{ emp.regimen }}
+            </span>
+          </template>
+        </EasyDataTable>
+      </div>
+      </div>
 
     <div v-if="vistaInterna === 'nuevo'" class="bg-white p-6 rounded-lg shadow-sm border-t-4 border-blue-600">
       <h2 class="text-xl font-bold mb-4 text-gray-800">Alta Individual de Personal</h2>
@@ -165,17 +186,16 @@ onMounted(() => {
           <input v-model="formulario.departamento" placeholder="Ej. Informática" class="w-full p-2 border rounded focus:ring-blue-500 outline-none" />
         </div>
  
-       <!-- Selector 1: Define CÓMO checa la persona -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Asistencia</label>
           <select v-model="formulario.regimen" class="w-full p-2 border rounded bg-white focus:ring-blue-500 outline-none">
             <option value="NORMAL">Normal</option>
             <option value="ESPECIAL">Especial</option>
             <option value="LISTA">Por Lista </option>
+            <option value="EXENTO">Exento</option>
           </select>
         </div>
 
-        <!-- Selector 2: Define el HORARIO de la persona -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Turno Asignado</label>
           <select v-model="formulario.horarioId" class="w-full p-2 border rounded bg-white focus:ring-blue-500 outline-none">
@@ -187,16 +207,15 @@ onMounted(() => {
         </div>
       </div>
       <div class="mt-6 flex justify-end">
-        <button @click="guardarManual" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition">💾 Guardar en Base de Datos</button>
+        <button @click="guardarManual" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded shadow transition"> Guardar en Base de Datos</button>
       </div>
     </div>
-<!-- Pestaña 3: Importar -->
+
     <div v-if="vistaInterna === 'importar'" class="bg-white p-6 rounded-lg shadow-sm border-t-4 border-green-600">
       <h2 class="text-xl font-bold mb-2 text-gray-800">Carga Masiva de Personal</h2>
       <p class="text-sm text-gray-600 mb-6">Sube tu archivo Excel con las columnas: <strong>ID, Nombre, Departamento, Regimen</strong>.</p>
       
       <div class="border-2 border-dashed border-green-300 bg-green-50 p-8 text-center rounded-lg flex flex-col items-center">
-        
         <div class="mb-4 text-green-600">
           <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
         </div>
@@ -213,7 +232,7 @@ onMounted(() => {
           :disabled="importando"
           class="bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white font-bold py-2 px-8 rounded shadow transition flex items-center gap-2">
           <span v-if="importando">⏳ Procesando archivo...</span>
-          <span v-else>🚀 Subir e Importar Catálogo</span>
+          <span v-else> Subir e Importar Catálogo</span>
         </button>
       </div>
     </div>
