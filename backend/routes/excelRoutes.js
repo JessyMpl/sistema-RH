@@ -13,7 +13,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // ==============================================================================
 router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No se envió ningún archivo.' });
+    if (!req.file) return res.status(400).json({ error: 'No se envio ningun archivo.' });
 
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     const hoja = workbook.Sheets[workbook.SheetNames[0]];
@@ -40,6 +40,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             const mes = fPartes[0].padStart(2, '0');
             const dia = fPartes[1].padStart(2, '0');
             const anio = fPartes[2].length === 2 ? `20${fPartes[2]}` : fPartes[2];
+            fechaLinter = `${anio}-${mes}-${dia}`;
             fechaLimpia = `${anio}-${mes}-${dia}`;
           }
 
@@ -54,21 +55,22 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       }
     });
 
-    const resultadosProcesados = []; // Lo que verá el usuario en la tabla
-    const datosAProcesar = [];       // Los datos crudos que luego enviaremos a guardar
+    const resultadosProcesados = []; 
+    const datosAProcesar = [];       
 
     // PROCESAR BIOMÉTRICO (NORMALES Y ESPECIALES)
     for (const llave in registrosPorDia) {
       const { numEmp, fecha, horas } = registrosPorDia[llave];
       const empleado = empleados.find(e => String(e.numeroEmpleado).trim() === numEmp);
       
-      horas.sort(); 
-      let primeraChecada = horas[0];
-      let ultimaChecada = horas.length > 1 ? horas[horas.length - 1] : null;
+      // CAMBIO 1: Eliminamos checadas duplicadas y ordenamos
+      const horasUnicas = [...new Set(horas)].sort(); 
+      let primeraChecada = horasUnicas[0];
+      let ultimaChecada = horasUnicas.length > 1 ? horasUnicas[horasUnicas.length - 1] : null;
 
       if (!empleado) {
         resultadosProcesados.push({ 
-          numEmp, nombre: "⚠️ No registrado en BD", fecha, entrada: primeraChecada, salida: ultimaChecada, estatus: "NO ENCONTRADO", minutosRetardo: 0
+          numEmp, nombre: "No registrado en BD", fecha, entrada: primeraChecada, salida: ultimaChecada, estatus: "NO ENCONTRADO", minutosRetardo: 0
         });
         continue; 
       }
@@ -85,11 +87,15 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       const llaveAyer = `${numEmp}_${fechaAyer}`;
 
       let calcularRetardo = false;
+      
+      // Limpieza del regimen de la Base de Datos
+      const regimenDB = String(empleado.regimen || '').toUpperCase().trim();
 
-      if (empleado.regimen === 'NORMAL') {
-        if (horas.length === 1) {
-          const horaNum = parseInt(primeraChecada.split(':')[0], 10);
-          if (horaNum >= 14) { 
+      if (regimenDB === 'NORMAL') {
+        const horaPrimera = parseInt(primeraChecada.split(':')[0], 10);
+
+        if (horasUnicas.length === 1) {
+          if (horaPrimera >= 14) { 
             entradaFinal = null;
             salidaFinal = primeraChecada;
             estatus = "OMISION_E"; 
@@ -99,12 +105,25 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             estatus = "OMISION_S"; 
           }
         } else {
-          entradaFinal = primeraChecada;
-          salidaFinal = ultimaChecada;
+          // CAMBIO 2: Logica inteligente para multiples checadas
+          const horaUltima = parseInt(ultimaChecada.split(':')[0], 10);
+
+          if (horaPrimera >= 14) {
+            entradaFinal = null;
+            salidaFinal = ultimaChecada; 
+            estatus = "OMISION_E";
+          } else if (horaUltima < 14) {
+            entradaFinal = primeraChecada; 
+            salidaFinal = null;
+            estatus = "OMISION_S";
+          } else {
+            entradaFinal = primeraChecada;
+            salidaFinal = ultimaChecada;
+          }
         }
         calcularRetardo = true;
       } 
-      else if (empleado.regimen === 'ESPECIAL') {
+      else if (regimenDB === 'ESPECIAL') {
         estatus = "OK_ESPECIAL";
         if (registrosPorDia[llaveAyer]) {
           entradaFinal = null; 
@@ -114,6 +133,16 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
           salidaFinal = null; 
           calcularRetardo = true; 
         }
+      } 
+      else if (regimenDB === 'LISTA') {
+        estatus = "LA";
+        entradaFinal = null;
+        salidaFinal = null;
+      }
+      else if (regimenDB === 'EXENTO' || regimenDB === 'EXCENTO') {
+        estatus = "EXENTO";
+        entradaFinal = null;
+        salidaFinal = null;
       }
 
       if (calcularRetardo && entradaFinal) {
@@ -139,9 +168,9 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         if (totalMinutosReal > limiteTolerancia) {
           minutosRetardo = totalMinutosReal - limiteTolerancia;
           
-          if (empleado.regimen === 'NORMAL') {
+          if (regimenDB === 'NORMAL') {
             estatus = estatus === "OMISION_S" ? "RETARDO_Y_OMISION" : "RETARDO";
-          } else if (empleado.regimen === 'ESPECIAL') {
+          } else if (regimenDB === 'ESPECIAL') {
             estatus = "RETARDO_ESPECIAL";
           }
         }
@@ -170,7 +199,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       });
     }
 
-    // AUTO-GENERAR LISTA DE ASISTENCIA (LUNES A VIERNES)
+    // AUTO-GENERAR LISTA DE ASISTENCIA Y PERSONAL EXENTO (LUNES A VIERNES)
     const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
     
     if (fechasUnicas.length > 0) {
@@ -178,7 +207,11 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       const fechaMin = new Date(Math.min(...fechasObj));
       const fechaMax = new Date(Math.max(...fechasObj));
 
-      const empleadosLista = empleados.filter(e => e.regimen === 'LISTA');
+      const empleadosLista = empleados.filter(e => String(e.regimen || '').toUpperCase().trim() === 'LISTA');
+      const empleadosExento = empleados.filter(e => {
+        const reg = String(e.regimen || '').toUpperCase().trim();
+        return reg === 'EXENTO' || reg === 'EXCENTO';
+      });
 
       for (let d = new Date(fechaMin); d <= fechaMax; d.setDate(d.getDate() + 1)) {
         const diaSemana = d.getDay(); 
@@ -187,6 +220,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
           const fechaStr = d.toISOString().split('T')[0];
           const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
 
+          // Auto-generar para personal de Lista
           for (const emp of empleadosLista) {
             datosAProcesar.push({
               servidorId: emp.id,
@@ -208,22 +242,44 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
               minutosRetardo: 0
             });
           }
+
+          // Auto-generar para personal Exento
+          for (const emp of empleadosExento) {
+            datosAProcesar.push({
+              servidorId: emp.id,
+              fechaParaPrisma,
+              entradaFinal: null,
+              salidaFinal: null,
+              minutosRetardo: 0,
+              estatus: "EXENTO"
+            });
+
+            resultadosProcesados.push({
+              numEmp: emp.numeroEmpleado,
+              nombre: emp.nombreCompleto,
+              departamento: emp.departamento,
+              fecha: fechaStr,
+              entrada: '---',
+              salida: '---',
+              estatus: 'EXENTO',
+              minutosRetardo: 0
+            });
+          }
         }
       }
     }
 
     resultadosProcesados.sort((a, b) => a.nombre.localeCompare(b.nombre) || a.fecha.localeCompare(b.fecha));
 
-    // 💡 IMPORTANTE: Devolvemos los datos visuales Y los datos listos para guardar
     res.json({
-      mensaje: '¡Datos analizados listos para revisión!',
+      mensaje: 'Datos analizados listos para revision!',
       diasProcesados: fechasUnicas.length,
       datosVisuales: resultadosProcesados,
       datosParaGuardar: datosAProcesar 
     });
 
   } catch (error) {
-    console.error("Error previsualizando biométrico:", error);
+    console.error("Error previsualizando biometrico:", error);
     res.status(500).json({ error: 'Hubo un error al intentar leer el Excel.' });
   }
 });
@@ -249,7 +305,6 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
         const entrada = dato.entradaFinal ? `'${dato.entradaFinal}'` : 'NULL';
         const salida = dato.salidaFinal ? `'${dato.salidaFinal}'` : 'NULL';
         const incidencia = `'${dato.estatus}'`;
-        // Aseguramos que la fecha se procese correctamente desde el JSON
         const fechaStr = new Date(dato.fechaParaPrisma).toISOString(); 
         
         return `(${dato.servidorId}, '${fechaStr}'::timestamp, ${entrada}, ${salida}, ${dato.minutosRetardo}, ${incidencia})`;
@@ -268,7 +323,7 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
       await prisma.$executeRawUnsafe(query);
     }
 
-    res.json({ mensaje: '¡Datos guardados exitosamente en la base de datos!' });
+    res.json({ mensaje: 'Datos guardados exitosamente en la base de datos!' });
 
   } catch (error) {
     console.error("Error guardando en BD:", error);
@@ -278,7 +333,7 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
 
 
 // ==============================================================================
-// 3. RUTA PARA DESCARGAR LA SÁBANA OFICIAL (Intacta)
+// 3. RUTA PARA DESCARGAR LA SÁBANA OFICIAL
 // ==============================================================================
 router.get('/descargar-reporte', async (req, res) => {
   try {
@@ -328,6 +383,7 @@ router.get('/descargar-reporte', async (req, res) => {
           nombre: a.servidor.nombreCompleto,
           departamento: a.servidor.departamento,
           horarioId: a.servidor.horarioId, 
+          regimen: a.servidor.regimen,
           asistencias: {}
         };
       }
@@ -356,6 +412,9 @@ router.get('/descargar-reporte', async (req, res) => {
           if (reg.incidencia === 'LA') {
             entradaTexto = 'LA';
             salidaTexto = 'LA';
+          } else if (reg.incidencia === 'EXENTO' || reg.incidencia === 'EXCENTO') {
+            entradaTexto = 'EXENTO';
+            salidaTexto = 'EXENTO';
           } else {
             entradaTexto = reg.entrada || '---';
             salidaTexto = reg.salida || '---';
@@ -366,12 +425,16 @@ router.get('/descargar-reporte', async (req, res) => {
           const fechaObj = new Date(`${fecha}T12:00:00Z`);
           const diaSemana = fechaObj.getDay(); 
           const esFinSemana = (diaSemana === 0 || diaSemana === 6);
+          const regimenC = String(emp.regimen || '').toUpperCase().trim();
 
-          if (emp.horarioId === 2 && !esFinSemana) {
+          if (regimenC === 'EXENTO' || regimenC === 'EXCENTO') {
+            entradaTexto = 'EXENTO';
+            salidaTexto = 'EXENTO';
+          } else if (emp.horarioId === 2 && !esFinSemana) {
             entradaTexto = 'SR';
             salidaTexto = 'SR';
             esFalta = true;
-          } else if (emp.horarioId === 3) {
+          } else if (emp.horarioId === 3 || regimenC === 'LISTA') {
              entradaTexto = 'LA';
              salidaTexto = 'LA';
           } else {
