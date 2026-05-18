@@ -13,7 +13,7 @@ const searchValue = ref('');
 // Definicion de las columnas que requiere vue3-easy-data-table
 // "text" es el titulo visible y "value" es el campo exacto de la base de datos
 const headers = [
-  { text: "ID", value: "numeroEmpleado", sortable: true },
+  { text: "Num Empleado", value: "numeroEmpleado", sortable: true },
   { text: "Nombre Completo", value: "nombreCompleto", sortable: true },
   { text: "Departamento", value: "departamento", sortable: true },
   { text: "Tipo de Horario", value: "regimen" }
@@ -126,14 +126,14 @@ onMounted(() => {
     <div class="flex space-x-4 mb-6">
       <button @click="vistaInterna = 'lista'" :class="vistaInterna === 'lista' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">📋 Ver Catálogo</button>
       <button @click="vistaInterna = 'nuevo'" :class="vistaInterna === 'nuevo' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">➕ Registro Manual</button>
-      <button @click="vistaInterna = 'importar'" :class="vistaInterna === 'importar' ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">📥 Importar Excel</button>
+      <button @click="vistaInterna = 'importar'" :class="vistaInterna === 'importar' ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Importar Excel</button>
     </div>
 
     <div v-if="vistaInterna === 'lista'" class="space-y-4">
       
       <div class="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <div class="w-full max-w-md">
-          <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Buscar Servidor Público</label>
+          <label class="block text-xs font-bold uppercase text-inst-primario mb-1"> Buscar Servidor Público     <i class="fa-solid fa-magnifying-glass w-6 flex-shrink-0 text-center mr-3 text-lg"></i></label>
           <input 
             v-model="searchValue" 
             type="text" 
@@ -151,7 +151,7 @@ onMounted(() => {
           :headers="headers"
           :items="empleados"
           :search-value="searchValue"
-          :rows-per-page="25"
+          :rows-per-page="30"
           buttons-pagination
           theme-color="#2563eb"
           table-class-name="img-strattia-style"
@@ -238,3 +238,21 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.img-strattia-style {
+  --easy-table-header-background-color: #6B1C3A;
+  --easy-table-header-font-color: #FFFFFF;
+  --easy-table-header-font-size: 14px;
+  
+  --easy-table-body-row-font-color: #475569;
+  --easy-table-body-row-font-size: 14px;
+
+  /* Aquí está la magia de la cebra */
+  --easy-table-body-even-row-background-color: #f1f5f9;
+  --easy-table-body-even-row-font-color: #475569;
+
+  --easy-table-body-row-hover-background-color: #e2e8f0;
+  --easy-table-border: 1px solid #cbd5e1;
+}
+</style>
