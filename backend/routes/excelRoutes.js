@@ -546,6 +546,7 @@ router.get('/consultar-incidencias', async (req, res) => {
       numEmp: reg.servidor.numeroEmpleado,
       nombre: reg.servidor.nombreCompleto,
       departamento: reg.servidor.departamento,
+      regimen: reg.servidor.regimen,
       fecha: reg.fecha.toISOString().split('T')[0],
       entrada: reg.entrada || 'SR',
       salida: reg.salida || 'SR',

@@ -12,6 +12,7 @@ const headers = [
   { text: "NUM. EMP", value: "numEmp", sortable: true },
   { text: "SERVIDOR PÚBLICO", value: "nombre", sortable: true },
   //{ text: "DEPARTAMENTO", value: "departamento", sortable: true },
+  { text: "HORARIO", value: "regimen", sortable: true },
   { text: "FECHA", value: "fecha", sortable: true },
   { text: "ENTRADA", value: "entrada" },
   { text: "SALIDA", value: "salida" },
@@ -60,7 +61,7 @@ const consultarRango = async () => {
           <input type="date" v-model="fechaFin" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 text-sm shadow-sm" />
         </div>
         <div>
-          <button @click="consultarRango" :disabled="cargando" class="w-full bg-inst-primario hover:bg-inst-secundario disabled:bg-blue-400 text-white font-bold py-2 px-6 rounded-lg shadow transition text-sm">
+          <button @click="consultarRango" :disabled="cargando" class="w-full bg-inst-primario hover:bg-inst-secundario disabled:bg-inst-secundario text-white font-bold py-2 px-6 rounded-lg shadow transition text-sm">
             {{ cargando ? 'Buscando registros...' : 'Consultar Incidencias' }}
           </button>
         </div>
@@ -88,20 +89,28 @@ const consultarRango = async () => {
         table-class-name="img-strattia-style"
       >
         <template #item-semaforo="item">
-          <div class="flex items-center space-x-2">
-            <span v-if="item.estatus.includes('RETARDO')" class="w-4 h-4 rounded-full bg-yellow-400 border border-yellow-500 inline-block" title="Retardo Comercial"></span>
+          <div class="flex justify-center items-center">
             
-            <span v-else-if="['OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION'].includes(item.estatus)" class="w-4 h-4 rounded-full bg-red-500 border border-red-600 inline-block" title="Falta u Omision"></span>
+            <span v-if="item.estatus === 'NO ENCONTRADO' || (item.entrada === 'SR' && item.salida === 'SR')" class="w-6 h-6 rounded-full bg-red-600 border border-red-700 inline-block" title="Falta / Ausencia"></span>
             
-            <span class="text-xs font-medium text-gray-600">{{ item.estatus }}</span>
+            <span v-else-if="['OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION'].includes(item.estatus)" class="w-6 h-6 rounded-full bg-orange-500 border border-orange-600 inline-block" title="Omisión de Checada"></span>
+            
+            <span v-else-if="item.estatus.includes('RETARDO')" class="w-6 h-6 rounded-full bg-yellow-400 border border-yellow-500 inline-block" title="Retardo por minutos"></span>
+            
           </div>
         </template>
 
         <template #item-entrada="item">
-          <span :class="{'text-red-600 font-bold': item.entrada === 'SR'}">{{ item.entrada }}</span>
+          <span :class="item.entrada === 'SR' ? 'text-gray-500 font-bold' : 'text-gray-800 font-medium'">{{ item.entrada }}</span>
         </template>
         <template #item-salida="item">
-          <span :class="{'text-red-600 font-bold': item.salida === 'SR'}">{{ item.salida }}</span>
+          <span :class="item.salida === 'SR' ? 'text-gray-500 font-bold' : 'text-gray-800 font-medium'">{{ item.salida }}</span>
+        </template>
+        
+        <template #item-regimen="item">
+           <span v-if="item.regimen === 'NORMAL'" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Normal</span>
+           <span v-if="item.regimen === 'ESPECIAL'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Especial</span>
+          
         </template>
       </EasyDataTable>
     </div>
