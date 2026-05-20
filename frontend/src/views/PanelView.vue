@@ -4,6 +4,7 @@ import Swal from 'sweetalert2';
 import SidebarRH from '@/components/SidebarRH.vue';
 import GestionEmpleados from '@/components/GestionEmpleados.vue';
 import Incidencias from '@/components/incidencias.vue';
+import Consultas from '@/components/consultas.vue';
 
 const vistaActiva = ref('reporte'); 
 const archivoSeleccionado = ref(null);
@@ -352,6 +353,13 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Incidencias</h1>
         <Incidencias />
       </div>
+
+
+      <div v-else-if="vistaActiva === 'consultas'">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">Módulo de Consultas de Personal</h1>
+  <Consultas />
+</div>
+      
     </main>
   </div>
 </template>

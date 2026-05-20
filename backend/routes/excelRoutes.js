@@ -561,3 +561,89 @@ router.get('/consultar-incidencias', async (req, res) => {
     res.status(500).json({ error: 'Hubo un error al consultar las incidencias.' });
   }
 });
+
+// ==============================================================================
+// 5. RUTAS PARA EL MÓDULO DE CONSULTAS GENERALES
+// ==============================================================================
+
+// A. Obtener lista de departamentos únicos para el select
+router.get('/departamentos', async (req, res) => {
+  try {
+    const departamentos = await prisma.servidorPublico.findMany({
+      select: { departamento: true },
+      distinct: ['departamento'],
+      where: { departamento: { not: null } }
+    });
+    
+    // Mapeamos a un arreglo simple y lo ordenamos alfabéticamente
+    const lista = departamentos.map(d => d.departamento).sort();
+    res.json(lista);
+  } catch (error) {
+    console.error("Error obteniendo departamentos:", error);
+    res.status(500).json({ error: 'Error al cargar las areas.' });
+  }
+});
+
+// B. Consultar asistencias en general con filtros (Actualizado con búsqueda por nombre)
+router.get('/consultas-generales', async (req, res) => {
+  try {
+    const { inicio, fin, departamento, nombre } = req.query;
+
+    if (!inicio || !fin) {
+      return res.status(400).json({ error: 'Faltan fechas de inicio y fin.' });
+    }
+
+    const fechaInicio = new Date(`${inicio}T00:00:00Z`);
+    const fechaFin = new Date(`${fin}T23:59:59Z`);
+
+    const filtro = {
+      fecha: {
+        gte: fechaInicio,
+        lte: fechaFin
+      }
+    };
+
+    // Filtros dinámicos para el servidor (Área y Nombre)
+    if ((departamento && departamento !== 'TODOS') || (nombre && nombre.trim() !== '')) {
+      filtro.servidor = {};
+      
+      if (departamento && departamento !== 'TODOS') {
+        filtro.servidor.departamento = departamento;
+      }
+      
+      if (nombre && nombre.trim() !== '') {
+        filtro.servidor.OR = [
+          { nombreCompleto: { contains: nombre.trim(), mode: 'insensitive' } },
+          { numeroEmpleado: { contains: nombre.trim(), mode: 'insensitive' } }
+        ];
+      }
+    }
+
+    const registros = await prisma.asistencia.findMany({
+      where: filtro,
+      include: { servidor: true },
+      orderBy: [
+        { fecha: 'desc' },
+        { servidor: { nombreCompleto: 'asc' } }
+      ]
+    });
+
+    const resultado = registros.map(reg => ({
+      id: reg.id,
+      numEmp: reg.servidor.numeroEmpleado,
+      nombre: reg.servidor.nombreCompleto,
+      departamento: reg.servidor.departamento,
+      regimen: reg.servidor.regimen,
+      fecha: reg.fecha.toISOString().split('T')[0],
+      entrada: reg.entrada || 'SR',
+      salida: reg.salida || 'SR',
+      estatus: reg.incidencia,
+      minutosRetardo: reg.minutosRetardo
+    }));
+
+    res.json(resultado);
+  } catch (error) {
+    console.error("Error en consultas generales:", error);
+    res.status(500).json({ error: 'Error al consultar la base de datos.' });
+  }
+});
