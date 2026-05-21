@@ -31,6 +31,18 @@ const cerrarSesion = () => {
         <span class="text-left leading-tight">Procesar Datos</span>
       </button>
 
+        <button @click="emit('cambiar-vista', 'consultas')"
+        :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'consultas' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
+        <i class="fa-solid fa-magnifying-glass w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
+        <span class="text-left leading-tight">Consultas</span>
+      </button>
+
+       <button @click="emit('cambiar-vista', 'empleados')"
+        :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'empleados' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
+        <i class="fa-solid fa-users w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
+        <span class="text-left leading-tight"> Gestión Personal</span>
+      </button>
+
          <button @click="emit('cambiar-vista', 'incidencias')"
         :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'incidencias' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
         <i class="fa-solid fa-circle-exclamation w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
@@ -43,22 +55,10 @@ const cerrarSesion = () => {
         <span class="text-left leading-tight">Justificaciones</span>
       </button>
 
-      <button @click="emit('cambiar-vista', 'consultas')"
-        :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'consultas' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
-        <i class="fa-solid fa-magnifying-glass w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
-        <span class="text-left leading-tight">Consultas</span>
-      </button>
-
-       <button @click="emit('cambiar-vista', 'empleados')"
-        :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'empleados' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
-        <i class="fa-solid fa-users w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
-        <span class="text-left leading-tight">Gestión Personal</span>
-      </button>
-
       <button @click="emit('cambiar-vista', 'historial')"
         :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'historial' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
         <i class="fa-solid fa-calendar w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
-        <span class="text-left leading-tight">Historial Reportes</span>
+        <span class="text-left leading-tight"> Reportes</span>
       </button>
       
 

@@ -12,9 +12,9 @@ const mostrarModalEditar = ref(false);
 const empleadoEditar = ref(null);
 
 const headers = [
-  { text: "Num Empleado", value: "numeroEmpleado", sortable: true },
+  { text: "No. Empleado", value: "numeroEmpleado", sortable: true },
   { text: "Nombre Completo", value: "nombreCompleto", sortable: true },
-  { text: "Departamento", value: "departamento", sortable: true },
+  { text: "Área de Adscripción", value: "departamento", sortable: true },
   { text: "Tipo de Horario", value: "regimen" },
   { text: "Estatus", value: "activo" }, // Nueva columna de estatus
   { text: "Acciones", value: "acciones" }  // Nueva columna de acciones
@@ -162,7 +162,7 @@ onMounted(() => {
           :search-value="searchValue"
           :rows-per-page="30"
           buttons-pagination
-          theme-color="#902c3e"
+          theme-color="#965664"
           table-class-name="img-strattia-style"
         >
           <template #item-regimen="emp">
@@ -175,8 +175,8 @@ onMounted(() => {
           </template>
 
           <template #item-activo="emp" > <!--   columna de estatus-->
-            <span v-if="emp.activo" class="text-green-600 "><i class="fa-solid fa-circle-check text-base"></i> </span>
-            <span v-else class="text-red-600 font-bold"><i class="fa-solid fa-circle-xmark text-base"></i> </span>
+            <span v-if="emp.activo" class="text-emerald-600 text-xs"><i class="fa-solid fa-circle-check text-base"></i>Activo </span>
+            <span v-else class="text-rose-800 text-xs"> <i class="fa-solid fa-circle-xmark text-base"></i> Baja </span>
           </template>
 
           <template #item-acciones="emp">
@@ -190,8 +190,8 @@ onMounted(() => {
 
     <div v-if="mostrarModalEditar" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate__animated animate__fadeInDown">
-        <div class="bg-inst-primario p-4 text-white flex justify-between items-center">
-          <h3 class="font-bold text-lg uppercase">Editar Servidor Público</h3>
+        <div class="bg-inst-cafe-oscuro p-3 text-white font-bold  flex justify-between items-center">
+          <h3 class="font-bold text-lg uppercase">Actualizar Datos del Servidor Público</h3>
           <button @click="mostrarModalEditar = false" class="text-white text-2xl">&times;</button>
         </div>
         
@@ -251,7 +251,7 @@ onMounted(() => {
         </div>
 
         <div class="p-4 bg-gray-50 flex justify-end space-x-3">
-          <button @click="mostrarModalEditar = false" class="px-6 py-2 border rounded-lg hover:bg-gray-200 transition">Cancelar</button>
+          <button @click="mostrarModalEditar = false" class="px-6 py-2 border rounded-lg bg-gray-200 hover:bg-inst-cafe transition">Cancelar</button>
           <button @click="actualizarEmpleado" class="px-6 py-2 bg-inst-primario text-white font-bold rounded-lg hover:bg-inst-secundario transition">Guardar Cambios</button>
         </div>
       </div>
@@ -260,11 +260,11 @@ onMounted(() => {
     <div v-if="vistaInterna === 'nuevo'" class="bg-white p-6 rounded-lg shadow-sm border-t-4 border-inst-primario">
       <h2 class="text-xl font-bold mb-4 text-gray-800 uppercase">Alta Individual de Personal</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">Num Empleado</label><input v-model="formulario.numeroEmpleado" class="w-full p-2 border rounded outline-none" /></div>
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">No. Empleado</label><input v-model="formulario.numeroEmpleado" class="w-full p-2 border rounded outline-none" /></div>
         <div><label class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label><input v-model="formulario.nombreCompleto" class="w-full p-2 border rounded outline-none" /></div>
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">Departamento</label><input v-model="formulario.departamento" class="w-full p-2 border rounded outline-none" /></div>
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">Área de Adscripción</label><input v-model="formulario.departamento" class="w-full p-2 border rounded outline-none" /></div>
         <div><label class="block text-sm font-medium text-gray-700 mb-1">Régimen</label><select v-model="formulario.regimen" class="w-full p-2 border rounded outline-none bg-white"><option value="NORMAL">NORMAL</option><option value="ESPECIAL">ESPECIAL</option><option value="LISTA">POR LISTA</option><option value="EXENTO">EXENTO</option></select></div>
-        <div><label class="block text-sm font-medium text-gray-700 mb-1">Turno</label><select v-model="formulario.horarioId" class="w-full p-2 border rounded outline-none bg-white"><option v-for="h in horarios" :key="h.id" :value="h.id">{{ h.nombre }}</option></select></div>
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">Horario</label><select v-model="formulario.horarioId" class="w-full p-2 border rounded outline-none bg-white"><option v-for="h in horarios" :key="h.id" :value="h.id">{{ h.nombre }}</option></select></div>
       </div>
       <div class="mt-6 flex justify-end"><button @click="guardarManual" class="bg-inst-primario hover:bg-inst-secundario text-white font-bold py-2 px-6 rounded shadow transition">Guardar Personal</button></div>
     </div>
