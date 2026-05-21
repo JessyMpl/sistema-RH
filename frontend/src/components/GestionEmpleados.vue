@@ -174,14 +174,15 @@ onMounted(() => {
   <div class="space-y-6">
     
     <div class="flex space-x-4 mb-6">
-      <button @click="vistaInterna = 'lista'" :class="vistaInterna === 'lista' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">📋 Ver Catálogo</button>
-      <button @click="vistaInterna = 'nuevo'" :class="vistaInterna === 'nuevo' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">➕ Registro Manual</button>
-      <button @click="vistaInterna = 'importar'" :class="vistaInterna === 'importar' ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">📥 Importar Excel</button>
+      <button @click="vistaInterna = 'lista'" :class="vistaInterna === 'lista' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Ver Catálogo</button>
+      <button @click="vistaInterna = 'nuevo'" :class="vistaInterna === 'nuevo' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Registro Manual</button>
+      <button @click="vistaInterna = 'importar'" :class="vistaInterna === 'importar' ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Importar Excel</button>
     </div>
 
 
     <div v-if="vistaInterna === 'lista'" class="space-y-4">
-      <div class="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+      
+      <div class="flex justify-between items-center bg-white p-4 rounded-lg border-t-4 border-inst-primario">
         <div class="w-full max-w-md">
           <label class="block text-xs font-bold uppercase text-inst-primario mb-1">Buscar Servidor Público <i class="fa-solid fa-magnifying-glass ml-2 text-lg"></i></label>
           <input v-model="searchValue" type="text" placeholder="ID o Nombre..." class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 transition shadow-sm text-sm" />
@@ -206,11 +207,13 @@ onMounted(() => {
               'bg-orange-100 text-orange-800': emp.regimen === 'LISTA',
               'bg-gray-100 text-gray-800': emp.regimen === 'EXENTO'
             }" class="px-2 py-1 text-xs font-bold rounded-full uppercase">{{ emp.regimen }}</span>
+            <!-- en caso de que no se requieran colores en los horarios
+            <span class="bg-slate-200 text-slate-900 text-xs rounded-full px-2 py-1">{{ emp.regimen }}</span> -->
           </template>
 
           <template #item-activo="emp" > 
-            <span v-if="emp.activo" class="text-emerald-600 text-xs font-bold"><i class="fa-solid fa-circle-check text-base mr-1"></i>Activo </span>
-            <span v-else class="text-rose-800 text-xs font-bold"> <i class="fa-solid fa-circle-xmark text-base mr-1"></i> Baja </span>
+            <span v-if="emp.activo" class="text-emerald-600 text-xs "><i class="fa-solid fa-circle-check text-base mr-1"></i>Activo </span>
+            <span v-else class="text-rose-800 text-xs"> <i class="fa-solid fa-circle-xmark text-base mr-1"></i> Baja </span>
           </template>
 
           <template #item-acciones="emp">
@@ -424,7 +427,7 @@ onMounted(() => {
         <i class="fa-solid fa-file-excel text-5xl text-green-600 mb-4"></i>
         <input type="file" @change="seleccionarArchivoCatalogo" class="mb-6 block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-green-100 file:text-green-800 cursor-pointer" />
         <button @click="procesarImportacion" :disabled="importando" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-10 rounded-lg shadow transition">
-          {{ importando ? '⏳ Procesando...' : 'Iniciar Importación' }}
+          {{ importando ? 'Procesando...' : 'Iniciar Importación' }}
         </button>
       </div>
     </div>
@@ -442,9 +445,9 @@ onMounted(() => {
 .bg-inst-cafe { background-color: #e5e7eb; } 
 .bg-inst-cafe-oscuro { background-color: #4b5563; } 
 
-.img-strattia-style {
-  --easy-table-header-background-color: #6B1C3A;
-  --easy-table-header-font-color: #FFFFFF;
+.img-strattia-style { /* estilos de la tabla de empleados */
+  --easy-table-header-background-color: #924156;
+  --easy-table-header-font-color: #ffffff;
   --easy-table-border: 1px solid #cbd5e1;
   --easy-table-body-even-row-background-color: #f8fafc;
 }
@@ -452,5 +455,5 @@ onMounted(() => {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-thumb:hover { background: #e0d2ba; } /* estilos para los scrollbars en modales y tablas */
 </style>
