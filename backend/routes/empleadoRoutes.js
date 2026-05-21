@@ -14,7 +14,10 @@ router.get('/', async (req, res) => {
   try {
     const empleados = await prisma.servidorPublico.findMany({
       include: {
-        horario: true // Agregamos esto para que el frontend pueda ver los detalles del horario
+        horario: true,
+        historial: {
+          orderBy: { fecha: 'desc' } // Traemos el historial ordenado por el más reciente
+        }
       },
       orderBy: { nombreCompleto: 'asc' }
     });
@@ -25,77 +28,118 @@ router.get('/', async (req, res) => {
 });
 
 // ==========================================
-// 2. ALTA MANUAL
+// 2. ALTA MANUAL (Ahora con fecha de ingreso y bitácora)
 // ==========================================
 router.post('/', async (req, res) => {
-  const { numeroEmpleado, nombreCompleto, departamento, regimen, horarioId } = req.body;
+  const { numeroEmpleado, nombreCompleto, departamento, regimen, horarioId, fechaIngreso } = req.body;
   try {
+    const dataNuevo = {
+      numeroEmpleado: String(numeroEmpleado).trim(),
+      nombreCompleto: String(nombreCompleto).trim().toUpperCase(),
+      departamento: departamento ? String(departamento).trim() : null,
+      regimen: String(regimen).trim(),
+      horarioId: parseInt(horarioId),
+      activo: true
+    };
+
+    if (fechaIngreso) {
+      dataNuevo.fechaIngreso = new Date(`${fechaIngreso.split('T')[0]}T12:00:00Z`);
+    }
+
     const nuevo = await prisma.servidorPublico.create({
-      data: { 
-        numeroEmpleado: String(numeroEmpleado), 
-        nombreCompleto, 
-        departamento, 
-        regimen, 
-        horarioId: parseInt(horarioId),
-        activo: true // Garantizamos que entre activo
-      } 
+      data: {
+        ...dataNuevo,
+        // Registramos su alta oficial en la bitácora automáticamente
+        historial: {
+          create: [{
+            tipoMovimiento: "ALTA EN SISTEMA",
+            datoNuevo: dataNuevo.departamento || "SIN ÁREA ASIGNADA"
+          }]
+        }
+      }
     });
     res.json(nuevo);
   } catch (error) {
-    console.error("Error de Prisma:", error); 
+    console.error("Error al registrar:", error); 
     res.status(400).json({ error: 'Error al registrar. Verifica que el ID no esté duplicado.' });
   }
 });
 
 // ==========================================
-// 3. EDITAR EMPLEADO (Blindado contra errores de validación)
+// 3. EDITAR EMPLEADO (Inteligente: Detecta cambios automáticamente)
 // ==========================================
 router.put('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { nombreCompleto, numeroEmpleado, departamento, regimen, horarioId, activo, fechaBaja, motivoBaja } = req.body;
+    const { nombreCompleto, numeroEmpleado, departamento, regimen, horarioId, activo, fechaBaja, motivoBaja, fechaIngreso } = req.body;
 
-    // 1. Validar ID
-    if (isNaN(id)) return res.status(400).json({ error: 'ID del empleado no válido.' });
+    if (isNaN(id)) return res.status(400).json({ error: 'ID no válido.' });
 
-    // 2. Forzar el valor booleano estricto (Evita errores de texto "true"/"false")
+    // 1. Traemos al empleado como está AHORITA para poder comparar
+    const empleadoActual = await prisma.servidorPublico.findUnique({ where: { id } });
+    if (!empleadoActual) return res.status(404).json({ error: 'Empleado no encontrado' });
+
     const isActivo = activo === true || activo === 'true' || activo === 1;
+    const deptoLimpio = departamento ? String(departamento).trim() : null;
+    const regimenLimpio = String(regimen).trim();
 
-    // 3. Construir el objeto base con datos limpios
+    // 2. LÓGICA DE DETECCIÓN DE CAMBIOS PARA LA BITÁCORA
+    const nuevosMovimientos = [];
+
+    if (empleadoActual.departamento !== deptoLimpio) {
+      nuevosMovimientos.push({
+        tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
+        datoAnterior: empleadoActual.departamento || "SIN ASIGNAR",
+        datoNuevo: deptoLimpio || "SIN ASIGNAR"
+      });
+    }
+
+    if (empleadoActual.regimen !== regimenLimpio) {
+      nuevosMovimientos.push({
+        tipoMovimiento: "CAMBIO DE RÉGIMEN",
+        datoAnterior: empleadoActual.regimen,
+        datoNuevo: regimenLimpio
+      });
+    }
+
+    // 3. Preparamos los datos para actualizar
     let dataAActualizar = {
-      nombreCompleto: String(nombreCompleto).trim(),
+      nombreCompleto: String(nombreCompleto).trim().toUpperCase(),
       numeroEmpleado: String(numeroEmpleado).trim(),
-      departamento: departamento ? String(departamento).trim() : null,
-      regimen: String(regimen).trim(),
+      departamento: deptoLimpio,
+      regimen: regimenLimpio,
       activo: isActivo
     };
 
-    // 4. Conexión segura de la relación Horario (Solo si existe un horarioId válido)
     if (horarioId && !isNaN(parseInt(horarioId))) {
-      dataAActualizar.horario = {
-        connect: { id: parseInt(horarioId) }
-      };
+      dataAActualizar.horario = { connect: { id: parseInt(horarioId) } };
     }
 
-    // 5. Lógica estricta para Bajas
+    if (fechaIngreso && fechaIngreso.trim() !== '') {
+      dataAActualizar.fechaIngreso = new Date(`${fechaIngreso.split('T')[0]}T12:00:00Z`);
+    }
+
+    // Bajas
     if (!isActivo) {
-      // Si mandaron fecha, la limpiamos. Si no, usamos la fecha de hoy por defecto.
-      if (fechaBaja && fechaBaja.trim() !== '') {
-        // Cortamos en la 'T' por si viene con horas y la forzamos a medianoche UTC
-        const fechaLimpia = fechaBaja.split('T')[0];
-        dataAActualizar.fechaBaja = new Date(`${fechaLimpia}T12:00:00Z`);
-      } else {
-        dataAActualizar.fechaBaja = new Date();
-      }
+      dataAActualizar.fechaBaja = (fechaBaja && fechaBaja.trim() !== '') 
+        ? new Date(`${fechaBaja.split('T')[0]}T12:00:00Z`) 
+        : new Date();
       dataAActualizar.motivoBaja = motivoBaja ? String(motivoBaja).trim() : 'Baja general';
       
+      // Si antes estaba activo y ahora es baja, lo registramos
+      if (empleadoActual.activo === true) {
+        nuevosMovimientos.push({ tipoMovimiento: "BAJA", datoNuevo: dataAActualizar.motivoBaja });
+      }
     } else {
-      // Garantizamos que Prisma borre los datos de baja si se reactiva al empleado
       dataAActualizar.fechaBaja = null;
       dataAActualizar.motivoBaja = null;
     }
 
-    // 6. Ejecutar la actualización
+    // 4. Si hubo movimientos, le decimos a Prisma que los guarde anidados
+    if (nuevosMovimientos.length > 0) {
+      dataAActualizar.historial = { create: nuevosMovimientos };
+    }
+
     const empleadoActualizado = await prisma.servidorPublico.update({
       where: { id: id },
       data: dataAActualizar
@@ -104,13 +148,10 @@ router.put('/:id', async (req, res) => {
     res.json(empleadoActualizado);
 
   } catch (error) {
-    // Console log detallado para ver exactamente en dónde llora Prisma si vuelve a fallar
-    console.error("====== ERROR FATAL EN PUT /EMPLEADOS ======");
-    console.error(error);
-    res.status(500).json({ error: 'Error interno al actualizar.', detalle: error.message });
+    console.error("====== ERROR FATAL EN PUT /EMPLEADOS ======\n", error);
+    res.status(500).json({ error: 'Error interno al actualizar.' });
   }
 });
-
 
 // ==========================================
 // 4. IMPORTACIÓN MASIVA OPTIMIZADA
@@ -138,7 +179,7 @@ router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
       if (!rawNumEmp || !rawNombre) continue;
 
       const numEmpLimpio = String(rawNumEmp).trim();
-      const nombreLimpio = String(rawNombre).trim().replace(/'/g, "''");
+      const nombreLimpio = String(rawNombre).trim().replace(/'/g, "''").toUpperCase();
       const deptoLimpio = rawDepto ? String(rawDepto).trim().replace(/'/g, "''") : null;
       
       const entradaLimpia = String(rawEntrada).trim();

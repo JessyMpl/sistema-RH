@@ -23,7 +23,7 @@ model Horario {
   servidores  ServidorPublico[]
 }
 
-// 3. Tabla del Personal (Actualizada para el control estricto de bajas)
+// 3. Tabla del Personal (Actualizada con Fecha de Ingreso e Historial de Movimientos)
 model ServidorPublico {
   id             Int          @id @default(autoincrement())
   nombreCompleto String
@@ -33,12 +33,14 @@ model ServidorPublico {
   activo         Boolean      @default(true)
   horarioId      Int
   
-  // NUEVOS CAMPOS PARA CONTROL DE BAJAS (Permiten valores nulos si están activos)
+  // CAMPOS DE CONTROL DE EXPEDIENTE
+  fechaIngreso   DateTime?    @db.Date  // Nueva columna para la fecha de alta institucional
   fechaBaja      DateTime?    @db.Date
   motivoBaja     String?      @db.Text
 
   horario        Horario      @relation(fields: [horarioId], references: [id])
   asistencias    Asistencia[]
+  historial      HistorialMovimiento[]  // Relación inversa para acceder a la bitácora del empleado
 }
 
 // 4. Tabla de Asistencias (Tu hoja de "reporte" depurada)
@@ -63,4 +65,16 @@ model Usuario {
   email    String   @unique
   password String
   rol      String   @default("RH")
+}
+
+// 6. NUEVA TABLA: Bitácora Histórica de Movimientos del Personal
+model HistorialMovimiento {
+  id             Int             @id @default(autoincrement())
+  servidorId     Int
+  tipoMovimiento String          // "CAMBIO DE DEPARTAMENTO", "CAMBIO DE RÉGIMEN", "ALTA", etc.
+  datoAnterior   String?         @db.Text // Valor que tenía antes del cambio
+  datoNuevo      String?         @db.Text // Nuevo valor asignado
+  fecha          DateTime        @default(now()) // Cuándo ocurrió el movimiento
+
+  servidor       ServidorPublico @relation(fields: [servidorId], references: [id])
 }
