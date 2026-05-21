@@ -231,7 +231,7 @@ onMounted(() => {
     </div>
 
 
-    <div v-if="mostrarModalEditar" class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+    <div v-if="mostrarModalEditar" class="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all" style="background-color: rgba(0,0,0,0.4); backdrop-filter: blur(4px);">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate__animated animate__fadeInDown">
         <div class="bg-inst-cafe-oscuro p-3 text-white font-bold flex justify-between items-center">
           <h3 class="font-bold text-lg uppercase">Actualizar Datos del Servidor Público</h3>
@@ -305,7 +305,7 @@ onMounted(() => {
     </div>
 
 
-    <div v-if="mostrarModalDetalle" class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all">
+    <div v-if="mostrarModalDetalle" class="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all" style="background-color: rgba(0,0,0,0.4); backdrop-filter: blur(4px);">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate__animated animate__fadeInDown flex flex-col max-h-[85vh]">
         
         <div class="bg-inst-cafe-oscuro p-3 text-white font-bold flex justify-between items-center">
