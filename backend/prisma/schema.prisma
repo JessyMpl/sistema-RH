@@ -16,36 +16,41 @@ enum Regimen {
 
 // 2. Tabla de Horarios
 model Horario {
-  id              Int               @id @default(autoincrement())
-  nombre          String            // Ejemplo: "Administrativo", "Seguridad 24x48"
-  horaEntrada     String            // "09:00"
-  horaSalida      String            // "18:00"
-  servidores      ServidorPublico[]
+  id          Int               @id @default(autoincrement())
+  nombre      String            // Ejemplo: "Administrativo", "Seguridad 24x48"
+  horaEntrada String            // "09:00"
+  horaSalida  String            // "18:00"
+  servidores  ServidorPublico[]
 }
 
-// 3. Tabla del Personal (Tus hojas de "horario-especial" y "lista-asistencia")
+// 3. Tabla del Personal (Actualizada para el control estricto de bajas)
 model ServidorPublico {
-  id              Int               @id @default(autoincrement())
-  nombreCompleto  String
-  numeroEmpleado  String            @unique 
-  departamento    String?           
-  regimen         Regimen           @default(NORMAL)
-  activo          Boolean           @default(true)
-  horarioId       Int
-  horario         Horario           @relation(fields: [horarioId], references: [id])
-  asistencias     Asistencia[]
+  id             Int          @id @default(autoincrement())
+  nombreCompleto String
+  numeroEmpleado String       @unique 
+  departamento   String?           
+  regimen        Regimen      @default(NORMAL)
+  activo         Boolean      @default(true)
+  horarioId      Int
+  
+  // NUEVOS CAMPOS PARA CONTROL DE BAJAS (Permiten valores nulos si están activos)
+  fechaBaja      DateTime?    @db.Date
+  motivoBaja     String?      @db.Text
+
+  horario        Horario      @relation(fields: [horarioId], references: [id])
+  asistencias    Asistencia[]
 }
 
 // 4. Tabla de Asistencias (Tu hoja de "reporte" depurada)
 model Asistencia {
-  id              Int               @id @default(autoincrement())
-  fecha           DateTime          @db.Date
-  entrada         String?           // Almacenamos "08:45"
-  salida          String?           // Almacenamos "18:10"
-  minutosRetardo  Int               @default(0)
-  incidencia      String?           // Para guardar "LA", "FALTA", "RETARDO", etc.
+  id              Int             @id @default(autoincrement())
+  fecha           DateTime        @db.Date
+  entrada         String?         // Almacenamos "08:45"
+  salida          String?         // Almacenamos "18:10"
+  minutosRetardo  Int             @default(0)
+  incidencia      String?         // Para guardar "LA", "FALTA", "RETARDO", etc.
   servidorId      Int
-  servidor        ServidorPublico   @relation(fields: [servidorId], references: [id])
+  servidor        ServidorPublico @relation(fields: [servidorId], references: [id])
 
   // Esta regla garantiza que no haya registros duplicados el mismo día para la misma persona
   @@unique([servidorId, fecha])
@@ -59,4 +64,3 @@ model Usuario {
   password String
   rol      String   @default("RH")
 }
-

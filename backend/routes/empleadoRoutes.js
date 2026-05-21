@@ -7,10 +7,15 @@ const xlsx = require('xlsx');
 // 💡 SEGURO EN MEMORIA RAM (Para evitar problemas de carpetas y discos)
 const upload = multer({ storage: multer.memoryStorage() });
 
-// 1. Obtener catálogo
+// ==========================================
+// 1. OBTENER CATÁLOGO DE EMPLEADOS
+// ==========================================
 router.get('/', async (req, res) => {
   try {
     const empleados = await prisma.servidorPublico.findMany({
+      include: {
+        horario: true // Agregamos esto para que el frontend pueda ver los detalles del horario
+      },
       orderBy: { nombreCompleto: 'asc' }
     });
     res.json(empleados);
@@ -19,7 +24,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 2. Alta manual
+// ==========================================
+// 2. ALTA MANUAL
+// ==========================================
 router.post('/', async (req, res) => {
   const { numeroEmpleado, nombreCompleto, departamento, regimen, horarioId } = req.body;
   try {
@@ -29,7 +36,8 @@ router.post('/', async (req, res) => {
         nombreCompleto, 
         departamento, 
         regimen, 
-        horarioId: parseInt(horarioId) 
+        horarioId: parseInt(horarioId),
+        activo: true // Garantizamos que entre activo
       } 
     });
     res.json(nuevo);
@@ -39,7 +47,74 @@ router.post('/', async (req, res) => {
   }
 });
 
-// 3. IMPORTACIÓN MASIVA OPTIMIZADA
+// ==========================================
+// 3. EDITAR EMPLEADO (Blindado contra errores de validación)
+// ==========================================
+router.put('/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { nombreCompleto, numeroEmpleado, departamento, regimen, horarioId, activo, fechaBaja, motivoBaja } = req.body;
+
+    // 1. Validar ID
+    if (isNaN(id)) return res.status(400).json({ error: 'ID del empleado no válido.' });
+
+    // 2. Forzar el valor booleano estricto (Evita errores de texto "true"/"false")
+    const isActivo = activo === true || activo === 'true' || activo === 1;
+
+    // 3. Construir el objeto base con datos limpios
+    let dataAActualizar = {
+      nombreCompleto: String(nombreCompleto).trim(),
+      numeroEmpleado: String(numeroEmpleado).trim(),
+      departamento: departamento ? String(departamento).trim() : null,
+      regimen: String(regimen).trim(),
+      activo: isActivo
+    };
+
+    // 4. Conexión segura de la relación Horario (Solo si existe un horarioId válido)
+    if (horarioId && !isNaN(parseInt(horarioId))) {
+      dataAActualizar.horario = {
+        connect: { id: parseInt(horarioId) }
+      };
+    }
+
+    // 5. Lógica estricta para Bajas
+    if (!isActivo) {
+      // Si mandaron fecha, la limpiamos. Si no, usamos la fecha de hoy por defecto.
+      if (fechaBaja && fechaBaja.trim() !== '') {
+        // Cortamos en la 'T' por si viene con horas y la forzamos a medianoche UTC
+        const fechaLimpia = fechaBaja.split('T')[0];
+        dataAActualizar.fechaBaja = new Date(`${fechaLimpia}T12:00:00Z`);
+      } else {
+        dataAActualizar.fechaBaja = new Date();
+      }
+      dataAActualizar.motivoBaja = motivoBaja ? String(motivoBaja).trim() : 'Baja general';
+      
+    } else {
+      // Garantizamos que Prisma borre los datos de baja si se reactiva al empleado
+      dataAActualizar.fechaBaja = null;
+      dataAActualizar.motivoBaja = null;
+    }
+
+    // 6. Ejecutar la actualización
+    const empleadoActualizado = await prisma.servidorPublico.update({
+      where: { id: id },
+      data: dataAActualizar
+    });
+
+    res.json(empleadoActualizado);
+
+  } catch (error) {
+    // Console log detallado para ver exactamente en dónde llora Prisma si vuelve a fallar
+    console.error("====== ERROR FATAL EN PUT /EMPLEADOS ======");
+    console.error(error);
+    res.status(500).json({ error: 'Error interno al actualizar.', detalle: error.message });
+  }
+});
+
+
+// ==========================================
+// 4. IMPORTACIÓN MASIVA OPTIMIZADA
+// ==========================================
 router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No se subió ningún archivo' });
@@ -66,7 +141,6 @@ router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
       const nombreLimpio = String(rawNombre).trim().replace(/'/g, "''");
       const deptoLimpio = rawDepto ? String(rawDepto).trim().replace(/'/g, "''") : null;
       
-      // 💡 AQUÍ ESTABA EL ERROR: Declaramos la variable que se nos había perdido
       const entradaLimpia = String(rawEntrada).trim();
       
       let regimenLimpio = String(rawRegimen).trim().toUpperCase();
@@ -79,7 +153,6 @@ router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
       } else if (regimenLimpio === 'EXENTO') {
         horarioIdCalculado = 6; 
       } else if (regimenLimpio === 'ESPECIAL') {
-        // Y aquí usamos la variable correctamente
         horarioIdCalculado = entradaLimpia.includes('7') ? 1 : 4;
       }
 
