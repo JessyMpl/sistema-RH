@@ -20,6 +20,10 @@ app.use('/api/excel', excelRoutes);
 const empleadoRoutes = require('./routes/empleadoRoutes');
 app.use('/api/empleados', empleadoRoutes);
 
+const justificacionRoutes = require('./routes/justificacionRoutes');
+app.use('/api/justificaciones', justificacionRoutes);
+// -------------------------------------------------
+
 // 💡 Aproveché para agrupar tus authRoutes aquí arriba con las demás
 // (Es mejor práctica cargar todas las rutas antes de encender el servidor)
 const authRoutes = require('./routes/authRoutes');

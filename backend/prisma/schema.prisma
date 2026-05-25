@@ -28,7 +28,7 @@ model ServidorPublico {
   id             Int          @id @default(autoincrement())
   nombreCompleto String
   numeroEmpleado String       @unique 
-  departamento   String?           
+  departamento   String?            
   regimen        Regimen      @default(NORMAL)
   activo         Boolean      @default(true)
   horarioId      Int
@@ -38,21 +38,24 @@ model ServidorPublico {
   fechaBaja      DateTime?    @db.Date
   motivoBaja     String?      @db.Text
 
-  horario        Horario      @relation(fields: [horarioId], references: [id])
-  asistencias    Asistencia[]
-  historial      HistorialMovimiento[]  // Relación inversa para acceder a la bitácora del empleado
+  horario         Horario               @relation(fields: [horarioId], references: [id])
+  asistencias     Asistencia[]
+  historial       HistorialMovimiento[] // Relación inversa para acceder a la bitácora del empleado
+  justificaciones Justificacion[]       // NUEVO: Relación para el historial de justificaciones del empleado
 }
 
 // 4. Tabla de Asistencias (Tu hoja de "reporte" depurada)
 model Asistencia {
-  id              Int             @id @default(autoincrement())
-  fecha           DateTime        @db.Date
-  entrada         String?         // Almacenamos "08:45"
-  salida          String?         // Almacenamos "18:10"
-  minutosRetardo  Int             @default(0)
-  incidencia      String?         // Para guardar "LA", "FALTA", "RETARDO", etc.
-  servidorId      Int
-  servidor        ServidorPublico @relation(fields: [servidorId], references: [id])
+  id             Int             @id @default(autoincrement())
+  fecha          DateTime        @db.Date
+  entrada        String?         // Almacenamos "08:45"
+  salida         String?         // Almacenamos "18:10"
+  minutosRetardo Int             @default(0)
+  incidencia     String?         // Para guardar "LA", "FALTA", "RETARDO", etc.
+  servidorId     Int
+  
+  servidor       ServidorPublico @relation(fields: [servidorId], references: [id])
+  justificacion  Justificacion?  // NUEVO: Relación 1 a 1 con la justificación
 
   // Esta regla garantiza que no haya registros duplicados el mismo día para la misma persona
   @@unique([servidorId, fecha])
@@ -78,3 +81,22 @@ model HistorialMovimiento {
 
   servidor       ServidorPublico @relation(fields: [servidorId], references: [id])
 }
+
+// 7. NUEVA TABLA: Justificaciones de Incidencias
+model Justificacion {
+  id                Int             @id @default(autoincrement())
+  motivo            String          // Ej: "OFICIO DE COMISIÓN", "INCAPACIDAD MÉDICA", "ONOMÁSTICO"
+  folioDocumento    String?         // Ej: "SM-001-2026" para guardar la referencia del papel
+  observaciones     String?         @db.Text
+  cobertura         String          @default("COMPLETO") // 👈 AQUÍ ESTÁ EL CAMPO NUEVO
+  fechaRegistro     DateTime        @default(now())
+
+  // Relación con el servidor público para fácil acceso
+  servidorId        Int
+  servidor          ServidorPublico @relation(fields: [servidorId], references: [id])
+
+  // Relación 1 a 1 con la asistencia (Cada incidencia justificada se liga a su registro de asistencia)
+  asistenciaId      Int             @unique
+  asistencia        Asistencia      @relation(fields: [asistenciaId], references: [id])
+}
+

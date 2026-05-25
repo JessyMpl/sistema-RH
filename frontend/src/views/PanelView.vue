@@ -5,6 +5,7 @@ import SidebarRH from '@/components/SidebarRH.vue';
 import GestionEmpleados from '@/components/GestionEmpleados.vue';
 import Incidencias from '@/components/incidencias.vue';
 import Consultas from '@/components/consultas.vue';
+import Justificaciones from '@/components/GestionJustificaciones.vue';
 
 const vistaActiva = ref('reporte'); 
 const archivoSeleccionado = ref(null);
@@ -359,6 +360,11 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
   <h1 class="text-2xl font-bold text-gray-800 mb-6">Módulo de Consultas de Personal</h1>
   <Consultas />
 </div>
+
+      <div v-else-if="vistaActiva === 'justificaciones'">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Gestión de Justificaciones</h1>
+        <Justificaciones />
+      </div>
       
     </main>
   </div>
