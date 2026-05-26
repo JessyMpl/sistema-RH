@@ -11,14 +11,13 @@ const vistaActiva = ref('reporte');
 const archivoSeleccionado = ref(null);
 const mensajeStatus = ref('');
 const estaSubiendo = ref(false);
-const estaGuardando = ref(false); // 💡 Nuevo estado para el botón de guardar
+const estaGuardando = ref(false); 
 
-const datosExtraidos = ref(null); // Lo visual
-const datosParaGuardarBD = ref(null); // 💡 Lo crudo que se irá al backend
+const datosExtraidos = ref(null); 
+const datosParaGuardarBD = ref(null); 
 
 const vistaActual = ref('validacion'); 
 
-// 💡 1. CONFIGURACIÓN DE LA NUEVA TABLA DINÁMICA
 const valorBusqueda = ref('');
 const columnasTabla = [
   { text: "NUM. EMP", value: "numEmp", sortable: true },
@@ -37,7 +36,6 @@ const seleccionarArchivo = (event) => {
   vistaActual.value = 'validacion'; 
 };
 
-// 💡 2. FUNCIÓN PASO 1: PREVISUALIZAR
 const subirExcel = async () => {
   if (!archivoSeleccionado.value) {
     Swal.fire({ icon: 'warning', title: '¡Falta el archivo!', text: 'Por favor, selecciona un archivo Excel primero.', confirmButtonColor: '#902c3e' });
@@ -52,14 +50,13 @@ const subirExcel = async () => {
 
   Swal.fire({
     title: '¡Analizando archivo! ⚙️',
-    html: 'Calculando retardos y omisiones. Solo tomará unos segundos...',
+    html: 'Calculando retardos, omisiones y faltas. Solo tomará unos segundos...',
     allowOutsideClick: false,
     showConfirmButton: false,
     didOpen: () => { Swal.showLoading(); }
   });
 
   try {
-    // 🔴 CAMBIO AQUÍ: Apuntamos a la nueva ruta
     const respuesta = await fetch('http://localhost:3000/api/excel/previsualizar-asistencias', {
       method: 'POST',
       body: formData
@@ -70,7 +67,6 @@ const subirExcel = async () => {
     if (respuesta.ok) {
       Swal.fire({ icon: 'success', title: '¡Análisis terminado!', text: 'Revisa los datos en la tabla antes de guardarlos.', confirmButtonColor: '#902c3e' });
       
-      // 🔴 CAMBIO AQUÍ: Guardamos ambas listas que nos mandó el backend
       datosExtraidos.value = data.datosVisuales; 
       datosParaGuardarBD.value = data.datosParaGuardar; 
       vistaActual.value = 'validacion'; 
@@ -84,7 +80,6 @@ const subirExcel = async () => {
   }
 };
 
-// 💡 3. FUNCIÓN PASO 2: GUARDAR EN BD (Botón de Confirmación)
 const confirmarYGuardar = async () => {
   estaGuardando.value = true;
 
@@ -107,7 +102,6 @@ const confirmarYGuardar = async () => {
     
     if (respuesta.ok) {
       Swal.fire({ icon: 'success', title: '¡Guardado Exitoso!', text: data.mensaje, confirmButtonColor: '#16a34a' });
-      // Limpiamos la memoria cruda por seguridad ya que ya se guardó
       datosParaGuardarBD.value = null; 
     } else {
       Swal.fire({ icon: 'error', title: 'Error al guardar', text: data.error, confirmButtonColor: '#902c3e' });
@@ -139,7 +133,6 @@ const descargarExcel = async () => {
   }
 };
 
-
 const diasSabana = computed(() => {
   if (!datosExtraidos.value || datosExtraidos.value.length === 0) return [];
   return [...new Set(datosExtraidos.value.map(d => d.fecha))].sort();
@@ -156,6 +149,7 @@ const tituloReporte = computed(() => {
   return `REPORTE ${quincena} QUINCENA DEL MES DE ${meses[mesIndex].toUpperCase()} DEL AÑO ${anio}`;
 });
 
+// 💡 CAMBIO: Lógica simplificada basada en la inteligencia del backend
 const datosPivotados = computed(() => {
   if (!datosExtraidos.value || datosExtraidos.value.length === 0) return [];
   const empleadosMap = {};
@@ -177,14 +171,13 @@ const datosPivotados = computed(() => {
       if (reg) {
         if (reg.estatus.includes('RETARDO')) faltasPuntualidad++;
         
+        // El backend ahora dicta quién tiene falta, respetando roles y guardias
+        if (reg.estatus === 'FALTA') faltasAsistencia++;
+        
         if (reg.minutosRetardo && reg.minutosRetardo > 0) {
           totalMinutos += Number(reg.minutosRetardo);
         }
       }
-      
-      const d = new Date(`${fecha}T12:00:00Z`);
-      const esFinSemana = (d.getDay() === 0 || d.getDay() === 6);
-      if (!reg && !esFinSemana) faltasAsistencia++;
     });
     
     return { 
@@ -197,7 +190,6 @@ const datosPivotados = computed(() => {
 });
 
 const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
-
 
 </script>
 
@@ -241,6 +233,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
             </button>
           </div>
 
+          <!-- TABLA DE VALIDACIÓN -->
           <div v-if="vistaActual === 'validacion'">
             <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
               
@@ -259,13 +252,15 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                 class="font-mono text-sm"
               >
                 <template #item-entrada="item">
-                  <span :class="{'text-red-600 font-bold': item.estatus.includes('RETARDO'), 'text-gray-700': !item.estatus.includes('RETARDO')}">
+                  <span :class="{'text-red-600 font-bold': item.estatus.includes('RETARDO') || item.estatus === 'FALTA', 'text-gray-700': !item.estatus.includes('RETARDO')}">
                     {{ item.entrada || 'SR' }}
                   </span>
                 </template>
                 
                 <template #item-salida="item">
-                  <span class="text-gray-700">{{ item.salida || 'SR' }}</span>
+                  <span :class="{'text-red-600 font-bold': item.estatus === 'FALTA', 'text-gray-700': item.estatus !== 'FALTA'}">
+                    {{ item.salida || 'SR' }}
+                  </span>
                 </template>
 
                 <template #item-estatus="item">
@@ -273,8 +268,10 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                   <span v-else-if="item.estatus.includes('RETARDO')" class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">Retardo ({{ item.minutosRetardo }} min)</span>
                   <span v-else-if="item.estatus === 'OK_ESPECIAL'" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold">Especial</span>
                   <span v-else-if="item.estatus === 'NO ENCONTRADO'" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta en BD</span>
+                  <!-- 💡 NUEVA ETIQUETA PARA FALTAS -->
+                  <span v-else-if="item.estatus === 'FALTA'" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta de Asistencia</span>
                   <span v-else-if="item.estatus === 'LA'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Lista</span>
-                    <span v-else-if="item.estatus === 'EXENTO'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Exento</span>
+                  <span v-else-if="item.estatus === 'EXENTO'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Exento</span>
                   <span v-else-if="item.estatus === 'OMISION_E'" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Omisión Entrada</span>
                   <span v-else-if="item.estatus === 'OMISION_S'" class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Omisión Salida</span>
                   <span v-else class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs">{{ item.estatus }}</span>
@@ -283,7 +280,8 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
 
             </div>
           </div>
-            <!-- SABA QUINCENAL -->
+          
+          <!-- SÁBANA QUINCENAL -->
           <div v-if="vistaActual === 'sabana'">
             <div class="flex justify-end mb-6">
               <button v-if="datosExtraidos" @click="descargarExcel" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out">
@@ -321,7 +319,13 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                     <template v-for="fecha in diasSabana" :key="'data-'+fecha">
                       <template v-if="emp.asistencias[fecha]">
                         <td colspan="2" v-if="emp.asistencias[fecha].estatus === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
+                        <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
                         <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
+                        <!-- 💡 NUEVA ETIQUETA ROJA PARA FALTAS EN LA SÁBANA -->
+                        <template v-else-if="emp.asistencias[fecha].estatus === 'FALTA'">
+                          <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
+                          <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
+                        </template>
                         <template v-else>
                           <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-red-600 font-bold bg-red-50': emp.asistencias[fecha].estatus.includes('RETARDO'), 'text-orange-600 font-bold bg-orange-50': emp.asistencias[fecha].estatus === 'OMISION_E', 'text-gray-700': !emp.asistencias[fecha].estatus.includes('RETARDO') && emp.asistencias[fecha].estatus !== 'OMISION_E'}">
                             {{ emp.asistencias[fecha].entrada || (emp.asistencias[fecha].estatus.includes('ESPECIAL') ? '---' : 'SR') }}
@@ -341,7 +345,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
               </table>
             </div>
           </div>
-              <!-- SABA QUINCENAL -->
+              
         </div>
       </div>
       <div v-else-if="vistaActiva === 'empleados'">
@@ -349,17 +353,15 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
         <GestionEmpleados />
       </div>
 
-
       <div v-else-if="vistaActiva === 'incidencias'">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Incidencias</h1>
         <Incidencias />
       </div>
 
-
       <div v-else-if="vistaActiva === 'consultas'">
-  <h1 class="text-2xl font-bold text-gray-800 mb-6">Módulo de Consultas de Personal</h1>
-  <Consultas />
-</div>
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Módulo de Consultas de Personal</h1>
+        <Consultas />
+      </div>
 
       <div v-else-if="vistaActiva === 'justificaciones'">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Gestión de Justificaciones</h1>
