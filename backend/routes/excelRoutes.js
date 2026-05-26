@@ -55,7 +55,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
     // ==============================================================================
     // 🛡️ NUEVA LÓGICA: AUTO-DETECCIÓN Y LIMPIEZA DE QUINCENA
-    // Esto borra los días "intrusos" (como el día 15 colado en la 2da quincena)
     // ==============================================================================
     let conteoPrimera = 0;
     let conteoSegunda = 0;
@@ -66,22 +65,18 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       else conteoSegunda++;
     }
 
-    // Si hay más registros mayores al día 15, entonces estamos en la 2da quincena
     const esSegundaQuincena = conteoSegunda > conteoPrimera;
 
     for (const llave in registrosPorDia) {
       const dia = parseInt(registrosPorDia[llave].fecha.split('-')[2], 10);
       
-      // Si domina la 2da quincena, borramos cualquier registro del 15 o antes
       if (esSegundaQuincena && dia <= 15) {
         delete registrosPorDia[llave];
       } 
-      // Si domina la 1ra quincena, borramos registros del 16 en adelante
       else if (!esSegundaQuincena && dia > 15) {
         delete registrosPorDia[llave];
       }
     }
-    // ==============================================================================
 
     const resultadosProcesados = []; 
     const datosAProcesar = [];       
@@ -223,9 +218,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       });
     }
 
-    // ==============================================================================
-    // CAMBIO CLAVE: DETECCIÓN INTELIGENTE DE FALTAS SEGÚN EL TIPO DE HORARIO
-    // ==============================================================================
     const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
     
     if (fechasUnicas.length > 0) {
@@ -239,7 +231,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         return reg === 'EXENTO' || reg === 'EXCENTO';
       });
       
-      // Separamos los empleados que sí están obligados a registrar asistencia física
       const empleadosChecadores = empleados.filter(e => {
         const reg = String(e.regimen || '').toUpperCase().trim();
         return reg !== 'LISTA' && reg !== 'EXENTO' && reg !== 'EXCENTO';
@@ -250,47 +241,43 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         const fechaStr = d.toISOString().split('T')[0];
         const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
 
-        // 1. Inyección para personal de firma por LISTA (Lunes a Viernes)
         if (diaSemana !== 0 && diaSemana !== 6) { 
           for (const emp of empleadosLista) {
-            datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "LA" });
-            resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.departamento, fecha: fechaStr, entrada: '---', salida: '---', estatus: 'LA', minutosRetardo: 0 });
+            const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
+            if (!registrosPorDia[llaveBusqueda]) {
+              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "LA" });
+              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.departamento, fecha: fechaStr, entrada: '---', salida: '---', estatus: 'LA', minutosRetardo: 0 });
+            }
           }
 
-          // 2. Inyección para personal EXENTO (Lunes a Viernes)
           for (const emp of empleadosExento) {
-            datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "EXENTO" });
-            resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.departamento, fecha: fechaStr, entrada: '---', salida: '---', estatus: 'EXENTO', minutosRetardo: 0 });
+            const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
+            if (!registrosPorDia[llaveBusqueda]) {
+              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "EXENTO" });
+              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.departamento, fecha: fechaStr, entrada: '---', salida: '---', estatus: 'EXENTO', minutosRetardo: 0 });
+            }
           }
         }
 
-        // 3. Evaluación de ausencias para personal con Horarios NORMALES y ESPECIALES
         for (const emp of empleadosChecadores) {
           const regimenC = String(emp.regimen || '').toUpperCase().trim();
           const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
           
-          // Si el empleado no registró absolutamente ninguna huella en todo este día
           if (!registrosPorDia[llaveBusqueda]) {
             let generarFalta = false;
 
             if (regimenC === 'NORMAL') {
-              // Horario de Oficina estándar: Falta si se ausenta entre semana (Lunes a Viernes)
               if (diaSemana !== 0 && diaSemana !== 6) {
                 generarFalta = true;
               }
             } 
             else if (regimenC === 'ESPECIAL') {
-              // Horario 1x1: Los fines de semana sí son laborables según su rol rotativo.
-              // Usamos el 5 de abril de 2026 como fecha base institucional del ciclo alterno.
               const fechaAncla = new Date('2026-04-05T00:00:00Z');
               const fechaActual = new Date(`${fechaStr}T00:00:00Z`);
               const diferenciaDias = Math.floor((fechaActual - fechaAncla) / (1000 * 60 * 60 * 24));
-              
-              // Se distribuyen los empleados en dos turnos alternos (A y B) según su ID relacional
               const turnoActivoPar = diferenciaDias % 2 === 0;
               const empleadoEsPar = emp.id % 2 === 0;
 
-              // Si hoy corresponde trabajar a su turno, su ausencia es una falta de jornada completa
               if (empleadoEsPar === turnoActivoPar) {
                 generarFalta = true;
               }
@@ -303,7 +290,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
                 entradaFinal: null,
                 salidaFinal: null,
                 minutosRetardo: 0,
-                estatus: "FALTA" // Se guarda explícitamente en el arreglo relacional
+                estatus: "FALTA" 
               });
 
               resultadosProcesados.push({
@@ -311,8 +298,8 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
                 nombre: emp.nombreCompleto,
                 departamento: emp.departamento,
                 fecha: fechaStr,
-                entrada: 'SR', // Sin Registro
-                salida: 'SR',  // Sin Registro
+                entrada: 'SR', 
+                salida: 'SR',  
                 estatus: 'FALTA',
                 minutosRetardo: 0
               });
@@ -324,11 +311,24 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
     resultadosProcesados.sort((a, b) => a.nombre.localeCompare(b.nombre) || a.fecha.localeCompare(b.fecha));
 
+    // ==============================================================================
+    // 🚨 EL RADAR: Revisamos si ya existe información en BD de estos días
+    // ==============================================================================
+    let existenDatosPrevios = false;
+    if (fechasUnicas.length > 0) {
+      const fechasRevisar = fechasUnicas.map(f => new Date(`${f}T00:00:00Z`));
+      const conteoExistentes = await prisma.asistencia.count({
+        where: { fecha: { in: fechasRevisar } }
+      });
+      existenDatosPrevios = conteoExistentes > 0;
+    }
+
     res.json({
       mensaje: 'Datos analizados listos para revision!',
       diasProcesados: fechasUnicas.length,
       datosVisuales: resultadosProcesados,
-      datosParaGuardar: datosAProcesar 
+      datosParaGuardar: datosAProcesar,
+      existenDatosPrevios // 💡 Mandamos esta bandera al Frontend
     });
 
   } catch (error) {
@@ -338,7 +338,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 });
 
 // ==============================================================================
-// 2. RUTA DE CONFIRMACIÓN (Recibe los datos aprobados y usa SQL Nivel Dios)
+// 2. RUTA DE CONFIRMACIÓN (Hace un HARD RESET del periodo y guarda desde cero)
 // ==============================================================================
 router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req, res) => {
   try {
@@ -348,38 +348,88 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
       return res.status(400).json({ error: 'No se recibieron datos para guardar.' });
     }
 
-    const TAMANO_LOTE = 1000; 
+    const fechasUnicasStr = [...new Set(datosParaGuardar.map(d => new Date(d.fechaParaPrisma).toISOString()))];
+    const fechasObj = fechasUnicasStr.map(f => new Date(f));
 
-    for (let i = 0; i < datosParaGuardar.length; i += TAMANO_LOTE) {
-      const loteDatos = datosParaGuardar.slice(i, i + TAMANO_LOTE);
-      
-      const values = loteDatos.map(dato => {
-        const entrada = dato.entradaFinal ? `'${dato.entradaFinal}'` : 'NULL';
-        const salida = dato.salidaFinal ? `'${dato.salidaFinal}'` : 'NULL';
-        const incidencia = `'${dato.estatus}'`;
-        const fechaStr = new Date(dato.fechaParaPrisma).toISOString(); 
-        
-        return `(${dato.servidorId}, '${fechaStr}'::timestamp, ${entrada}, ${salida}, ${dato.minutosRetardo}, ${incidencia})`;
-      }).join(',\n');
+    // 🧹 LIMPIEZA PROFUNDA (BORRÓN Y CUENTA NUEVA PARA EL PERIODO)
+    const asistenciasViejas = await prisma.asistencia.findMany({
+      where: { fecha: { in: fechasObj } },
+      select: { id: true }
+    });
+    
+    const idsViejos = asistenciasViejas.map(a => a.id);
 
-      const query = `
-        INSERT INTO "Asistencia" ("servidorId", "fecha", "entrada", "salida", "minutosRetardo", "incidencia")
-        VALUES ${values}
-        ON CONFLICT ("servidorId", "fecha") DO UPDATE SET
-          "entrada" = EXCLUDED."entrada",
-          "salida" = EXCLUDED."salida",
-          "minutosRetardo" = EXCLUDED."minutosRetardo",
-          "incidencia" = EXCLUDED."incidencia";
-      `;
-
-      await prisma.$executeRawUnsafe(query);
+    if (idsViejos.length > 0) {
+      await prisma.justificacion.deleteMany({
+        where: { asistenciaId: { in: idsViejos } }
+      });
+      await prisma.asistencia.deleteMany({
+        where: { id: { in: idsViejos } }
+      });
     }
 
-    res.json({ mensaje: 'Datos guardados exitosamente en la base de datos!' });
+    // 🌱 INSERCIÓN MASIVA LÍMPIA (Evitando duplicados con un Map)
+    const datosUnicosMap = new Map();
+    datosParaGuardar.forEach(dato => {
+      const llaveDuplicidad = `${dato.servidorId}_${new Date(dato.fechaParaPrisma).toISOString()}`;
+      datosUnicosMap.set(llaveDuplicidad, {
+        servidorId: dato.servidorId,
+        fecha: new Date(dato.fechaParaPrisma),
+        entrada: dato.entradaFinal,
+        salida: dato.salidaFinal,
+        minutosRetardo: dato.minutosRetardo,
+        incidencia: dato.estatus
+      });
+    });
+
+    const datosPrisma = Array.from(datosUnicosMap.values());
+
+    await prisma.asistencia.createMany({
+      data: datosPrisma
+    });
+
+    res.json({ mensaje: 'Datos limpiados y guardados exitosamente en la base de datos!' });
 
   } catch (error) {
     console.error("Error guardando en BD:", error);
     res.status(500).json({ error: 'Hubo un error al guardar los datos en el servidor.' });
+  }
+});
+
+// ==============================================================================
+// 2.5 RUTA NUEVA: OBTENER DATOS CRUDOS PARA PREVISUALIZACIÓN DE SÁBANA
+// ==============================================================================
+router.get('/datos-reporte', async (req, res) => {
+  try {
+    const { inicio, fin } = req.query;
+
+    if (!inicio || !fin) {
+      return res.status(400).json({ error: 'Faltan los parámetros de fecha.' });
+    }
+
+    const fechaInicio = new Date(`${inicio}T00:00:00Z`);
+    const fechaFin = new Date(`${fin}T23:59:59Z`);
+
+    const asistencias = await prisma.asistencia.findMany({
+      where: {
+        fecha: { gte: fechaInicio, lte: fechaFin }
+      },
+      include: {
+        servidor: {
+          select: { numeroEmpleado: true, nombreCompleto: true, departamento: true }
+        }
+      },
+      orderBy: [
+        { fecha: 'asc' },
+        { servidor: { nombreCompleto: 'asc' } }
+      ]
+    });
+
+    res.json(asistencias);
+
+  } catch (error) {
+    console.error("Error al obtener datos para previsualización:", error);
+    res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
 
@@ -390,7 +440,6 @@ router.get('/descargar-reporte', async (req, res) => {
   try {
     const { inicio, fin } = req.query;
 
-    // 🛡️ CANDADO: Si no hay fechas, no descargamos nada para evitar mezclar quincenas
     if (!inicio || !fin) {
       return res.status(400).json({ error: 'Faltan los parámetros de fecha para generar el reporte.' });
     }
@@ -398,7 +447,6 @@ router.get('/descargar-reporte', async (req, res) => {
     const fechaInicio = new Date(`${inicio}T00:00:00Z`);
     const fechaFin = new Date(`${fin}T23:59:59Z`);
 
-    // Consulta filtrada estrictamente a los días de la quincena actual
     const asistencias = await prisma.asistencia.findMany({
       where: {
         fecha: {
@@ -499,7 +547,6 @@ router.get('/descargar-reporte', async (req, res) => {
           } else if (reg.incidencia === 'EXENTO' || reg.incidencia === 'EXCENTO') {
             entradaTexto = 'EXENTO';
             salidaTexto = 'EXENTO';
-          // 🚨 AQUÍ CACHAMOS LA FALTA REAL QUE VIENE DE LA BASE DE DATOS
           } else if (reg.incidencia === 'FALTA') {
             entradaTexto = 'SR';
             salidaTexto = 'SR';
@@ -519,9 +566,6 @@ router.get('/descargar-reporte', async (req, res) => {
             }
           }
         } else {
-          // Como ahora guardamos FALTAS, LA y EXENTOS en la BD directamente,
-          // si no hay registro (reg === undefined) significa que es un día 
-          // de descanso real (fin de semana o día alterno 1x1).
           entradaTexto = '---';
           salidaTexto = '---';
         }
@@ -593,7 +637,6 @@ router.get('/consultar-incidencias', async (req, res) => {
           lte: fechaFin
         },
         incidencia: {
-          // MODIFICACIÓN: Se inyecta la palabra 'FALTA' para recuperarlas en el Front
           in: ['RETARDO', 'RETARDO_ESPECIAL', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION', 'FALTA']
         }
       },

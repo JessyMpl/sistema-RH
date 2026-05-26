@@ -8,7 +8,6 @@ import Consultas from '@/components/Consultas.vue';
 import Justificaciones from '@/components/GestionJustificaciones.vue';
 import ReporteFinal from '@/components/ReporteFinal.vue';
 
-
 const vistaActiva = ref('reporte'); 
 const archivoSeleccionado = ref(null);
 const mensajeStatus = ref('');
@@ -17,6 +16,7 @@ const estaGuardando = ref(false);
 
 const datosExtraidos = ref(null); 
 const datosParaGuardarBD = ref(null); 
+const existenDatosPreviosBD = ref(false); // 💡 NUEVA VARIABLE: Guarda si hay datos repetidos
 
 const vistaActual = ref('validacion'); 
 
@@ -35,6 +35,7 @@ const seleccionarArchivo = (event) => {
   mensajeStatus.value = '';
   datosExtraidos.value = null; 
   datosParaGuardarBD.value = null;
+  existenDatosPreviosBD.value = false; // Reiniciamos la bandera
   vistaActual.value = 'validacion'; 
 };
 
@@ -71,6 +72,7 @@ const subirExcel = async () => {
       
       datosExtraidos.value = data.datosVisuales; 
       datosParaGuardarBD.value = data.datosParaGuardar; 
+      existenDatosPreviosBD.value = data.existenDatosPrevios || false; // 💡 Atrapamos la bandera del backend
       vistaActual.value = 'validacion'; 
     } else {
       Swal.fire({ icon: 'error', title: '¡Ups!', text: data.error || 'Hubo un error al leer el archivo.', confirmButtonColor: '#902c3e' });
@@ -83,6 +85,24 @@ const subirExcel = async () => {
 };
 
 const confirmarYGuardar = async () => {
+  // 💡 LÓGICA NUEVA: La pregunta de seguridad si detecta datos repetidos
+  if (existenDatosPreviosBD.value) {
+    const confirmacion = await Swal.fire({
+      title: '⚠️ ¿Sobrescribir esta Quincena?',
+      html: 'El sistema detectó que <b>ya existen registros y justificaciones guardadas</b> para estas fechas.<br><br>Si continúas, <b>se borrará TODO tu trabajo manual anterior</b> de esta quincena para empezar de cero.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33', // Rojo peligroso
+      cancelButtonColor: '#3085d6', // Azul seguro
+      confirmButtonText: 'Sí, borrar y sobrescribir todo',
+      cancelButtonText: 'Cancelar y mantener mi trabajo'
+    });
+
+    if (!confirmacion.isConfirmed) {
+      return; // Aborta la misión si le dan cancelar
+    }
+  }
+
   estaGuardando.value = true;
 
   Swal.fire({
@@ -105,6 +125,7 @@ const confirmarYGuardar = async () => {
     if (respuesta.ok) {
       Swal.fire({ icon: 'success', title: '¡Guardado Exitoso!', text: data.mensaje, confirmButtonColor: '#16a34a' });
       datosParaGuardarBD.value = null; 
+      existenDatosPreviosBD.value = false;
     } else {
       Swal.fire({ icon: 'error', title: 'Error al guardar', text: data.error, confirmButtonColor: '#902c3e' });
     }
@@ -120,7 +141,6 @@ const diasSabana = computed(() => {
   return [...new Set(datosExtraidos.value.map(d => d.fecha))].sort();
 });
 
-// 💡 AQUÍ ESTÁ EL CAMBIO CLAVE: Función de descarga inteligente
 const descargarExcel = async () => {
   try {
     let url = 'http://localhost:3000/api/excel/descargar-reporte';
@@ -398,3 +418,4 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
     </main>
   </div>
 </template>
+```
