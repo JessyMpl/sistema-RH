@@ -221,13 +221,19 @@ onMounted(() => {
         </template>
 
         <template #item-incidencia="item">
-          <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200 tabular-nums shadow-sm">
+          <span :class="{
+              'text-xs font-bold bg-red-100 text-red-800': item.incidencia === 'FALTA',
+              'text-xs font-bold bg-amber-100 text-yellow-700': item.incidencia === 'RETARDO' || item.incidencia === 'RETARDO_ESPECIAL' || item.incidencia === 'RETARDO_Y_OMISION',
+              'text-xs font-bold bg-orange-200 text-orange-800': item.incidencia === 'OMISION_E' || item.incidencia === 'OMISION_S',
+            }" class="px-2 py-1 text-xs font-bold rounded-full uppercase">{{ item.incidencia }}</span>
+
+          <!--<span class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200 tabular-nums shadow-sm">
             {{ item.incidencia }}
-          </span>
+          </span> estilos en caso de que se quiera usar el mismo estilo en la alerta -->
         </template>
         
         <template #item-acciones="item">
-          <button @click="prepararJustificacion(item)" class="text-white bg-inst-primario hover:bg-inst-secundario px-4 py-1.5 rounded text-xs font-bold transition shadow-sm flex items-center gap-1">
+          <button @click="prepararJustificacion(item)" class="text-white bg-inst-vino-claro hover:bg-inst-secundario px-4 py-1.5 rounded text-xs font-bold transition shadow-sm flex items-center gap-1">
             Justificar <i class="fa-solid fa-arrow-right text-[10px]"></i>
           </button>
         </template>
@@ -255,9 +261,10 @@ onMounted(() => {
             <p class="text-sm text-gray-600">Checadas: Entrada <strong class="text-gray-800">{{ empleadoSeleccionado.entrada || 'SR' }}</strong> / Salida <strong class="text-gray-800">{{ empleadoSeleccionado.salida || 'SR' }}</strong></p>
           </div>
           <div class="text-right">
-             <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
+            
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
               Alerta: {{ empleadoSeleccionado.incidencia }}
-            </span>
+            </span> 
           </div>
         </div>
 
