@@ -12,7 +12,8 @@ router.get('/pendientes', async (req, res) => {
         AND: [
           {
             incidencia: {
-              in: ['RETARDO', 'RETARDO_ESPECIAL', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION']
+              // 🚨 AQUÍ ESTÁ EL CAMBIO: Se agregó 'FALTA' a la matriz de búsqueda
+              in: ['RETARDO', 'RETARDO_ESPECIAL', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION', 'FALTA']
             }
           },
           {
