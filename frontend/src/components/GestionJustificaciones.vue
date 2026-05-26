@@ -32,7 +32,7 @@ const catalogoIncidencias = [
   "16. Comisión sindical", "17. Salida antes con autorización", "18. Otros"
 ];
 
-// Encabezados de la Tabla de Pendientes alineados con tu diseño visual
+// Encabezados de la Tabla de Pendientes 
 const headersPendientes = [
   { text: "NUM. EMP", value: "servidor.numeroEmpleado", sortable: true },
   { text: "SERVIDOR PÚBLICO", value: "servidor.nombreCompleto", sortable: true },
@@ -43,9 +43,10 @@ const headersPendientes = [
   { text: "ACCIONES", value: "acciones" }
 ];
 
+// Encabezados de la Tabla de Historial 
 const headersHistorial = [
-  { text: "FECHA INCIDENCIA", value: "asistencia.fecha", sortable: true },
-  { text: "NUM. EMP", value: "servidor.numeroEmpleado", sortable: true },
+  { text: "FECHA INCIDENCIA", value: "fechaIncidencia", sortable: true },
+  { text: "NUM. EMP", value: "servidor.numeroEmpleado", sortable: true, align: 'center' },
   { text: "SERVIDOR PÚBLICO", value: "servidor.nombreCompleto", sortable: true },
   { text: "ALCANCE", value: "cobertura", sortable: true },
   { text: "FOLIO FORMATO", value: "folio", sortable: true },
@@ -85,11 +86,16 @@ const cargarPendientes = async () => {
   }
 };
 
+// funcion para cargar el historial de justificaciones, con un mapeo para extraer la fecha de incidencia desde el objeto de asistencia relacionado
 const cargarHistorial = async () => {
   try {
     const res = await fetch('http://localhost:3000/api/justificaciones/historial');
     if (!res.ok) throw new Error('Error al consultar historial');
-    listaHistorial.value = await res.json();
+    const data = await res.json();
+    listaHistorial.value = data.map(item => ({
+      ...item,
+      fechaIncidencia: item.asistencia?.fecha 
+    }));
   } catch (error) {
     console.error(error);
   }
@@ -226,10 +232,6 @@ onMounted(() => {
               'text-xs font-bold bg-amber-100 text-yellow-700': item.incidencia === 'RETARDO' || item.incidencia === 'RETARDO_ESPECIAL' || item.incidencia === 'RETARDO_Y_OMISION',
               'text-xs font-bold bg-orange-200 text-orange-800': item.incidencia === 'OMISION_E' || item.incidencia === 'OMISION_S',
             }" class="px-2 py-1 text-xs font-bold rounded-full uppercase">{{ item.incidencia }}</span>
-
-          <!--<span class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200 tabular-nums shadow-sm">
-            {{ item.incidencia }}
-          </span> estilos en caso de que se quiera usar el mismo estilo en la alerta -->
         </template>
         
         <template #item-acciones="item">
@@ -322,8 +324,9 @@ onMounted(() => {
         :rows-per-page="15"
         table-class-name="img-strattia-style"
       >
-        <template #item-asistencia-fecha="item">
-          <span class="tabular-nums">{{ formatearFecha(item.asistencia?.fecha) }}</span>
+    
+        <template #item-fechaIncidencia="item">
+          <span class="tabular-nums text-gray-800">{{ formatearFecha(item.fechaIncidencia) }}</span>
         </template>
 
         <template #item-cobertura="item">
