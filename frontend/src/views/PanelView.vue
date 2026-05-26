@@ -4,8 +4,10 @@ import Swal from 'sweetalert2';
 import SidebarRH from '@/components/SidebarRH.vue';
 import GestionEmpleados from '@/components/GestionEmpleados.vue';
 import Incidencias from '@/components/incidencias.vue';
-import Consultas from '@/components/consultas.vue';
+import Consultas from '@/components/Consultas.vue';
 import Justificaciones from '@/components/GestionJustificaciones.vue';
+import ReporteFinal from '@/components/ReporteFinal.vue';
+
 
 const vistaActiva = ref('reporte'); 
 const archivoSeleccionado = ref(null);
@@ -386,6 +388,12 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Gestión de Justificaciones</h1>
         <Justificaciones />
       </div>
+
+        <div v-else-if="vistaActiva === 'reporteFinal'">
+          <h1 class="text-2xl font-bold text-gray-800 mb-6">Reporte Final de Asistencias</h1>
+          <ReporteFinal />
+        </div>
+     
       
     </main>
   </div>
