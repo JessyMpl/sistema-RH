@@ -184,6 +184,7 @@ onMounted(() => {
     </div>
 
     <div v-if="pestanaActiva === 'pendientes'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-4 space-y-4">
+      
       <div class="flex justify-between items-center bg-gray-50 p-3 rounded border border-gray-200">
         <div class="w-full max-w-md">
           <input v-model="valorBusquedaPendientes" type="text" placeholder="Buscar por nombre o número de empleado..." class="w-full p-2 border border-gray-300 rounded outline-none focus:border-inst-primario text-sm" />
@@ -197,6 +198,7 @@ onMounted(() => {
         :headers="headersPendientes"
         :items="listaPendientes"
         :search-value="valorBusquedaPendientes"
+        :search-field="['servidor.numeroEmpleado', 'servidor.nombreCompleto']"
         :rows-per-page="15"
         :loading="cargando"
         buttons-pagination
@@ -309,6 +311,7 @@ onMounted(() => {
         :headers="headersHistorial"
         :items="listaHistorial"
         :search-value="valorBusquedaHistorial"
+         :search-field="['servidor.numeroEmpleado', 'servidor.nombreCompleto']"
         :rows-per-page="15"
         table-class-name="img-strattia-style"
       >
