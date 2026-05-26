@@ -113,30 +113,51 @@ const confirmarYGuardar = async () => {
   }
 };
 
-
-const descargarExcel = async () => {
-  try {
-    const respuesta = await fetch('http://localhost:3000/api/excel/descargar-reporte', { method: 'GET' });
-    if (!respuesta.ok) throw new Error('Error al generar el archivo');
-    const blob = await respuesta.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'Sabana_Quincenal_Secretaria.xlsx');
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Error al bajar el Excel:", error);
-    alert("❌ Hubo un problema al descargar el reporte.");
-  }
-};
-
 const diasSabana = computed(() => {
   if (!datosExtraidos.value || datosExtraidos.value.length === 0) return [];
   return [...new Set(datosExtraidos.value.map(d => d.fecha))].sort();
 });
+
+// 💡 AQUÍ ESTÁ EL CAMBIO CLAVE: Función de descarga inteligente
+const descargarExcel = async () => {
+  try {
+    let url = 'http://localhost:3000/api/excel/descargar-reporte';
+
+    if (diasSabana.value && diasSabana.value.length > 0) {
+      const fechaMin = diasSabana.value[0];
+      const fechaMax = diasSabana.value[diasSabana.value.length - 1];
+      // Inyectamos las fechas en la petición para que el backend nos apruebe
+      url += `?inicio=${fechaMin}&fin=${fechaMax}`; 
+    } else {
+      Swal.fire({ icon: 'warning', title: 'Atención', text: 'No hay datos procesados en pantalla para descargar.', confirmButtonColor: '#902c3e' });
+      return;
+    }
+
+    const respuesta = await fetch(url, { method: 'GET' });
+    
+    if (!respuesta.ok) {
+      const errorData = await respuesta.json();
+      throw new Error(errorData.error || 'Error al generar el archivo');
+    }
+    
+    const blob = await respuesta.blob();
+    const urlBlob = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = urlBlob;
+    
+    const fechaMin = diasSabana.value[0];
+    link.setAttribute('download', `Sabana_Quincenal_${fechaMin}.xlsx`);
+    
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(urlBlob);
+
+  } catch (error) {
+    console.error("Error al bajar el Excel:", error);
+    Swal.fire({ icon: 'error', title: 'Error de descarga', text: error.message || 'Hubo un problema al generar el reporte.', confirmButtonColor: '#902c3e'});
+  }
+};
 
 const tituloReporte = computed(() => {
   if (!diasSabana.value || diasSabana.value.length === 0) return '';
@@ -149,7 +170,6 @@ const tituloReporte = computed(() => {
   return `REPORTE ${quincena} QUINCENA DEL MES DE ${meses[mesIndex].toUpperCase()} DEL AÑO ${anio}`;
 });
 
-// 💡 CAMBIO: Lógica simplificada basada en la inteligencia del backend
 const datosPivotados = computed(() => {
   if (!datosExtraidos.value || datosExtraidos.value.length === 0) return [];
   const empleadosMap = {};
@@ -171,7 +191,6 @@ const datosPivotados = computed(() => {
       if (reg) {
         if (reg.estatus.includes('RETARDO')) faltasPuntualidad++;
         
-        // El backend ahora dicta quién tiene falta, respetando roles y guardias
         if (reg.estatus === 'FALTA') faltasAsistencia++;
         
         if (reg.minutosRetardo && reg.minutosRetardo > 0) {
