@@ -233,9 +233,9 @@ onMounted(() => {
         </template>
         
         <template #item-acciones="item">
-          <button @click="prepararJustificacion(item)" class="text-white bg-inst-vino-claro hover:bg-inst-secundario px-4 py-1.5 rounded text-xs font-bold transition shadow-sm flex items-center gap-1">
-            Justificar <i class="fa-solid fa-arrow-right text-[10px]"></i>
-          </button>
+          <button @click="prepararJustificacion(item)"> 
+                <i class="fa-solid fa-pen-to-square text-base hover:bg-inst-vino-claro hover:text-white p-2 rounded-lg transition"> </i>  
+              </button>
         </template>
       </EasyDataTable>
     </div>
