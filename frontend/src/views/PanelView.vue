@@ -16,7 +16,7 @@ const estaGuardando = ref(false);
 
 const datosExtraidos = ref(null); 
 const datosParaGuardarBD = ref(null); 
-const existenDatosPreviosBD = ref(false); // 💡 NUEVA VARIABLE: Guarda si hay datos repetidos
+const existenDatosPreviosBD = ref(false); //  NUEVA VARIABLE: Guarda si hay datos repetidos
 
 const vistaActual = ref('validacion'); 
 
@@ -52,7 +52,7 @@ const subirExcel = async () => {
   formData.append('archivoExcel', archivoSeleccionado.value);
 
   Swal.fire({
-    title: '¡Analizando archivo! ⚙️',
+    title: '¡Analizando archivo! ',
     html: 'Calculando retardos, omisiones y faltas. Solo tomará unos segundos...',
     allowOutsideClick: false,
     showConfirmButton: false,
@@ -72,7 +72,7 @@ const subirExcel = async () => {
       
       datosExtraidos.value = data.datosVisuales; 
       datosParaGuardarBD.value = data.datosParaGuardar; 
-      existenDatosPreviosBD.value = data.existenDatosPrevios || false; // 💡 Atrapamos la bandera del backend
+      existenDatosPreviosBD.value = data.existenDatosPrevios || false; //  Atrapamos la bandera del backend
       vistaActual.value = 'validacion'; 
     } else {
       Swal.fire({ icon: 'error', title: '¡Ups!', text: data.error || 'Hubo un error al leer el archivo.', confirmButtonColor: '#902c3e' });
@@ -85,10 +85,10 @@ const subirExcel = async () => {
 };
 
 const confirmarYGuardar = async () => {
-  // 💡 LÓGICA NUEVA: La pregunta de seguridad si detecta datos repetidos
+  //  LÓGICA NUEVA: La pregunta de seguridad si detecta datos repetidos
   if (existenDatosPreviosBD.value) {
     const confirmacion = await Swal.fire({
-      title: '⚠️ ¿Sobrescribir esta Quincena?',
+      title: ' ¿Sobrescribir esta Quincena?',
       html: 'El sistema detectó que <b>ya existen registros y justificaciones guardadas</b> para estas fechas.<br><br>Si continúas, <b>se borrará TODO tu trabajo manual anterior</b> de esta quincena para empezar de cero.',
       icon: 'warning',
       showCancelButton: true,
@@ -241,17 +241,27 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
     <main class="flex-1 p-8 overflow-y-auto"> 
       
       <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-inst-primario">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Procesar Datos del Biometrico</h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Procesar Datos de los Biométricos</h1>
         
-        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 mb-6 relative">
-          <p class="text-gray-500 mb-6">Selecciona el archivo Excel (.xlsx, .xls) extraído del checador biométrico.</p>
+     <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors mb-6 relative group">
+          
+         
+          <i class="fa-solid fa-cloud-arrow-up text-5xl text-gray-400 group-hover:text-inst-primario group-hover:scale-110 transition-all duration-300 mb-4 block"></i>
+          
+          <p class="text-gray-600 font-medium mb-6">
+            <i class="fas fa-file-excel text-green-600 mr-2 text-lg"></i>
+            Carga el archivo Excel (.xlsx, .xls) extraído del reloj checador.
+          </p>
+          
           <div class="flex flex-col items-center justify-center gap-4">
             <input type="file" accept=".xlsx, .xls" @change="seleccionarArchivo"
-              class="block w-full max-w-sm text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-            />
+              class="block w-full max-w-sm text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-inst-primario/10 file:text-inst-primario hover:file:bg-inst-primario/20 cursor-pointer transition"
+            /> 
+            
             <button @click="subirExcel" :disabled="estaSubiendo"
-              class="mt-4 bg-inst-primario hover:bg-inst-secundario disabled:bg-blue-400 text-white font-bold py-2 px-6 rounded-md shadow-sm transition">
-              {{ estaSubiendo ? 'Analizando...' : '1. Leer y Previsualizar' }}
+              class="mt-4 bg-inst-primario hover:bg-inst-secundario disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-md shadow-sm transition flex items-center gap-2">
+              <i class="fa-solid" :class="estaSubiendo ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart'"></i>
+              {{ estaSubiendo ? 'Analizando...' : 'Analizar Datos' }}
             </button>
           </div>
         </div>
@@ -260,17 +270,18 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
           
           <div class="flex justify-between mb-6 border-b border-gray-200 pb-4">
             <div class="flex space-x-4">
-              <button @click="vistaActual = 'validacion'" :class="vistaActual === 'validacion' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">
-                📋 Validar Registros
+              <button @click="vistaActual = 'validacion'" :class="vistaActual === 'validacion' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">
+               <i class="fas fa-eye mr-2"></i> Validar Registros
               </button>
-              <button @click="vistaActual = 'sabana'" :class="vistaActual === 'sabana' ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">
-                📊 Sábana Quincenal
+              <button @click="vistaActual = 'sabana'" :class="vistaActual === 'sabana' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">
+                <i class="fas fa-table mr-2"></i>  
+                Sábana Quincenal
               </button>
             </div>
             
             <button v-if="datosParaGuardarBD" @click="confirmarYGuardar" :disabled="estaGuardando" class="bg-inst-primario hover:bg-inst-secundario text-white font-bold py-2 px-6 rounded-lg shadow-md transition flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z"/></svg>
-              {{ estaGuardando ? 'Guardando...' : '2. Confirmar y Guardar en BD' }}
+              {{ estaGuardando ? 'Guardando...' : 'Guardar en BD' }}
             </button>
           </div>
 
@@ -279,7 +290,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
             <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
               
               <div class="mb-4 flex items-center">
-                <span class="mr-2 text-gray-500 font-bold">🔍 Buscar:</span>
+                <span class="mr-2 text-gray-500 font-bold"> Buscar:</span>
                 <input type="text" v-model="valorBusqueda" placeholder="Buscar por nombre o número..." class="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
 
@@ -326,7 +337,8 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
           <div v-if="vistaActual === 'sabana'">
             <div class="flex justify-end mb-6">
               <button v-if="datosExtraidos" @click="descargarExcel" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out">
-                Descargar Reporte Excel
+                <i class="fas fa-file-arrow-down mr-2"></i>
+                Descargar  
               </button>
             </div>
             <div class="mb-4 bg-gray-200 py-3 rounded-t-lg border-b-2 border-gray-300 shadow-sm">
@@ -362,7 +374,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                         <td colspan="2" v-if="emp.asistencias[fecha].estatus === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
                         <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
                         <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
-                        <!-- 💡 NUEVA ETIQUETA ROJA PARA FALTAS EN LA SÁBANA -->
+                        <!--  NUEVA ETIQUETA ROJA PARA FALTAS EN LA SÁBANA -->
                         <template v-else-if="emp.asistencias[fecha].estatus === 'FALTA'">
                           <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
                           <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
