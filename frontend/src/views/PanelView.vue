@@ -189,7 +189,7 @@ const tituloReporte = computed(() => {
   const anio = primeraFecha.getFullYear();
   const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
   const quincena = dia <= 15 ? 'PRIMERA' : 'SEGUNDA';
-  return `REPORTE ${quincena} QUINCENA DEL MES DE ${meses[mesIndex].toUpperCase()} DEL AÑO ${anio}`;
+  return `REPORTE ${quincena} QUINCENA DEL MES DE ${meses[mesIndex].toUpperCase()} DE ${anio}`;
 });
 
 const datosPivotados = computed(() => {
@@ -341,8 +341,8 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                 Descargar  
               </button>
             </div>
-            <div class="mb-4 bg-gray-200 py-3 rounded-t-lg border-b-2 border-gray-300 shadow-sm">
-              <h2 class="text-lg font-bold text-gray-800 text-center tracking-wide">{{ tituloReporte }}</h2>
+            <div class="mb-4 bg-inst-vino-claro py-3 rounded-t-lg border-b-2 border-gray-300 shadow-sm">
+              <h2 class="text-lg font-bold text-white text-center tracking-wide">{{ tituloReporte }}</h2>
             </div>
             
             <div class="overflow-x-auto bg-white shadow ring-1 ring-black ring-opacity-5 rounded-b-lg pb-4">
