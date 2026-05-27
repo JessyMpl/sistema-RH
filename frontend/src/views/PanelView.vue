@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'; 
+import { ref, computed, watch } from 'vue'; 
 import Swal from 'sweetalert2'; 
 import SidebarRH from '@/components/SidebarRH.vue';
 import GestionEmpleados from '@/components/GestionEmpleados.vue';
@@ -16,7 +16,7 @@ const estaGuardando = ref(false);
 
 const datosExtraidos = ref(null); 
 const datosParaGuardarBD = ref(null); 
-const existenDatosPreviosBD = ref(false); //  NUEVA VARIABLE: Guarda si hay datos repetidos
+const existenDatosPreviosBD = ref(false); 
 
 const vistaActual = ref('validacion'); 
 
@@ -35,7 +35,7 @@ const seleccionarArchivo = (event) => {
   mensajeStatus.value = '';
   datosExtraidos.value = null; 
   datosParaGuardarBD.value = null;
-  existenDatosPreviosBD.value = false; // Reiniciamos la bandera
+  existenDatosPreviosBD.value = false; 
   vistaActual.value = 'validacion'; 
 };
 
@@ -52,7 +52,7 @@ const subirExcel = async () => {
   formData.append('archivoExcel', archivoSeleccionado.value);
 
   Swal.fire({
-    title: '¡Analizando archivo! ',
+    title: '¡Analizando archivo! ⚙️',
     html: 'Calculando retardos, omisiones y faltas. Solo tomará unos segundos...',
     allowOutsideClick: false,
     showConfirmButton: false,
@@ -72,7 +72,7 @@ const subirExcel = async () => {
       
       datosExtraidos.value = data.datosVisuales; 
       datosParaGuardarBD.value = data.datosParaGuardar; 
-      existenDatosPreviosBD.value = data.existenDatosPrevios || false; //  Atrapamos la bandera del backend
+      existenDatosPreviosBD.value = data.existenDatosPrevios || false; 
       vistaActual.value = 'validacion'; 
     } else {
       Swal.fire({ icon: 'error', title: '¡Ups!', text: data.error || 'Hubo un error al leer el archivo.', confirmButtonColor: '#902c3e' });
@@ -85,21 +85,20 @@ const subirExcel = async () => {
 };
 
 const confirmarYGuardar = async () => {
-  //  LÓGICA NUEVA: La pregunta de seguridad si detecta datos repetidos
   if (existenDatosPreviosBD.value) {
     const confirmacion = await Swal.fire({
-      title: ' ¿Sobrescribir esta Quincena?',
+      title: '⚠️ ¿Sobrescribir esta Quincena?',
       html: 'El sistema detectó que <b>ya existen registros y justificaciones guardadas</b> para estas fechas.<br><br>Si continúas, <b>se borrará TODO tu trabajo manual anterior</b> de esta quincena para empezar de cero.',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33', // Rojo peligroso
-      cancelButtonColor: '#3085d6', // Azul seguro
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
       confirmButtonText: 'Sí, borrar y sobrescribir todo',
       cancelButtonText: 'Cancelar y mantener mi trabajo'
     });
 
     if (!confirmacion.isConfirmed) {
-      return; // Aborta la misión si le dan cancelar
+      return; 
     }
   }
 
@@ -148,7 +147,6 @@ const descargarExcel = async () => {
     if (diasSabana.value && diasSabana.value.length > 0) {
       const fechaMin = diasSabana.value[0];
       const fechaMax = diasSabana.value[diasSabana.value.length - 1];
-      // Inyectamos las fechas en la petición para que el backend nos apruebe
       url += `?inicio=${fechaMin}&fin=${fechaMax}`; 
     } else {
       Swal.fire({ icon: 'warning', title: 'Atención', text: 'No hay datos procesados en pantalla para descargar.', confirmButtonColor: '#902c3e' });
@@ -212,9 +210,7 @@ const datosPivotados = computed(() => {
       
       if (reg) {
         if (reg.estatus.includes('RETARDO')) faltasPuntualidad++;
-        
         if (reg.estatus === 'FALTA') faltasAsistencia++;
-        
         if (reg.minutosRetardo && reg.minutosRetardo > 0) {
           totalMinutos += Number(reg.minutosRetardo);
         }
@@ -230,6 +226,39 @@ const datosPivotados = computed(() => {
   }).sort((a, b) => a.nombre.localeCompare(b.nombre));
 });
 
+// =========================================================
+// 💡 LÓGICA NUEVA: FILTROS Y PAGINACIÓN PARA LA SÁBANA
+// =========================================================
+const busquedaSabana = ref('');
+const elementosPorPaginaSabana = ref(15);
+const paginaActualSabana = ref(1);
+
+const sabanaFiltrada = computed(() => {
+  let filtrados = datosPivotados.value;
+  if (busquedaSabana.value) {
+    const query = busquedaSabana.value.toLowerCase();
+    filtrados = filtrados.filter(emp =>
+      emp.nombre.toLowerCase().includes(query) ||
+      emp.numEmp.toLowerCase().includes(query) ||
+      (emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || '').toLowerCase().includes(query)
+    );
+  }
+  return filtrados;
+});
+
+const paginasTotalesSabana = computed(() => Math.ceil(sabanaFiltrada.value.length / elementosPorPaginaSabana.value));
+
+const sabanaPaginada = computed(() => {
+  const inicio = (paginaActualSabana.value - 1) * elementosPorPaginaSabana.value;
+  return sabanaFiltrada.value.slice(inicio, inicio + elementosPorPaginaSabana.value);
+});
+
+// Reiniciar a la página 1 cada vez que se busca algo
+watch(busquedaSabana, () => {
+  paginaActualSabana.value = 1;
+});
+// =========================================================
+
 const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
 
 </script>
@@ -243,9 +272,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
       <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-inst-primario">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Procesar Datos de los Biométricos</h1>
         
-     <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors mb-6 relative group">
-          
-         
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors mb-6 relative group">
           <i class="fa-solid fa-cloud-arrow-up text-5xl text-gray-400 group-hover:text-inst-primario group-hover:scale-110 transition-all duration-300 mb-4 block"></i>
           
           <p class="text-gray-600 font-medium mb-6">
@@ -285,10 +312,9 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
             </button>
           </div>
 
-          <!-- TABLA DE VALIDACIÓN -->
+          <!-- TABLA DE VALIDACIÓN (EASY DATA TABLE) -->
           <div v-if="vistaActual === 'validacion'">
             <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
-              
               <div class="mb-4 flex items-center">
                 <span class="mr-2 text-gray-500 font-bold"> Buscar:</span>
                 <input type="text" v-model="valorBusqueda" placeholder="Buscar por nombre o número..." class="border border-gray-300 rounded px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -301,7 +327,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                 theme-color="#902c3e"
                 buttons-pagination
                 :rows-per-page="50"
-                class="font-mono text-sm"
+                class="font-mono text-sm img-strattia-style"
               >
                 <template #item-entrada="item">
                   <span :class="{'text-red-600 font-bold': item.estatus.includes('RETARDO') || item.estatus === 'FALTA', 'text-gray-700': !item.estatus.includes('RETARDO')}">
@@ -320,7 +346,6 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                   <span v-else-if="item.estatus.includes('RETARDO')" class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">Retardo ({{ item.minutosRetardo }} min)</span>
                   <span v-else-if="item.estatus === 'OK_ESPECIAL'" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold">Especial</span>
                   <span v-else-if="item.estatus === 'NO ENCONTRADO'" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta en BD</span>
-                  <!-- 💡 NUEVA ETIQUETA PARA FALTAS -->
                   <span v-else-if="item.estatus === 'FALTA'" class="bg-red-800 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta</span>
                   <span v-else-if="item.estatus === 'LA'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Lista</span>
                   <span v-else-if="item.estatus === 'EXENTO'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Exento</span>
@@ -329,23 +354,40 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                   <span v-else class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs">{{ item.estatus }}</span>
                 </template>
               </EasyDataTable>
-
             </div>
           </div>
           
-          <!-- SÁBANA QUINCENAL -->
+          <!-- SÁBANA QUINCENAL (TABLA NATIVA CON FILTROS CUSTOM) -->
           <div v-if="vistaActual === 'sabana'">
-            <div class="flex justify-end mb-6">
-              <button v-if="datosExtraidos" @click="descargarExcel" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition duration-300 ease-in-out">
-                <i class="fas fa-file-arrow-down mr-2"></i>
-                Descargar  
+            <div class="flex flex-col lg:flex-row justify-between mb-4 gap-4 items-center">
+              
+              <!-- 💡 NUEVO BUSCADOR Y PAGINADOR -->
+              <div class="flex flex-col md:flex-row gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200 w-full lg:w-auto">
+                <div class="flex items-center w-full md:w-64 relative">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 text-gray-400"></i>
+                  <input type="text" v-model="busquedaSabana" placeholder="Buscar empleado..." class="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-inst-primario text-sm" />
+                </div>
+                <div class="flex items-center gap-2 border-l pl-4 border-gray-200">
+                  <span class="text-xs font-bold text-gray-500 uppercase">Mostrar:</span>
+                  <select v-model="elementosPorPaginaSabana" class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:border-inst-primario cursor-pointer bg-gray-50">
+                    <option :value="15">15</option>
+                    <option :value="30">30</option>
+                    <option :value="50">50</option>
+                    <option :value="100">100</option>
+                  </select>
+                </div>
+              </div>
+
+              <button v-if="datosExtraidos" @click="descargarExcel" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition duration-300 ease-in-out whitespace-nowrap">
+                <i class="fas fa-file-arrow-down mr-2"></i> Descargar Excel
               </button>
             </div>
-            <div class="mb-4 bg-inst-vino-claro py-3 rounded-t-lg border-b-2 border-gray-300 shadow-sm">
+
+            <div class="mb-0 bg-inst-vino-claro py-3 rounded-t-lg border border-inst-primario shadow-sm">
               <h2 class="text-lg font-bold text-white text-center tracking-wide">{{ tituloReporte }}</h2>
             </div>
             
-            <div class="overflow-x-auto bg-white shadow ring-1 ring-black ring-opacity-5 rounded-b-lg pb-4">
+            <div class="overflow-x-auto bg-white shadow-lg ring-1 ring-black ring-opacity-5 rounded-b-lg pb-4 border-l border-r border-b border-gray-200">
               <table class="min-w-full border-collapse">
                 <thead class="bg-gray-100">
                   <tr>
@@ -365,7 +407,8 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                   </tr>
                 </thead>
                 <tbody class="bg-white">
-                  <tr v-for="(emp, index) in datosPivotados" :key="emp.numEmp" class="hover:bg-blue-50 transition duration-150">
+                  <!-- 💡 MODIFICACIÓN: Iteramos sobre sabanaPaginada en vez de datosPivotados -->
+                  <tr v-for="(emp, index) in sabanaPaginada" :key="emp.numEmp" class="hover:bg-blue-50 transition duration-150">
                     <td class="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-sm text-gray-600 border border-gray-200 text-center shadow-[1px_0_0_0_#e5e7eb] tabular-nums" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.numEmp }}</td>
                     <td class="sticky left-[60px] z-10 bg-white py-2 pl-4 pr-3 text-xs text-gray-700 border border-gray-200 truncate max-w-[180px] shadow-[1px_0_0_0_#e5e7eb]" :class="{'bg-gray-50': index % 2 === 0}" :title="emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área'">{{ emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área' }}</td>
                     <td class="sticky left-[240px] z-10 bg-white py-2 pl-4 pr-3 text-sm font-medium text-gray-900 border border-gray-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.nombre }}</td>
@@ -374,7 +417,6 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                         <td colspan="2" v-if="emp.asistencias[fecha].estatus === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
                         <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
                         <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
-                        <!--  NUEVA ETIQUETA ROJA PARA FALTAS EN LA SÁBANA -->
                         <template v-else-if="emp.asistencias[fecha].estatus === 'FALTA'">
                           <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
                           <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
@@ -396,6 +438,31 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                   </tr>
                 </tbody>
               </table>
+              
+              <!-- 💡 CONTROLES DE PAGINACIÓN -->
+              <div v-if="sabanaFiltrada.length > 0" class="mt-4 px-4 flex justify-between items-center bg-white border-t pt-4">
+                <div class="text-sm text-gray-500 font-medium">
+                  Mostrando <span class="font-bold text-gray-800">{{ ((paginaActualSabana - 1) * elementosPorPaginaSabana) + 1 }}</span> al
+                  <span class="font-bold text-gray-800">{{ Math.min(paginaActualSabana * elementosPorPaginaSabana, sabanaFiltrada.length) }}</span> de
+                  <span class="font-bold text-gray-800">{{ sabanaFiltrada.length }}</span> registros
+                </div>
+                <div class="flex gap-2 items-center">
+                  <button @click="paginaActualSabana--" :disabled="paginaActualSabana === 1" class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40 hover:bg-gray-100 font-bold text-gray-600 transition disabled:cursor-not-allowed flex items-center">
+                    <i class="fa-solid fa-chevron-left mr-1"></i> Ant
+                  </button>
+                  <span class="px-4 py-1.5 bg-inst-primario text-white font-bold rounded-md text-sm shadow-sm">
+                    {{ paginaActualSabana }} / {{ paginasTotalesSabana || 1 }}
+                  </span>
+                  <button @click="paginaActualSabana++" :disabled="paginaActualSabana >= paginasTotalesSabana" class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40 hover:bg-gray-100 font-bold text-gray-600 transition disabled:cursor-not-allowed flex items-center">
+                    Sig <i class="fa-solid fa-chevron-right ml-1"></i>
+                  </button>
+                </div>
+              </div>
+              <div v-else class="p-8 text-center text-gray-500 font-bold">
+                <i class="fa-solid fa-folder-open text-3xl mb-2 block opacity-50"></i>
+                No se encontraron resultados para la búsqueda.
+              </div>
+
             </div>
           </div>
               
@@ -430,4 +497,3 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
     </main>
   </div>
 </template>
-```
