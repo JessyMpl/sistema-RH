@@ -23,7 +23,7 @@ const headers = [
 
 const cargarDepartamentos = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/excel/departamentos');
+    const res = await fetch('http://10.0.80.6:3000/api/excel/departamentos');
     if (res.ok) {
       listaDepartamentos.value = await res.json();
     }
@@ -40,7 +40,7 @@ const consultarDatos = async () => {
 
   cargando.value = true;
   try {
-    const url = new URL('http://localhost:3000/api/excel/consultas-generales');
+    const url = new URL('http://10.0.80.6:3000/api/excel/consultas-generales');
     url.searchParams.append('inicio', fechaInicio.value);
     url.searchParams.append('fin', fechaFin.value);
     url.searchParams.append('departamento', departamentoSeleccionado.value);

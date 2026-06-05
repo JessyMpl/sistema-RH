@@ -42,7 +42,7 @@ const tabActiva = ref('datos');
 // ==========================================
 const cargarEmpleados = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/empleados');
+    const res = await fetch('http://10.0.80.6:3000/api/empleados');
     empleados.value = await res.json();
   } catch (error) {
     console.error('Error cargando catalogo', error);
@@ -51,7 +51,7 @@ const cargarEmpleados = async () => {
 
 const cargarHorarios = async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/horarios'); 
+    const res = await fetch('http://10.0.80.6:3000/api/horarios'); 
     horarios.value = await res.json();
   } catch (error) {
     console.error('Error cargando horarios', error);
@@ -65,7 +65,7 @@ const guardarManual = async () => {
   }
 
   try {
-    const res = await fetch('http://localhost:3000/api/empleados', {
+    const res = await fetch('http://10.0.80.6:3000/api/empleados', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formulario.value)
@@ -100,7 +100,7 @@ const abrirEditar = (emp) => {
 
 const actualizarEmpleado = async () => {
   try {
-    const res = await fetch(`http://localhost:3000/api/empleados/${empleadoEditar.value.id}`, {
+    const res = await fetch(`http://10.0.80.6:3000/api/empleados/${empleadoEditar.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(empleadoEditar.value)
@@ -149,7 +149,7 @@ const procesarImportacion = async () => {
   const formData = new FormData();
   formData.append('archivoExcel', archivoCatalogo.value);
   try {
-    const res = await fetch('http://localhost:3000/api/empleados/importar', { method: 'POST', body: formData });
+    const res = await fetch('http://10.0.80.6:3000/api/empleados/importar', { method: 'POST', body: formData });
     const data = await res.json();
     if (res.ok) {
       Swal.fire({ title: '¡Catálogo Importado!', text: data.mensaje, icon: 'success' });

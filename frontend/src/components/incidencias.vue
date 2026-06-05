@@ -27,7 +27,7 @@ const consultarRango = async () => {
 
   cargando.value = true;
   try {
-    const url = `http://localhost:3000/api/excel/consultar-incidencias?inicio=${fechaInicio.value}&fin=${fechaFin.value}`;
+    const url = `http://10.0.80.6:3000/api/excel/consultar-incidencias?inicio=${fechaInicio.value}&fin=${fechaFin.value}`;
     const res = await fetch(url);
     const data = await res.json();
 

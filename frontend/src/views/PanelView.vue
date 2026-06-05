@@ -60,7 +60,7 @@ const subirExcel = async () => {
   });
 
   try {
-    const respuesta = await fetch('http://localhost:3000/api/excel/previsualizar-asistencias', {
+    const respuesta = await fetch('http://10.0.80.6:3000/api/excel/previsualizar-asistencias', {
       method: 'POST',
       body: formData
     });
@@ -113,7 +113,7 @@ const confirmarYGuardar = async () => {
   });
 
   try {
-    const respuesta = await fetch('http://localhost:3000/api/excel/guardar-asistencias', {
+    const respuesta = await fetch('http://10.0.80.6:3000/api/excel/guardar-asistencias', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ datosParaGuardar: datosParaGuardarBD.value })
@@ -142,7 +142,7 @@ const diasSabana = computed(() => {
 
 const descargarExcel = async () => {
   try {
-    let url = 'http://localhost:3000/api/excel/descargar-reporte';
+    let url = 'http://10.0.80.6:3000/api/excel/descargar-reporte';
 
     if (diasSabana.value && diasSabana.value.length > 0) {
       const fechaMin = diasSabana.value[0];

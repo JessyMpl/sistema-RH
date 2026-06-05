@@ -12,6 +12,11 @@ export default defineConfig({
     vueDevTools(),
     tailwindcss(), // <-- 2. Lo agregamos a los plugins
   ],
+  server: {
+    host: '0.0.0.0',
+    port: 5175,
+    allowedHosts: ['edomex-dtic.duckdns.org'],
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

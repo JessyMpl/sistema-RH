@@ -9,7 +9,7 @@ const router = useRouter();
 
 const intentarLogin = async () => {
   try {
-    const respuesta = await fetch('http://localhost:3000/api/auth/login', {
+    const respuesta = await fetch('http://10.0.80.6:3000/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email.value, password: password.value })
