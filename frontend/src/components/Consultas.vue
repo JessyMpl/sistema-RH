@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import Swal from 'sweetalert2';
+import { apiUrl } from '@/utils/api';
 
 const fechaInicio = ref('');
 const fechaFin = ref('');
@@ -23,7 +24,7 @@ const headers = [
 
 const cargarDepartamentos = async () => {
   try {
-    const res = await fetch('http://10.0.80.6:3000/api/excel/departamentos');
+    const res = await fetch(apiUrl('/api/excel/departamentos'));
     if (res.ok) {
       listaDepartamentos.value = await res.json();
     }
@@ -40,7 +41,7 @@ const consultarDatos = async () => {
 
   cargando.value = true;
   try {
-    const url = new URL('http://10.0.80.6:3000/api/excel/consultas-generales');
+    const url = new URL(apiUrl('/api/excel/consultas-generales'), window.location.origin);
     url.searchParams.append('inicio', fechaInicio.value);
     url.searchParams.append('fin', fechaFin.value);
     url.searchParams.append('departamento', departamentoSeleccionado.value);

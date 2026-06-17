@@ -1,0 +1,4 @@
+2026-06-16 11:01:42: ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-06-16 11:01:43: Servidor corriendo sin problemas en el puerto 5176
+2026-06-17 15:27:46: ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-06-17 15:27:47: Servidor corriendo sin problemas en el puerto 5176

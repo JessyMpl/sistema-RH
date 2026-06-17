@@ -31,6 +31,12 @@ const cerrarSesion = () => {
         <span class="text-left leading-tight">Procesar Datos</span>
       </button>
 
+      <button @click="emit('cambiar-vista', 'eventos')"
+        :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'eventos' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
+        <i class="fa-solid fa-clock-rotate-left w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
+        <span class="text-left leading-tight">Eventos</span>
+      </button>
+
         <button @click="emit('cambiar-vista', 'consultas')"
         :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'consultas' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
         <i class="fa-solid fa-magnifying-glass w-6 flex-shrink-0 text-center mr-3 text-lg"></i>

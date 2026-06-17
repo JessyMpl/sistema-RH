@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import Swal from 'sweetalert2';
+import { apiUrl } from '@/utils/api';
 
 const fechaInicio = ref('');
 const fechaFin = ref('');
@@ -27,7 +28,7 @@ const consultarRango = async () => {
 
   cargando.value = true;
   try {
-    const url = `http://10.0.80.6:3000/api/excel/consultar-incidencias?inicio=${fechaInicio.value}&fin=${fechaFin.value}`;
+    const url = apiUrl(`/api/excel/consultar-incidencias?inicio=${fechaInicio.value}&fin=${fechaFin.value}`);
     const res = await fetch(url);
     const data = await res.json();
 

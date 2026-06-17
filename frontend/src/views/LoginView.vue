@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2'; // <-- Importamos la magia visual
+import { apiUrl } from '@/utils/api';
 
 const email = ref('');
 const password = ref('');
@@ -9,7 +10,7 @@ const router = useRouter();
 
 const intentarLogin = async () => {
   try {
-    const respuesta = await fetch('http://10.0.80.6:3000/api/auth/login', {
+    const respuesta = await fetch(apiUrl('/api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email.value, password: password.value })

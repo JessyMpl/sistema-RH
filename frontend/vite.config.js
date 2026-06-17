@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite' // <-- 1. Importamos Tailwind
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/biometrico/',
   plugins: [
     vue(),
     vueDevTools(),

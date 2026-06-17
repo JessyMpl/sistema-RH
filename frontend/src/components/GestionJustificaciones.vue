@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import Swal from 'sweetalert2';
+import { apiUrl } from '@/utils/api';
 
 // Control de Pestañas
 const pestanaActiva = ref('pendientes');
@@ -75,7 +76,7 @@ const formatearFecha = (fechaInput) => {
 const cargarPendientes = async () => {
   cargando.value = true;
   try {
-    const res = await fetch('http://10.0.80.6:3000/api/justificaciones/pendientes');
+    const res = await fetch(apiUrl('/api/justificaciones/pendientes'));
     if (!res.ok) throw new Error('Error al consultar incidencias pendientes');
     listaPendientes.value = await res.json();
   } catch (error) {
@@ -89,7 +90,7 @@ const cargarPendientes = async () => {
 // funcion para cargar el historial de justificaciones, con un mapeo para extraer la fecha de incidencia desde el objeto de asistencia relacionado
 const cargarHistorial = async () => {
   try {
-    const res = await fetch('http://10.0.80.6:3000/api/justificaciones/historial');
+    const res = await fetch(apiUrl('/api/justificaciones/historial'));
     if (!res.ok) throw new Error('Error al consultar historial');
     const data = await res.json();
     listaHistorial.value = data.map(item => ({
@@ -136,7 +137,7 @@ const guardarJustificacion = async () => {
   };
 
   try {
-    const respuesta = await fetch('http://10.0.80.6:3000/api/justificaciones/registrar', {
+    const respuesta = await fetch(apiUrl('/api/justificaciones/registrar'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import Swal from 'sweetalert2';
+import { apiUrl } from '@/utils/api';
 
 // Estado de las pestañas
 const pestanaActiva = ref('sabana');
@@ -62,7 +63,7 @@ const descargarSabanaOficial = async () => {
   }
 
   try {
-    const url = `http://10.0.80.6:3000/api/excel/descargar-reporte?inicio=${fechaInicioStr}&fin=${fechaFinStr}`;
+    const url = apiUrl(`/api/excel/descargar-reporte?inicio=${fechaInicioStr}&fin=${fechaFinStr}`);
     const respuesta = await fetch(url, { method: 'GET' });
     
     if (!respuesta.ok) {
@@ -102,7 +103,7 @@ const generarReporteSanciones = async () => {
   
   try {
     // 💡 NOTA: Esta ruta la crearemos en el backend en el siguiente paso
-    /* const url = `http://10.0.80.6:3000/api/reportes/sanciones?mes=${mesSeleccionadoSanciones.value}&anio=${anioActual}`;
+    /* const url = apiUrl(`/api/reportes/sanciones?mes=${mesSeleccionadoSanciones.value}&anio=${anioActual}`);
     const res = await fetch(url);
     if (!res.ok) throw new Error('Error al generar cálculo de sanciones');
     listaSanciones.value = await res.json();

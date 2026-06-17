@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, watch } from 'vue'; 
 import Swal from 'sweetalert2'; 
+import { apiUrl } from '@/utils/api';
 import SidebarRH from '@/components/SidebarRH.vue';
 import GestionEmpleados from '@/components/GestionEmpleados.vue';
 import Incidencias from '@/components/incidencias.vue';
 import Consultas from '@/components/Consultas.vue';
 import Justificaciones from '@/components/GestionJustificaciones.vue';
 import ReporteFinal from '@/components/ReporteFinal.vue';
+import Attendance from '@/components/Attendance.vue';
 
 const vistaActiva = ref('reporte'); 
 const archivoSeleccionado = ref(null);
@@ -60,7 +62,7 @@ const subirExcel = async () => {
   });
 
   try {
-    const respuesta = await fetch('http://10.0.80.6:3000/api/excel/previsualizar-asistencias', {
+    const respuesta = await fetch(apiUrl('/api/excel/previsualizar-asistencias'), {
       method: 'POST',
       body: formData
     });
@@ -113,7 +115,7 @@ const confirmarYGuardar = async () => {
   });
 
   try {
-    const respuesta = await fetch('http://10.0.80.6:3000/api/excel/guardar-asistencias', {
+    const respuesta = await fetch(apiUrl('/api/excel/guardar-asistencias'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ datosParaGuardar: datosParaGuardarBD.value })
@@ -142,7 +144,7 @@ const diasSabana = computed(() => {
 
 const descargarExcel = async () => {
   try {
-    let url = 'http://10.0.80.6:3000/api/excel/descargar-reporte';
+    let url = apiUrl('/api/excel/descargar-reporte');
 
     if (diasSabana.value && diasSabana.value.length > 0) {
       const fechaMin = diasSabana.value[0];
@@ -468,6 +470,10 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
               
         </div>
       </div>
+      <div v-else-if="vistaActiva === 'eventos'">
+        <Attendance />
+      </div>
+
       <div v-else-if="vistaActiva === 'empleados'">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Gestión de Personal</h1>
         <GestionEmpleados />

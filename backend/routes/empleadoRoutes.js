@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../database'); 
+const prisma = require('../config/db'); 
 const multer = require('multer'); 
 const xlsx = require('xlsx'); 
 

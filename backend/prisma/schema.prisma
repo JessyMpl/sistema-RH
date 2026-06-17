@@ -88,7 +88,7 @@ model Justificacion {
   motivo            String          // Ej: "OFICIO DE COMISIÓN", "INCAPACIDAD MÉDICA", "ONOMÁSTICO"
   folioDocumento    String?         // Ej: "SM-001-2026" para guardar la referencia del papel
   observaciones     String?         @db.Text
-  cobertura         String          @default("COMPLETO") // 👈 AQUÍ ESTÁ EL CAMPO NUEVO
+  cobertura         String          @default("COMPLETO") // 
   fechaRegistro     DateTime        @default(now())
 
   // Relación con el servidor público para fácil acceso
@@ -99,4 +99,37 @@ model Justificacion {
   asistenciaId      Int             @unique
   asistencia        Asistencia      @relation(fields: [asistenciaId], references: [id])
 }
+
+// 8. TABLA DE REGISTROS DE ASISTENCIA (CRON / APP ELECTRON)
+model AttendanceRecord {
+  id           BigInt   @id @default(autoincrement())
+  employeeId   String   @map("employee_id") @db.VarChar(50)
+  timestamp    DateTime @map("timestamp") @db.Timestamptz
+  serialNumber String   @map("serial_number") @db.VarChar(50)
+  cardNumber   String?  @default("") @map("card_number") @db.VarChar(50)
+  source       String   @default("unknown") @map("source") @db.VarChar(30)
+  clockIp      String?  @default("") @map("clock_ip") @db.VarChar(45)
+  clockName    String?  @default("") @map("clock_name") @db.VarChar(100)
+  syncDate     DateTime @default(now()) @map("sync_date") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([employeeId, timestamp, serialNumber], name: "uq_attendance_record")
+  @@map("attendance_records")
+}
+
+// 9. TABLA DE CALENDARIO (CATÁLOGO DE FECHAS A 15 AÑOS O MÁS)
+model Calendario {
+  id        Int      @id @default(autoincrement())
+  fecha     DateTime @unique @db.Date
+  anio      Int
+  mes       Int
+  dia       Int
+  semana    Int      // Semana del año (1 a 53)
+  diaSemana Int      // Día de la semana (1 = Lunes, 7 = Domingo)
+  quincena  Int      // Quincena (1 o 2)
+  esLaboral Boolean  @default(true) // Lunes a Viernes = true, Sábado/Domingo = false
+
+  @@map("calendario")
+}
+
 
