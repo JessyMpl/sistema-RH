@@ -11,6 +11,12 @@ import ReporteFinal from '@/components/ReporteFinal.vue';
 import Attendance from '@/components/Attendance.vue';
 
 const vistaActiva = ref('reporte'); 
+
+// 💡 CONTROL DE PESTAÑAS DE ORIGEN DE DATOS
+const metodoCarga = ref('cron'); // 'excel' o 'cron'
+const fechaInicio = ref('');
+const fechaFin = ref('');
+
 const archivoSeleccionado = ref(null);
 const mensajeStatus = ref('');
 const estaSubiendo = ref(false);
@@ -41,6 +47,59 @@ const seleccionarArchivo = (event) => {
   vistaActual.value = 'validacion'; 
 };
 
+// =========================================================
+// 💡 MÉTODO A: PROCESAR DESDE DATOS RECIBIDOS DE CRON
+// =========================================================
+const procesarDesdeCron = async () => {
+  if (!fechaInicio.value || !fechaFin.value) {
+    Swal.fire({ icon: 'warning', title: '¡Faltan fechas!', text: 'Por favor, selecciona la fecha de inicio y fin del periodo.', confirmButtonColor: '#902c3e' });
+    return;
+  }
+
+  estaSubiendo.value = true;
+  mensajeStatus.value = ''; 
+
+  Swal.fire({
+    title: '¡Sincronizando Biométrico! ⚙️',
+    html: 'Extrayendo checadas crudas y cruzando horarios. Solo tomará unos segundos...',
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    didOpen: () => { Swal.showLoading(); }
+  });
+
+  try {
+    const respuesta = await fetch(apiUrl('/api/excel/previsualizar-desde-bd'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        inicio: fechaInicio.value, 
+        fin: fechaFin.value 
+      })
+    });
+    
+    const data = await respuesta.json();
+    
+    if (respuesta.ok) {
+      Swal.fire({ icon: 'success', title: '¡Sincronización terminada!', text: 'Revisa los datos en la tabla antes de guardarlos.', confirmButtonColor: '#902c3e' });
+      
+      datosExtraidos.value = data.datosVisuales; 
+      datosParaGuardarBD.value = data.datosParaGuardar; 
+      existenDatosPreviosBD.value = data.existenDatosPrevios || false; 
+      vistaActual.value = 'validacion'; 
+    } else {
+      Swal.fire({ icon: 'error', title: '¡Ups!', text: data.error || 'Hubo un error al procesar los datos de la base.', confirmButtonColor: '#902c3e' });
+    }
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo contactar al servidor.', confirmButtonColor: '#902c3e' });
+  } finally {
+    const selectorVelas = document.getElementById("canvas");
+    estaSubiendo.value = false;
+  }
+};
+
+// =========================================================
+// 💡 MÉTODO B: PROCESAR DESDE ARCHIVO EXCEL
+// =========================================================
 const subirExcel = async () => {
   if (!archivoSeleccionado.value) {
     Swal.fire({ icon: 'warning', title: '¡Falta el archivo!', text: 'Por favor, selecciona un archivo Excel primero.', confirmButtonColor: '#902c3e' });
@@ -137,6 +196,17 @@ const confirmarYGuardar = async () => {
   }
 };
 
+// Limpiar la mesa de trabajo si cambian entre una pestaña u otra para evitar cruces
+watch(metodoCarga, () => {
+  archivoSeleccionado.value = null;
+  fechaInicio.value = '';
+  fechaFin.value = '';
+  datosExtraidos.value = null;
+  datosParaGuardarBD.value = null;
+  existenDatosPreviosBD.value = false;
+  vistaActual.value = 'validacion';
+});
+
 const diasSabana = computed(() => {
   if (!datosExtraidos.value || datosExtraidos.value.length === 0) return [];
   return [...new Set(datosExtraidos.value.map(d => d.fecha))].sort();
@@ -228,9 +298,7 @@ const datosPivotados = computed(() => {
   }).sort((a, b) => a.nombre.localeCompare(b.nombre));
 });
 
-// =========================================================
-// 💡 LÓGICA NUEVA: FILTROS Y PAGINACIÓN PARA LA SÁBANA
-// =========================================================
+// FILTROS Y PAGINACIÓN PARA LA SÁBANA
 const busquedaSabana = ref('');
 const elementosPorPaginaSabana = ref(15);
 const paginaActualSabana = ref(1);
@@ -255,11 +323,9 @@ const sabanaPaginada = computed(() => {
   return sabanaFiltrada.value.slice(inicio, inicio + elementosPorPaginaSabana.value);
 });
 
-// Reiniciar a la página 1 cada vez que se busca algo
 watch(busquedaSabana, () => {
   paginaActualSabana.value = 1;
 });
-// =========================================================
 
 const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
 
@@ -272,9 +338,22 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
     <main class="flex-1 p-8 overflow-y-auto"> 
       
       <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-inst-primario">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Procesar Datos de los Biométricos</h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Sistematizar Datos de Asistencia</h1>
         
-        <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors mb-6 relative group">
+        <div class="flex gap-6 mb-6 border-b border-gray-200">
+          <button @click="metodoCarga = 'cron'" 
+                  :class="metodoCarga === 'cron' ? 'border-inst-primario text-inst-primario border-b-2 font-bold' : 'text-gray-500 font-medium hover:text-gray-800'" 
+                  class="pb-2 px-2 transition-colors flex items-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-server text-blue-600"></i> Procesar datos de CRON
+          </button>
+           <button @click="metodoCarga = 'excel'" 
+                  :class="metodoCarga === 'excel' ? 'border-inst-primario text-inst-primario border-b-2 font-bold' : 'text-gray-500 font-medium hover:text-gray-800'" 
+                  class="pb-2 px-2 transition-colors flex items-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-file-excel text-green-600"></i> Carga Manual (Excel)
+          </button>
+        </div>
+
+        <div v-if="metodoCarga === 'excel'" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors mb-6 relative group">
           <i class="fa-solid fa-cloud-arrow-up text-5xl text-gray-400 group-hover:text-inst-primario group-hover:scale-110 transition-all duration-300 mb-4 block"></i>
           
           <p class="text-gray-600 font-medium mb-6">
@@ -288,10 +367,34 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
             /> 
             
             <button @click="subirExcel" :disabled="estaSubiendo"
-              class="mt-4 bg-inst-primario hover:bg-inst-secundario disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-md shadow-sm transition flex items-center gap-2">
+              class="mt-4 bg-inst-primario hover:bg-inst-secundario disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-md shadow-sm transition flex items-center gap-2 cursor-pointer">
               <i class="fa-solid" :class="estaSubiendo ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart'"></i>
               {{ estaSubiendo ? 'Analizando...' : 'Analizar Datos' }}
             </button>
+          </div>
+        </div>
+
+        <div v-if="metodoCarga === 'cron'" class="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 mb-6">
+          <div class="text-center mb-6">
+            <i class="fa-solid fa-calendar-days text-5xl text-gray-400 mb-4 block"></i>
+            <p class="text-gray-600 font-medium">Selecciona el rango de fechas que deseas procesar directamente desde las lecturas de la base de datos.</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto">
+            <div class="w-full">
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Fecha Inicio</label>
+              <input type="date" v-model="fechaInicio" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-inst-primario bg-white cursor-pointer" />
+            </div>
+            <div class="w-full">
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Fecha Fin</label>
+              <input type="date" v-model="fechaFin" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-inst-primario bg-white cursor-pointer" />
+            </div>
+            <div class="w-full sm:w-auto mt-5">
+              <button @click="procesarDesdeCron" :disabled="estaSubiendo" class="w-full bg-inst-primario hover:bg-inst-secundario disabled:opacity-50 text-white font-bold py-2 px-6 rounded-md shadow-sm transition flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer">
+                <i class="fa-solid" :class="estaSubiendo ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'"></i>
+                {{ estaSubiendo ? 'Procesando...' : 'Procesar Datos' }}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -299,22 +402,21 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
           
           <div class="flex justify-between mb-6 border-b border-gray-200 pb-4">
             <div class="flex space-x-4">
-              <button @click="vistaActual = 'validacion'" :class="vistaActual === 'validacion' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">
+              <button @click="vistaActual = 'validacion'" :class="vistaActual === 'validacion' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition cursor-pointer">
                <i class="fas fa-eye mr-2"></i> Validar Registros
               </button>
-              <button @click="vistaActual = 'sabana'" :class="vistaActual === 'sabana' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition">
+              <button @click="vistaActual = 'sabana'" :class="vistaActual === 'sabana' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition cursor-pointer">
                 <i class="fas fa-table mr-2"></i>  
                 Sábana Quincenal
               </button>
             </div>
             
-            <button v-if="datosParaGuardarBD" @click="confirmarYGuardar" :disabled="estaGuardando" class="bg-inst-primario hover:bg-inst-secundario text-white font-bold py-2 px-6 rounded-lg shadow-md transition flex items-center gap-2">
+            <button v-if="datosParaGuardarBD" @click="confirmarYGuardar" :disabled="estaGuardando" class="bg-inst-primario hover:bg-inst-secundario text-white font-bold py-2 px-6 rounded-lg shadow-md transition flex items-center gap-2 cursor-pointer">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z"/></svg>
               {{ estaGuardando ? 'Guardando...' : 'Guardar en BD' }}
             </button>
           </div>
 
-          <!-- TABLA DE VALIDACIÓN (EASY DATA TABLE) -->
           <div v-if="vistaActual === 'validacion'">
             <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
               <div class="mb-4 flex items-center">
@@ -359,11 +461,9 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
             </div>
           </div>
           
-          <!-- SÁBANA QUINCENAL (TABLA NATIVA CON FILTROS CUSTOM) -->
           <div v-if="vistaActual === 'sabana'">
             <div class="flex flex-col lg:flex-row justify-between mb-4 gap-4 items-center">
               
-              <!-- 💡 NUEVO BUSCADOR Y PAGINADOR -->
               <div class="flex flex-col md:flex-row gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200 w-full lg:w-auto">
                 <div class="flex items-center w-full md:w-64 relative">
                   <i class="fa-solid fa-magnifying-glass absolute left-3 text-gray-400"></i>
@@ -380,7 +480,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                 </div>
               </div>
 
-              <button v-if="datosExtraidos" @click="descargarExcel" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition duration-300 ease-in-out whitespace-nowrap">
+              <button v-if="datosExtraidos" @click="descargarExcel" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition duration-300 ease-in-out whitespace-nowrap cursor-pointer">
                 <i class="fas fa-file-arrow-down mr-2"></i> Descargar Excel
               </button>
             </div>
@@ -409,7 +509,6 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                   </tr>
                 </thead>
                 <tbody class="bg-white">
-                  <!-- 💡 MODIFICACIÓN: Iteramos sobre sabanaPaginada en vez de datosPivotados -->
                   <tr v-for="(emp, index) in sabanaPaginada" :key="emp.numEmp" class="hover:bg-blue-50 transition duration-150">
                     <td class="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-sm text-gray-600 border border-gray-200 text-center shadow-[1px_0_0_0_#e5e7eb] tabular-nums" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.numEmp }}</td>
                     <td class="sticky left-[60px] z-10 bg-white py-2 pl-4 pr-3 text-xs text-gray-700 border border-gray-200 truncate max-w-[180px] shadow-[1px_0_0_0_#e5e7eb]" :class="{'bg-gray-50': index % 2 === 0}" :title="emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área'">{{ emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área' }}</td>
@@ -441,7 +540,6 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                 </tbody>
               </table>
               
-              <!-- 💡 CONTROLES DE PAGINACIÓN -->
               <div v-if="sabanaFiltrada.length > 0" class="mt-4 px-4 flex justify-between items-center bg-white border-t pt-4">
                 <div class="text-sm text-gray-500 font-medium">
                   Mostrando <span class="font-bold text-gray-800">{{ ((paginaActualSabana - 1) * elementosPorPaginaSabana) + 1 }}</span> al
@@ -494,11 +592,10 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
         <Justificaciones />
       </div>
 
-        <div v-else-if="vistaActiva === 'reporteFinal'">
-          <h1 class="text-2xl font-bold text-gray-800 mb-6">Reporte Final de Asistencias</h1>
-          <ReporteFinal />
-        </div>
-     
+      <div v-else-if="vistaActiva === 'reporteFinal'">
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Reporte Final de Asistencias</h1>
+        <ReporteFinal />
+      </div>
       
     </main>
   </div>

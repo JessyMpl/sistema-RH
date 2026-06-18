@@ -94,3 +94,5 @@
 2026-06-17 16:28:29: Servidor corriendo sin problemas en el puerto 5176
 2026-06-17 16:28:33: ◇ injected env (3) from .env // tip: ⌘ enable debugging { debug: true }
 2026-06-17 16:28:33: Servidor corriendo sin problemas en el puerto 5176
+2026-06-17 18:07:25: ◇ injected env (3) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-06-17 18:07:36: Servidor corriendo sin problemas en el puerto 5176
