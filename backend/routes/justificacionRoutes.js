@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const prisma = require('../config/db'); // Sincronizado con tu archivo db.js
+const prisma = require('../config/db'); 
 
 // ==============================================================================
 // 1. OBTENER INCIDENCIAS PENDIENTES DE JUSTIFICAR
@@ -12,12 +12,11 @@ router.get('/pendientes', async (req, res) => {
         AND: [
           {
             incidencia: {
-              // 🚨 AQUÍ ESTÁ EL CAMBIO: Se agregó 'FALTA' a la matriz de búsqueda
               in: ['RETARDO', 'RETARDO_ESPECIAL', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION', 'FALTA']
             }
           },
           {
-            justificacion: null // Filtra únicamente las que no tienen justificación
+            justificacion: null 
           }
         ]
       },
@@ -45,7 +44,7 @@ router.get('/pendientes', async (req, res) => {
 });
 
 // ==============================================================================
-// 2. REGISTRAR JUSTIFICACIÓN (PLANCHADO DINÁMICO POR COBERTURA)
+// 2. REGISTRAR JUSTIFICACIÓN (INDIVIDUAL)
 // ==============================================================================
 router.post('/registrar', async (req, res) => {
   const { asistenciaId, servidorId, motivo, folio, observaciones, siglas, cobertura } = req.body;
@@ -55,23 +54,20 @@ router.post('/registrar', async (req, res) => {
   }
 
   try {
-    // Definición de cambios mínimos en el registro original de Asistencia
     const dataAsistencia = {
       minutosRetardo: 0,
-      incidencia: "JUSTIFICADA" // Estatus para que se pinte de azul en Consultas e Incidencias
+      incidencia: "JUSTIFICADA" 
     };
 
-    // Lógica quirúrgica: Solo se altera la celda correspondiente al alcance seleccionado
     if (cobertura === 'ENTRADA') {
-      dataAsistencia.entrada = siglas; // Ejemplo: 'CS' o 'IN' en entrada, la salida se respeta
+      dataAsistencia.entrada = siglas; 
     } else if (cobertura === 'SALIDA') {
-      dataAsistencia.salida = siglas;  // Ejemplo: 'CS' o 'IN' en salida, la entrada se respeta
+      dataAsistencia.salida = siglas;  
     } else if (cobertura === 'COMPLETO') {
       dataAsistencia.entrada = siglas;
       dataAsistencia.salida = siglas;
     }
 
-    // Transacción atómica de Prisma
     await prisma.$transaction([
       prisma.justificacion.create({
         data: {
@@ -93,6 +89,63 @@ router.post('/registrar', async (req, res) => {
   } catch (error) {
     console.error("Error crítico durante la transacción de justificación:", error);
     res.status(500).json({ error: "No se pudo completar el registro debido a un fallo interno." });
+  }
+});
+
+// ==============================================================================
+// 2.5 REGISTRAR JUSTIFICACIÓN MASIVA
+// ==============================================================================
+router.post('/registrar-masiva', async (req, res) => {
+  const { asistencias, motivo, folio, observaciones, siglas, cobertura } = req.body;
+
+  if (!asistencias || asistencias.length === 0 || !motivo || !siglas || !cobertura) {
+    return res.status(400).json({ error: "Faltan parámetros requeridos para procesar." });
+  }
+
+  try {
+    const dataAsistencia = {
+      minutosRetardo: 0,
+      incidencia: "JUSTIFICADA" 
+    };
+
+    if (cobertura === 'ENTRADA') dataAsistencia.entrada = siglas;
+    else if (cobertura === 'SALIDA') dataAsistencia.salida = siglas;
+    else if (cobertura === 'COMPLETO') {
+      dataAsistencia.entrada = siglas;
+      dataAsistencia.salida = siglas;
+    }
+
+    // Preparamos todas las instrucciones para la base de datos
+    const transacciones = [];
+    
+    for (const ast of asistencias) {
+      transacciones.push(
+        prisma.justificacion.create({
+          data: {
+            asistenciaId: Number(ast.id),
+            servidorId: Number(ast.servidorId),
+            motivo: motivo,
+            folioDocumento: folio || null,
+            observaciones: observaciones || null,
+            cobertura: cobertura
+          }
+        })
+      );
+      transacciones.push(
+        prisma.asistencia.update({
+          where: { id: Number(ast.id) },
+          data: dataAsistencia
+        })
+      );
+    }
+
+    // Ejecutamos todo de un solo golpe. Si uno falla, ninguno se guarda (seguridad total)
+    await prisma.$transaction(transacciones);
+
+    res.json({ mensaje: `Se justificaron ${asistencias.length} registros exitosamente.` });
+  } catch (error) {
+    console.error("Error crítico durante justificación masiva:", error);
+    res.status(500).json({ error: "No se pudo completar el registro masivo por un fallo interno." });
   }
 });
 
