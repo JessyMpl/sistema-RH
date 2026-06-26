@@ -24,7 +24,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
     rawData.forEach(fila => {
       let rawId = fila['Person ID'] || fila.ID || fila.id || fila.numeroEmpleado;
-      const numEmp = String(rawId || '').replace(/['"]/g, '').trim();
+      const numEmp = String(rawId || '').replace(/['"]/g, '').trim().replace(/^0+/, ''); //cambio para que elimine 0 antes del num de empleado
       const tiempoString = String(fila.Time || fila.fecha || fila.hora || '').trim();
 
       if (numEmp && tiempoString) {
@@ -356,7 +356,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 
     const registrosPorDia = {};
     rawData.forEach(record => {
-      const numEmp = String(record.employeeId).trim();
+      const numEmp = String(record.employeeId).trim().replace(/^0+/, ''); // Eliminar ceros a la izquierda del num de empleado
       
       // 🔥 LA MAGIA CORRECTA:
       // Como guardaste '2026-06-01T09:05:00Z' en la BD, simplemente le decimos a Node
