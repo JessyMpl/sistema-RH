@@ -11,6 +11,7 @@ function isValidToken(token) {
 // Controlador genérico para procesar lotes de registros de asistencia
 async function processAttendanceBatch(req, res, expectedSource) {
   try {
+    console.log(req.body);
     // 1. Validar autenticación
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -48,14 +49,16 @@ async function processAttendanceBatch(req, res, expectedSource) {
     for (const rec of records) {
       const { employeeId, timestamp, serialNumber, cardNumber } = rec;
 
-      // Validar campos obligatorios
+// Validar campos obligatorios
       if (!employeeId || !timestamp || !serialNumber) {
         errors++;
         continue;
       }
 
-      // Validar formato de fecha/hora
+      // 💡 Regresamos a la normalidad: Node lo leerá como hora local de México
+      // y la base de datos lo guardará correctamente en UTC.
       const parsedTimestamp = new Date(timestamp);
+      
       if (isNaN(parsedTimestamp.getTime())) {
         errors++;
         continue;

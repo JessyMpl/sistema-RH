@@ -12,7 +12,7 @@ import Attendance from '@/components/Attendance.vue';
 
 const vistaActiva = ref('reporte'); 
 
-// 💡 CONTROL DE PESTAÑAS DE ORIGEN DE DATOS
+// CONTROL DE PESTAÑAS DE ORIGEN DE DATOS
 const metodoCarga = ref('cron'); // 'excel' o 'cron'
 const fechaInicio = ref('');
 const fechaFin = ref('');
@@ -60,7 +60,7 @@ const procesarDesdeCron = async () => {
   mensajeStatus.value = ''; 
 
   Swal.fire({
-    title: '¡Sincronizando Biométrico! ⚙️',
+    title: '¡Sincronizando Biométrico! ',
     html: 'Extrayendo checadas crudas y cruzando horarios. Solo tomará unos segundos...',
     allowOutsideClick: false,
     showConfirmButton: false,
@@ -98,7 +98,7 @@ const procesarDesdeCron = async () => {
 };
 
 // =========================================================
-// 💡 MÉTODO B: PROCESAR DESDE ARCHIVO EXCEL
+//  MÉTODO B: PROCESAR DESDE ARCHIVO EXCEL
 // =========================================================
 const subirExcel = async () => {
   if (!archivoSeleccionado.value) {

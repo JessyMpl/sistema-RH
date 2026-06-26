@@ -338,6 +338,8 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       return res.status(400).json({ error: 'Faltan las fechas de inicio y fin para el periodo.' });
     }
 
+    // 🔥 COMO ESTAMOS USANDO EL TRUCO DE LA 'Z', LA BD TIENE LAS HORAS VISUALES.
+    // Esto significa que si pides desde las 00:00 hasta las 23:59 en UTC, atraparás todo el día perfecto.
     const fechaInicio = new Date(`${inicio}T00:00:00Z`);
     const fechaFin = new Date(`${fin}T23:59:59Z`);
 
@@ -356,13 +358,12 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
     rawData.forEach(record => {
       const numEmp = String(record.employeeId).trim();
       
-      const localDateStr = new Intl.DateTimeFormat('sv-SE', {
-        timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit'
-      }).format(record.timestamp); 
-      
-      const localTimeStr = new Intl.DateTimeFormat('sv-SE', {
-        timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', hour12: false
-      }).format(record.timestamp); 
+      // 🔥 LA MAGIA CORRECTA:
+      // Como guardaste '2026-06-01T09:05:00Z' en la BD, simplemente le decimos a Node
+      // que corte el texto directamente. Sin formateadores, sin restar horas.
+      const isoString = record.timestamp.toISOString(); 
+      const localDateStr = isoString.split('T')[0]; // Extrae "2026-06-01"
+      const localTimeStr = isoString.substring(11, 16); // Extrae "09:05" y "18:02" puros
 
       const llave = `${numEmp}_${localDateStr}`;
       if (!registrosPorDia[llave]) registrosPorDia[llave] = { numEmp, fecha: localDateStr, horas: [] };

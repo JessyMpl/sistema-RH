@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router';
+import logoSemujeres from '@/assets/logo-semujeres.svg';
 
 // Recibimos la variable 'vistaActiva' desde el Panel
 defineProps({
@@ -18,8 +19,10 @@ const cerrarSesion = () => {
 </script>
 
 <template>
+  
   <aside class="w-64 bg-inst-primario text-white flex flex-col min-h-screen">
     <div class="p-6 text-center border-b border-white/20">
+      <img src="/src/assets/colibri_cafe.svg" alt="Logo" class="w-22 h-22 mx-auto mb-4 rounded-full">
       <h2 class="text-2xl font-bold text-white">Sistema Control de Asistencia</h2>
       <p class="text-xs text-white mt-1 ">Panel de Administración</p>
     </div>
@@ -82,4 +85,15 @@ const cerrarSesion = () => {
       </button>
     </div>
   </aside>
+
+  <!--  (Independiente del menú) -->
+  <div class="fixed top-6 right-8 z-50 flex items-center gap-6 bg-gray-100/80 backdrop-blur-sm px-4 py-2 rounded-xl ">
+    <!-- Botón de Guía -->
+    <!-- Logo SEMUJERES -->
+    <img 
+      :src="logoSemujeres" 
+      alt="SEMUJERES" 
+      class="h-10 w-auto object-contain drop-shadow-sm"
+    >
+  </div>
 </template>

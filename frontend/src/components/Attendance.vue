@@ -38,18 +38,12 @@ const getCalendarISODate = (fechaObj) => {
   return d.toISOString().split('T')[0];
 };
 
-// Helper para extraer la parte de fecha en la Zona Horaria local de México City ("YYYY-MM-DD")
+// Helper para extraer la parte de fecha en UTC ("YYYY-MM-DD") de los registros de asistencia
 const getLocalISODate = (fechaObj) => {
   if (!fechaObj) return '';
   const d = new Date(fechaObj);
   if (isNaN(d.getTime())) return '';
-  const formatter = new Intl.DateTimeFormat('sv-SE', {
-    timeZone: 'America/Mexico_City',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
-  return formatter.format(d);
+  return d.toISOString().split('T')[0];
 };
 
 // Comprobar si un día específico de la cinta de calendario tiene actividad registrada
@@ -115,7 +109,7 @@ const registrosFiltrados = computed(() => {
     return {
       ...reg,
       quincena: quincenaVal,
-      timestampFormatted: isNaN(ts.getTime()) ? '---' : ts.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }),
+      timestampFormatted: isNaN(ts.getTime()) ? '---' : ts.toLocaleString('es-MX', { timeZone: 'UTC' }),
       syncDateFormatted: isNaN(sd.getTime()) ? '---' : sd.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
     };
   });
