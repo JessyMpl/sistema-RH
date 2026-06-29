@@ -113,7 +113,7 @@ const subirExcel = async () => {
   formData.append('archivoExcel', archivoSeleccionado.value);
 
   Swal.fire({
-    title: '¡Analizando archivo! ⚙️',
+    title: '¡Analizando archivo! ',
     html: 'Calculando retardos, omisiones y faltas. Solo tomará unos segundos...',
     allowOutsideClick: false,
     showConfirmButton: false,

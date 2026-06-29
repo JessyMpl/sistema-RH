@@ -9,7 +9,21 @@ const pestanaActiva = ref('sabana');
 // --- VARIABLES PARA LA SÁBANA QUINCENAL ---
 const mesSeleccionadoSabana = ref('');
 const quincenaSeleccionada = ref('');
+const cargandoPrevisualizacion = ref(false);
 const estaDescargando = ref(false);
+const mostrarTablaPrevisualizacion = ref(false);
+const listaPrevisualizacion = ref([]);
+const valorBusquedaPrevisualizacion = ref('');
+
+// Encabezados para la tabla de previsualización
+const headersPrevisualizacion = [
+  { text: "FECHA", value: "fechaFmt", sortable: true },
+  { text: "NUM. EMP", value: "servidor.numeroEmpleado", sortable: true },
+  { text: "SERVIDOR PÚBLICO", value: "servidor.nombreCompleto", sortable: true },
+  { text: "ENTRADA", value: "entrada", align: "center" },
+  { text: "SALIDA", value: "salida", align: "center" },
+  { text: "ESTATUS / ALERTA", value: "incidencia", sortable: true, align: "center" }
+];
 
 // --- VARIABLES PARA EL REPORTE DE SANCIONES ---
 const mesSeleccionadoSanciones = ref('');
@@ -37,33 +51,69 @@ const meses = [
 
 const anioActual = new Date().getFullYear();
 
-// --- LÓGICA: DESCARGAR SÁBANA ACTUALIZADA ---
-const descargarSabanaOficial = async () => {
+// Utilidad: Formatear la fecha ISO a texto legible (YYYY-MM-DD)
+const formatearFecha = (isoString) => {
+  if (!isoString) return '';
+  return isoString.split('T')[0];
+};
+
+// Utilidad: Calcular fechas según selección
+const calcularFechasQuincena = () => {
+  const mes = parseInt(mesSeleccionadoSabana.value);
+  let inicio = '';
+  let fin = '';
+
+  if (quincenaSeleccionada.value === '1') {
+    inicio = `${anioActual}-${String(mes + 1).padStart(2, '0')}-01`;
+    fin = `${anioActual}-${String(mes + 1).padStart(2, '0')}-15`;
+  } else {
+    const ultimoDia = new Date(anioActual, mes + 1, 0).getDate();
+    inicio = `${anioActual}-${String(mes + 1).padStart(2, '0')}-16`;
+    fin = `${anioActual}-${String(mes + 1).padStart(2, '0')}-${ultimoDia}`;
+  }
+  return { inicio, fin };
+};
+
+// --- LÓGICA: PREVISUALIZAR SÁBANA (PASO 1) ---
+const generarPrevisualizacion = async () => {
   if (mesSeleccionadoSabana.value === '' || !quincenaSeleccionada.value) {
-    Swal.fire('Atención', 'Por favor selecciona el mes y la quincena a exportar.', 'warning');
+    Swal.fire('Atención', 'Por favor selecciona el mes y la quincena a consultar.', 'warning');
     return;
   }
 
-  estaDescargando.value = true;
-  
-  // Calcular las fechas de inicio y fin según la selección
-  const mes = parseInt(mesSeleccionadoSabana.value);
-  let fechaInicioStr = '';
-  let fechaFinStr = '';
-
-  if (quincenaSeleccionada.value === '1') {
-    // Del 1 al 15
-    fechaInicioStr = `${anioActual}-${String(mes + 1).padStart(2, '0')}-01`;
-    fechaFinStr = `${anioActual}-${String(mes + 1).padStart(2, '0')}-15`;
-  } else {
-    // Del 16 al último día del mes
-    const ultimoDia = new Date(anioActual, mes + 1, 0).getDate();
-    fechaInicioStr = `${anioActual}-${String(mes + 1).padStart(2, '0')}-16`;
-    fechaFinStr = `${anioActual}-${String(mes + 1).padStart(2, '0')}-${ultimoDia}`;
-  }
+  cargandoPrevisualizacion.value = true;
+  mostrarTablaPrevisualizacion.value = true;
+  const { inicio, fin } = calcularFechasQuincena();
 
   try {
-    const url = apiUrl(`/api/excel/descargar-reporte?inicio=${fechaInicioStr}&fin=${fechaFinStr}`);
+    const url = apiUrl(`/api/excel/datos-reporte?inicio=${inicio}&fin=${fin}`);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Error al cargar la previsualización');
+    
+    const data = await res.json();
+    
+    // Agregamos la fecha formateada para la tabla
+    listaPrevisualizacion.value = data.map(item => ({
+      ...item,
+      fechaFmt: formatearFecha(item.fecha)
+    }));
+    
+  } catch (error) {
+    console.error(error);
+    Swal.fire('Error', 'No se pudieron cargar los datos de la quincena.', 'error');
+    mostrarTablaPrevisualizacion.value = false;
+  } finally {
+    cargandoPrevisualizacion.value = false;
+  }
+};
+
+// --- LÓGICA: DESCARGAR EXCEL (PASO 2) ---
+const descargarSabanaOficial = async () => {
+  estaDescargando.value = true;
+  const { inicio, fin } = calcularFechasQuincena();
+
+  try {
+    const url = apiUrl(`/api/excel/descargar-reporte?inicio=${inicio}&fin=${fin}`);
     const respuesta = await fetch(url, { method: 'GET' });
     
     if (!respuesta.ok) {
@@ -75,14 +125,14 @@ const descargarSabanaOficial = async () => {
     const urlBlob = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = urlBlob;
-    link.setAttribute('download', `Sabana_Actualizada_${fechaInicioStr}_al_${fechaFinStr}.xlsx`);
+    link.setAttribute('download', `Sabana_Actualizada_${inicio}_al_${fin}.xlsx`);
     
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.URL.revokeObjectURL(urlBlob);
 
-    Swal.fire('¡Éxito!', 'La sábana oficial ha sido descargada.', 'success');
+    Swal.fire({ icon: 'success', title: '¡Excel Descargado!', text: 'La sábana ha sido exportada correctamente.', timer: 2000, showConfirmButton: false });
 
   } catch (error) {
     console.error(error);
@@ -91,6 +141,7 @@ const descargarSabanaOficial = async () => {
     estaDescargando.value = false;
   }
 };
+
 
 // --- LÓGICA: GENERAR REPORTE DE SANCIONES ---
 const generarReporteSanciones = async () => {
@@ -102,14 +153,7 @@ const generarReporteSanciones = async () => {
   cargandoSanciones.value = true;
   
   try {
-    // 💡 NOTA: Esta ruta la crearemos en el backend en el siguiente paso
-    /* const url = apiUrl(`/api/reportes/sanciones?mes=${mesSeleccionadoSanciones.value}&anio=${anioActual}`);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Error al generar cálculo de sanciones');
-    listaSanciones.value = await res.json();
-    */
-    
-    // Datos de prueba temporales para ver la tabla viva
+    // 💡 Datos de prueba temporales para ver la tabla viva
     listaSanciones.value = [
       { numeroEmpleado: '1408', nombreCompleto: 'YENY ANDREA', departamento: 'SISTEMAS', totalFaltas: 1, totalRetardos: 3, totalOmisiones: 0, diasDescuento: 2 },
       { numeroEmpleado: '2272', nombreCompleto: 'MERCEDES ALBARRAN', departamento: 'FINANZAS', totalFaltas: 0, totalRetardos: 2, totalOmisiones: 1, diasDescuento: 1 }
@@ -141,46 +185,111 @@ const generarReporteSanciones = async () => {
     </div>
 
     <!-- PESTAÑA 1: SÁBANA ACTUALIZADA -->
-    <div v-if="pestanaActiva === 'sabana'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 max-w-3xl mx-auto">
-      <div class="text-center mb-6">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 text-green-600 mb-3">
-          <i class="fa-solid fa-file-csv text-3xl"></i>
+    <div v-if="pestanaActiva === 'sabana'" class="space-y-4">
+      
+      <!-- Panel de Controles -->
+      <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div class="text-center mb-6">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-3">
+            <i class="fa-solid fa-calendar-check text-3xl"></i>
+          </div>
+          <h2 class="text-xl font-bold text-gray-800">Sábana Quincenal Oficial</h2>
+          <p class="text-sm text-gray-500 mt-1">Previsualiza los datos con justificaciones aplicadas antes de exportar el documento oficial.</p>
         </div>
-        <h2 class="text-xl font-bold text-gray-800">Generar Sábana Quincenal Oficial</h2>
-        <p class="text-sm text-gray-500 mt-1">Este reporte incluye todas las justificaciones y correcciones aplicadas.</p>
+
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4 max-w-3xl mx-auto">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mes del Reporte</label>
+              <select v-model="mesSeleccionadoSabana" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm">
+                <option value="" disabled>Selecciona un mes...</option>
+                <option v-for="mes in meses" :key="mes.valor" :value="mes.valor">{{ mes.texto }} {{ anioActual }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quincena</label>
+              <select v-model="quincenaSeleccionada" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm">
+                <option value="" disabled>Selecciona la quincena...</option>
+                <option value="1">Primera Quincena (Días 1 al 15)</option>
+                <option value="2">Segunda Quincena (Días 16 al fin de mes)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-2 flex justify-center">
+            <button @click="generarPrevisualizacion" :disabled="cargandoPrevisualizacion" class="px-8 py-2.5 bg-inst-primario text-white font-bold rounded-lg hover:bg-inst-secundario transition shadow-md flex items-center gap-2 disabled:opacity-50">
+              <i class="fa-solid" :class="cargandoPrevisualizacion ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart'"></i> 
+              {{ cargandoPrevisualizacion ? 'Cargando datos...' : 'Generar Previsualización' }}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mes del Reporte</label>
-            <select v-model="mesSeleccionadoSabana" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm">
-              <option value="" disabled>Selecciona un mes...</option>
-              <option v-for="mes in meses" :key="mes.valor" :value="mes.valor">{{ mes.texto }} {{ anioActual }}</option>
-            </select>
+      <!-- Tabla de Previsualización y Botones de Descarga -->
+      <div v-if="mostrarTablaPrevisualizacion" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4 animate-fade-in">
+        
+        <div class="flex justify-between items-center bg-gray-50 p-3 rounded border border-gray-200">
+          <div class="w-full max-w-md">
+            <input v-model="valorBusquedaPrevisualizacion" type="text" placeholder="Buscar empleado por nombre o número..." class="w-full p-2 border border-gray-300 rounded outline-none focus:border-inst-primario text-sm shadow-sm" />
           </div>
-          <div>
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quincena</label>
-            <select v-model="quincenaSeleccionada" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm">
-              <option value="" disabled>Selecciona la quincena...</option>
-              <option value="1">Primera Quincena (Días 1 al 15)</option>
-              <option value="2">Segunda Quincena (Días 16 al fin de mes)</option>
-            </select>
+          <div class="text-sm text-gray-500 font-bold bg-white px-3 py-1.5 rounded border border-gray-200 shadow-sm">
+            Total registros: <span class="text-inst-primario">{{ listaPrevisualizacion.length }}</span>
           </div>
         </div>
 
-        <div class="pt-4 flex justify-end">
+        <EasyDataTable
+          :headers="headersPrevisualizacion"
+          :items="listaPrevisualizacion"
+          :search-value="valorBusquedaPrevisualizacion"
+          :search-field="['servidor.numeroEmpleado', 'servidor.nombreCompleto']"
+          :rows-per-page="10"
+          :loading="cargandoPrevisualizacion"
+          buttons-pagination
+          table-class-name="img-strattia-style"
+        >
+          <template #item-fechaFmt="item">
+            <span class="tabular-nums font-medium text-gray-700">{{ item.fechaFmt }}</span>
+          </template>
+
+          <template #item-entrada="item">
+             <span :class="!item.entrada || item.entrada === 'SR' ? 'text-gray-400 font-bold' : 'text-gray-800 font-medium'">
+                {{ item.entrada || 'SR' }}
+             </span>
+          </template>
+
+          <template #item-salida="item">
+             <span :class="!item.salida || item.salida === 'SR' ? 'text-gray-400 font-bold' : 'text-gray-800 font-medium'">
+                {{ item.salida || 'SR' }}
+             </span>
+          </template>
+
+          <template #item-incidencia="item">
+            <span :class="{
+                'bg-green-100 text-green-800 border-green-200': item.incidencia === 'OK' || item.incidencia === 'OK_ESPECIAL',
+                'bg-red-100 text-red-800 border-red-200': item.incidencia === 'FALTA',
+                'bg-amber-100 text-yellow-800 border-amber-200': item.incidencia === 'RETARDO' || item.incidencia === 'RETARDO_ESPECIAL' || item.incidencia === 'RETARDO_Y_OMISION',
+                'bg-orange-100 text-orange-800 border-orange-200': item.incidencia === 'OMISION_E' || item.incidencia === 'OMISION_S',
+                'bg-blue-100 text-blue-800 border-blue-200': item.incidencia === 'JUSTIFICADA',
+                'bg-gray-100 text-gray-800 border-gray-200': item.incidencia === 'LA' || item.incidencia === 'EXENTO' || item.incidencia === 'EXCENTO'
+              }" class="px-3 py-1 text-[11px] font-bold rounded border shadow-sm uppercase whitespace-nowrap">
+              {{ item.incidencia }}
+            </span>
+          </template>
+        </EasyDataTable>
+
+        <!-- Botones de Acción Finales -->
+        <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          
           <button @click="descargarSabanaOficial" :disabled="estaDescargando" class="px-6 py-2.5 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition shadow-sm flex items-center gap-2 disabled:opacity-50">
-            <i class="fa-solid" :class="estaDescargando ? 'fa-spinner fa-spin' : 'fa-download'"></i> 
-            {{ estaDescargando ? 'Generando Excel...' : 'Descargar Excel Oficial' }}
+            <i class="fa-solid" :class="estaDescargando ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i> 
+            {{ estaDescargando ? 'Procesando...' : 'Descarga reporte' }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- PESTAÑA 2: REPORTE DE SANCIONES -->
+    <!-- PESTAÑA 2: REPORTE DE SANCIONES (Sin cambios por ahora) -->
     <div v-if="pestanaActiva === 'sanciones'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-4 space-y-4">
-      
       <div class="flex justify-between items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
         <div class="w-full max-w-xs">
            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mes a procesar</label>
@@ -189,13 +298,11 @@ const generarReporteSanciones = async () => {
               <option v-for="mes in meses" :key="mes.valor" :value="mes.valor">{{ mes.texto }} {{ anioActual }}</option>
             </select>
         </div>
-        
         <button @click="generarReporteSanciones" :disabled="cargandoSanciones" class="px-5 py-2 bg-inst-primario text-white font-bold rounded hover:bg-inst-secundario transition text-sm shadow-sm flex items-center gap-2 disabled:opacity-50">
           <i class="fa-solid fa-calculator"></i> Calcular Descuentos
         </button>
       </div>
 
-      <!-- Barra de búsqueda para la tabla de sanciones -->
       <div class="w-full max-w-md mt-4">
         <input v-model="valorBusquedaSanciones" type="text" placeholder="Filtrar servidor público..." class="w-full p-2 border border-gray-300 rounded outline-none focus:border-inst-primario text-sm" />
       </div>
@@ -212,37 +319,27 @@ const generarReporteSanciones = async () => {
         <template #item-numeroEmpleado="item">
            <div class="text-center font-mono font-bold text-gray-700 w-full">{{ item.numeroEmpleado }}</div>
         </template>
-        
         <template #item-totalFaltas="item">
            <div class="text-center w-full">
              <span class="px-2 py-0.5 bg-red-100 text-red-800 font-bold rounded tabular-nums border border-red-200">{{ item.totalFaltas }}</span>
            </div>
         </template>
-
         <template #item-totalRetardos="item">
            <div class="text-center w-full">
              <span class="px-2 py-0.5 bg-amber-100 text-yellow-800 font-bold rounded tabular-nums border border-amber-200">{{ item.totalRetardos }}</span>
            </div>
         </template>
-
         <template #item-totalOmisiones="item">
            <div class="text-center w-full">
              <span class="px-2 py-0.5 bg-orange-100 text-orange-800 font-bold rounded tabular-nums border border-orange-200">{{ item.totalOmisiones }}</span>
            </div>
         </template>
-
         <template #item-diasDescuento="item">
            <div class="text-center w-full">
              <span class="px-3 py-1 bg-gray-800 text-white font-bold rounded-full tabular-nums shadow-sm">{{ item.diasDescuento }} d</span>
            </div>
         </template>
       </EasyDataTable>
-
-      <div class="flex justify-end pt-2">
-        <button class="text-gray-600 hover:text-green-600 font-bold text-sm transition flex items-center gap-1">
-          <i class="fa-solid fa-file-arrow-down"></i> Exportar Lista (Nómina)
-        </button>
-      </div>
     </div>
 
   </div>

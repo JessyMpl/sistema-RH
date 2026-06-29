@@ -67,14 +67,14 @@ const cerrarSesion = () => {
       <button @click="emit('cambiar-vista', 'reporteFinal')"
         :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'reporteFinal' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
         <i class="fa-solid fa-calendar w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
-        <span class="text-left leading-tight"> Reporte </span>
+        <span class="text-left leading-tight"> Reportes </span>
       </button>
       
 
       <button @click="emit('cambiar-vista', 'perfil')"
         :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'perfil' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
         <i class="fa-solid fa-gear w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
-        <span class="text-left leading-tight">Mi Perfil</span>
+        <span class="text-left leading-tight">Configuración</span>
       </button>
     </nav>
 
