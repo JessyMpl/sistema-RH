@@ -48,7 +48,7 @@ const seleccionarArchivo = (event) => {
 };
 
 // =========================================================
-// 💡 MÉTODO A: PROCESAR DESDE DATOS RECIBIDOS DE CRON
+//  MÉTODO A: PROCESAR DESDE DATOS RECIBIDOS DE CRON
 // =========================================================
 const procesarDesdeCron = async () => {
   if (!fechaInicio.value || !fechaFin.value) {
