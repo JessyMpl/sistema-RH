@@ -42,6 +42,7 @@ model ServidorPublico {
   asistencias     Asistencia[]
   historial       HistorialMovimiento[] // Relación inversa para acceder a la bitácora del empleado
   justificaciones Justificacion[]       // NUEVO: Relación para el historial de justificaciones del empleado
+  sanciones       SancionMensual[]      // NUEVO: Relación para el historial de sanciones del empleado
 }
 
 // 4. Tabla de Asistencias (Tu hoja de "reporte" depurada)
@@ -132,4 +133,29 @@ model Calendario {
   @@map("calendario")
 }
 
-
+// 10. NUEVA TABLA: Historial de Sanciones Mensuales
+model SancionMensual {
+  id               Int             @id @default(autoincrement())
+  servidorId       Int
+  mes              Int             // Ej. 6 para Junio
+  anio             Int             // Ej. 2026
+  
+  // Evidencia matemática de ese mes específico
+  totalRetardos    Int             @default(0)
+  totalFaltas      Int             @default(0)
+  totalOmisiones   Int             @default(0) // Agregado por si la norma cambia en el futuro
+  
+  // Castigos aplicados
+  sancionAplicada  String          @db.Text // Ej. "Suspensión de 3 días sin goce de sueldo"
+  diasDescuento    Int             @default(0)
+  
+  // Rastro documental
+  folioOficio      String?         // Ej. "SMM/RH/045/2026"
+  fechaEmision     DateTime        @default(now())
+  
+  // Relación con el empleado
+  servidor         ServidorPublico @relation(fields: [servidorId], references: [id])
+  
+  // Restricción: Un empleado solo puede tener una sanción generada por mes y año
+  @@unique([servidorId, mes, anio])
+}

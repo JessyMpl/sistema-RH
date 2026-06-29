@@ -22,9 +22,12 @@ app.use('/api/empleados', empleadoRoutes);
 
 const justificacionRoutes = require('./routes/justificacionRoutes');
 app.use('/api/justificaciones', justificacionRoutes);
+
+const sancionesRoutes = require('./routes/sancionesRoutes');
+app.use('/api/sanciones', sancionesRoutes);
 // -------------------------------------------------
 
-// 💡 Aproveché para agrupar tus authRoutes aquí arriba con las demás
+//  Aproveché para agrupar tus authRoutes aquí arriba con las demás
 // (Es mejor práctica cargar todas las rutas antes de encender el servidor)
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);

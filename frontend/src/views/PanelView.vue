@@ -9,6 +9,7 @@ import Consultas from '@/components/Consultas.vue';
 import Justificaciones from '@/components/GestionJustificaciones.vue';
 import ReporteFinal from '@/components/ReporteFinal.vue';
 import Attendance from '@/components/Attendance.vue';
+import ModuloSanciones from '@/components/ModuloSanciones.vue';
 
 const vistaActiva = ref('reporte'); 
 
@@ -596,6 +597,13 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Reporte Final de Asistencias</h1>
         <ReporteFinal />
       </div>
+
+      <div v-else-if="vistaActiva === 'sanciones'">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Gestión de Sanciones</h1>
+    <ModuloSanciones /> 
+ </div>
+
+  
       
     </main>
   </div>
