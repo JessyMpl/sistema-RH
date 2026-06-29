@@ -177,7 +177,7 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
             <input type="number" v-model="anioSeleccionado" class="w-full p-2 border border-gray-300 rounded outline-none text-sm bg-white" />
           </div>
           <button @click="calcularMes" :disabled="cargandoCalculo" class="px-6 py-2 bg-inst-primario text-white font-bold rounded shadow-sm hover:bg-inst-secundario transition text-sm flex items-center gap-2">
-            <i class="fa-solid" :class="cargandoCalculo ? 'fa-spinner fa-spin' : 'fa-scale-balanced'"></i> Generar Infracciones
+            <i class="fa-solid" :class="cargandoCalculo ? 'fa-spinner fa-spin' : 'fa-scale-balanced'"></i> Generar Sanciones
           </button>
         </div>
       </div>
@@ -213,7 +213,7 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
           </template>
           <template #item-acciones="item">
             <button @click="procesarSancion(item)" class="bg-inst-primario hover:bg-inst-secundario text-white px-3 py-1.5 rounded text-xs font-bold transition shadow-sm whitespace-nowrap">
-              <i class="fa-solid fa-file-pen mr-1"></i> Generar sanción
+              <i class="fa-solid fa-file-pen mr-1"></i> Generar doc
             </button>
           </template>
         </EasyDataTable>

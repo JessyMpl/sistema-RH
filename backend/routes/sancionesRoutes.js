@@ -29,6 +29,7 @@ router.get('/calcular', async (req, res) => {
 
     // Agrupamos por empleado
     const empleadosMap = {};
+    
     asistenciasMes.forEach(registro => {
       const s = registro.servidor;
       if (!empleadosMap[s.id]) {
@@ -40,15 +41,27 @@ router.get('/calcular', async (req, res) => {
           totalFaltas: 0,
           totalRetardos: 0,
           totalOmisiones: 0,
-          sancionAplicada: [], // Arreglo porque puede tener sanción por falta Y por retardo
+          sancionAplicada: [], 
           diasDescuento: 0
         };
       }
 
-      const estatus = registro.incidencia;
-      if (estatus === 'FALTA') empleadosMap[s.id].totalFaltas++;
-      else if (estatus && estatus.includes('RETARDO')) empleadosMap[s.id].totalRetardos++;
-      else if (estatus === 'OMISION_E' || estatus === 'OMISION_S') empleadosMap[s.id].totalOmisiones++;
+      // 💡 BLINDAJE: Limpiamos el texto por si hay espacios invisibles y pasamos a mayúsculas
+      const estatus = String(registro.incidencia || '').trim().toUpperCase();
+      
+      // REGLA: Faltas puras y Omisiones cuentan como INASISTENCIA
+      if (estatus === 'FALTA' || estatus === 'OMISION_E' || estatus === 'OMISION_S' || estatus === 'RETARDO_Y_OMISION') {
+        empleadosMap[s.id].totalFaltas++;
+        
+        // Seguimos contando la omisión de forma interna por si se requiere en auditorías
+        if (estatus.includes('OMISION')) {
+          empleadosMap[s.id].totalOmisiones++;
+        }
+      } 
+      // REGLA: Retardos
+      else if (estatus === 'RETARDO' || estatus === 'RETARDO_ESPECIAL') {
+        empleadosMap[s.id].totalRetardos++;
+      }
     });
 
     // Filtramos solo a los infractores y aplicamos normatividad
@@ -67,13 +80,13 @@ router.get('/calcular', async (req, res) => {
       else if (emp.totalRetardos === 6) { textosSancion.push("Suspensión de 3 días s/goce (6 retardos)"); diasCastigo += 3; }
       else if (emp.totalRetardos >= 7) { textosSancion.push("Suspensión de 4 días s/goce (7+ retardos)"); diasCastigo += 4; }
 
-      // REGLAS DE FALTAS
-      if (emp.totalFaltas === 1) textosSancion.push("Amonestación escrita (1 falta)");
-      else if (emp.totalFaltas === 2) { textosSancion.push("Suspensión de 3 días s/goce (2 faltas)"); diasCastigo += 3; }
-      else if (emp.totalFaltas === 3) { textosSancion.push("Suspensión de 8 días s/goce (3 faltas)"); diasCastigo += 8; }
+      // REGLAS DE FALTAS (Incluye omisiones de entrada/salida)
+      if (emp.totalFaltas === 1) textosSancion.push("Amonestación escrita (1 falta/omisión)");
+      else if (emp.totalFaltas === 2) { textosSancion.push("Suspensión de 3 días s/goce (2 faltas/omisiones)"); diasCastigo += 3; }
+      else if (emp.totalFaltas === 3) { textosSancion.push("Suspensión de 8 días s/goce (3 faltas/omisiones)"); diasCastigo += 8; }
       else if (emp.totalFaltas > 3) { textosSancion.push("Baja / Ver norma 20301/206-03 (>3 faltas)"); diasCastigo += 8; }
 
-      // Si tiene alguna incidencia, lo agregamos a la lista negra
+      // Si tiene alguna incidencia, lo agregamos a la lista de sancionados
       if (emp.totalFaltas > 0 || emp.totalRetardos > 0 || emp.totalOmisiones > 0) {
         emp.diasDescuento = diasCastigo;
         emp.sancionTexto = textosSancion.length > 0 ? textosSancion.join(' | ') : 'Sin sanción grave';
@@ -114,7 +127,7 @@ router.post('/guardar', async (req, res) => {
     res.json({ mensaje: 'Sanción guardada y registrada en el expediente.', sancion: nuevaSancion });
   } catch (error) {
     console.error("Error guardando sanción:", error);
-    // Error P2002 de Prisma es por duplicidad (@@unique)
+    // Error P2002 de Prisma es por duplicidad de registro único (@@unique)
     if (error.code === 'P2002') {
       return res.status(400).json({ error: 'Ya existe una sanción generada para este servidor público en este mes.' });
     }
@@ -131,7 +144,10 @@ router.get('/historial', async (req, res) => {
       include: {
         servidor: { select: { numeroEmpleado: true, nombreCompleto: true, departamento: true } }
       },
-      orderBy: [{ anio: 'desc' }, { mes: 'desc' }]
+      orderBy: [
+        { anio: 'desc' }, 
+        { mes: 'desc' }
+      ]
     });
 
     res.json(historial);
