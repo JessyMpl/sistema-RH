@@ -23,26 +23,41 @@ model Horario {
   servidores  ServidorPublico[]
 }
 
-// 3. Tabla del Personal (Actualizada con Fecha de Ingreso e Historial de Movimientos)
+// ===============================================
+// NUEVO: Catálogo de Áreas de Adscripción
+// ===============================================
+model AreaAdscripcion {
+  id          Int               @id @default(autoincrement())
+  nombre      String            @unique // Ej: "DIRECCIÓN DE FINANZAS" o "DEPTO. DE SISTEMAS"
+  activo      Boolean           @default(true)
+  
+  servidores  ServidorPublico[]
+}
+
+// 3. Tabla del Personal (Actualizada con Catálogo de Área)
 model ServidorPublico {
   id             Int          @id @default(autoincrement())
   nombreCompleto String
   numeroEmpleado String       @unique 
-  departamento   String?            
+  
+  // 🔥 El cambio: Ahora es una relación, no texto libre
+  areaId         Int?
+  area           AreaAdscripcion? @relation(fields: [areaId], references: [id])
+  
   regimen        Regimen      @default(NORMAL)
   activo         Boolean      @default(true)
   horarioId      Int
   
   // CAMPOS DE CONTROL DE EXPEDIENTE
-  fechaIngreso   DateTime?    @db.Date  // Nueva columna para la fecha de alta institucional
+  fechaIngreso   DateTime?    @db.Date
   fechaBaja      DateTime?    @db.Date
   motivoBaja     String?      @db.Text
 
   horario         Horario               @relation(fields: [horarioId], references: [id])
   asistencias     Asistencia[]
-  historial       HistorialMovimiento[] // Relación inversa para acceder a la bitácora del empleado
-  justificaciones Justificacion[]       // NUEVO: Relación para el historial de justificaciones del empleado
-  sanciones       SancionMensual[]      // NUEVO: Relación para el historial de sanciones del empleado
+  historial       HistorialMovimiento[] 
+  justificaciones Justificacion[]       
+  sanciones       SancionMensual[]      
 }
 
 // 4. Tabla de Asistencias (Tu hoja de "reporte" depurada)

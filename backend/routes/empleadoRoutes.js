@@ -4,8 +4,22 @@ const prisma = require('../config/db');
 const multer = require('multer'); 
 const xlsx = require('xlsx'); 
 
-// 💡 SEGURO EN MEMORIA RAM (Para evitar problemas de carpetas y discos)
 const upload = multer({ storage: multer.memoryStorage() });
+
+// ==========================================
+// NUEVO: OBTENER CATÁLOGO DE ÁREAS
+// ==========================================
+router.get('/areas', async (req, res) => {
+  try {
+    const areas = await prisma.areaAdscripcion.findMany({
+      where: { activo: true },
+      orderBy: { nombre: 'asc' }
+    });
+    res.json(areas);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cargar catálogo de áreas.' });
+  }
+});
 
 // ==========================================
 // 1. OBTENER CATÁLOGO DE EMPLEADOS
@@ -15,28 +29,47 @@ router.get('/', async (req, res) => {
     const empleados = await prisma.servidorPublico.findMany({
       include: {
         horario: true,
-        historial: {
-          orderBy: { fecha: 'desc' } // Traemos el historial ordenado por el más reciente
-        }
+        area: true, // 💡 IMPORTANTE: Traemos el catálogo
+        historial: { orderBy: { fecha: 'desc' } }
       },
       orderBy: { nombreCompleto: 'asc' }
     });
-    res.json(empleados);
+
+    // 💡 EL DISFRAZ: Para que el frontend y reportes no truenen, mapeamos el area.nombre a 'departamento'
+    const empleadosDisfrazados = empleados.map(emp => ({
+      ...emp,
+      departamento: emp.area ? emp.area.nombre : null
+    }));
+
+    res.json(empleadosDisfrazados);
   } catch (error) {
     res.status(500).json({ error: 'Error al cargar empleados.' });
   }
 });
 
 // ==========================================
-// 2. ALTA MANUAL (Ahora con fecha de ingreso y bitácora)
+// 2. ALTA MANUAL
 // ==========================================
 router.post('/', async (req, res) => {
   const { numeroEmpleado, nombreCompleto, departamento, regimen, horarioId, fechaIngreso } = req.body;
   try {
+    let areaAsignadaId = null;
+
+    // 💡 Si nos mandan un departamento en texto, lo buscamos en el catálogo o lo creamos
+    if (departamento && String(departamento).trim() !== '') {
+      const deptoLimpio = String(departamento).trim().toUpperCase();
+      const area = await prisma.areaAdscripcion.upsert({
+        where: { nombre: deptoLimpio },
+        update: {}, // No hace nada si existe
+        create: { nombre: deptoLimpio }
+      });
+      areaAsignadaId = area.id;
+    }
+
     const dataNuevo = {
       numeroEmpleado: String(numeroEmpleado).trim(),
       nombreCompleto: String(nombreCompleto).trim().toUpperCase(),
-      departamento: departamento ? String(departamento).trim() : null,
+      areaId: areaAsignadaId,
       regimen: String(regimen).trim(),
       horarioId: parseInt(horarioId),
       activo: true
@@ -49,16 +82,17 @@ router.post('/', async (req, res) => {
     const nuevo = await prisma.servidorPublico.create({
       data: {
         ...dataNuevo,
-        // Registramos su alta oficial en la bitácora automáticamente
         historial: {
           create: [{
             tipoMovimiento: "ALTA EN SISTEMA",
-            datoNuevo: dataNuevo.departamento || "SIN ÁREA ASIGNADA"
+            datoNuevo: departamento || "SIN ÁREA ASIGNADA"
           }]
         }
-      }
+      },
+      include: { area: true } // Devolvemos con el área poblada
     });
-    res.json(nuevo);
+    
+    res.json({ ...nuevo, departamento: nuevo.area ? nuevo.area.nombre : null });
   } catch (error) {
     console.error("Error al registrar:", error); 
     res.status(400).json({ error: 'Error al registrar. Verifica que el ID no esté duplicado.' });
@@ -66,7 +100,7 @@ router.post('/', async (req, res) => {
 });
 
 // ==========================================
-// 3. EDITAR EMPLEADO (Inteligente: Detecta cambios automáticamente)
+// 3. EDITAR EMPLEADO
 // ==========================================
 router.put('/:id', async (req, res) => {
   try {
@@ -75,21 +109,39 @@ router.put('/:id', async (req, res) => {
 
     if (isNaN(id)) return res.status(400).json({ error: 'ID no válido.' });
 
-    // 1. Traemos al empleado como está AHORITA para poder comparar
-    const empleadoActual = await prisma.servidorPublico.findUnique({ where: { id } });
+    const empleadoActual = await prisma.servidorPublico.findUnique({ 
+      where: { id },
+      include: { area: true }
+    });
     if (!empleadoActual) return res.status(404).json({ error: 'Empleado no encontrado' });
 
     const isActivo = activo === true || activo === 'true' || activo === 1;
-    const deptoLimpio = departamento ? String(departamento).trim() : null;
+    const deptoLimpio = departamento ? String(departamento).trim().toUpperCase() : null;
     const regimenLimpio = String(regimen).trim();
 
-    // 2. LÓGICA DE DETECCIÓN DE CAMBIOS PARA LA BITÁCORA
+    let nuevaAreaId = empleadoActual.areaId;
+
+    // 💡 Si el departamento cambió, actualizamos el catálogo
+    const nombreDeptoActual = empleadoActual.area ? empleadoActual.area.nombre : null;
+    if (deptoLimpio !== nombreDeptoActual) {
+      if (deptoLimpio) {
+        const area = await prisma.areaAdscripcion.upsert({
+          where: { nombre: deptoLimpio },
+          update: {},
+          create: { nombre: deptoLimpio }
+        });
+        nuevaAreaId = area.id;
+      } else {
+        nuevaAreaId = null;
+      }
+    }
+
     const nuevosMovimientos = [];
 
-    if (empleadoActual.departamento !== deptoLimpio) {
+    if (deptoLimpio !== nombreDeptoActual) {
       nuevosMovimientos.push({
         tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
-        datoAnterior: empleadoActual.departamento || "SIN ASIGNAR",
+        datoAnterior: nombreDeptoActual || "SIN ASIGNAR",
         datoNuevo: deptoLimpio || "SIN ASIGNAR"
       });
     }
@@ -102,11 +154,10 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    // 3. Preparamos los datos para actualizar
     let dataAActualizar = {
       nombreCompleto: String(nombreCompleto).trim().toUpperCase(),
       numeroEmpleado: String(numeroEmpleado).trim(),
-      departamento: deptoLimpio,
+      areaId: nuevaAreaId,
       regimen: regimenLimpio,
       activo: isActivo
     };
@@ -119,14 +170,9 @@ router.put('/:id', async (req, res) => {
       dataAActualizar.fechaIngreso = new Date(`${fechaIngreso.split('T')[0]}T12:00:00Z`);
     }
 
-    // Bajas
     if (!isActivo) {
-      dataAActualizar.fechaBaja = (fechaBaja && fechaBaja.trim() !== '') 
-        ? new Date(`${fechaBaja.split('T')[0]}T12:00:00Z`) 
-        : new Date();
+      dataAActualizar.fechaBaja = (fechaBaja && fechaBaja.trim() !== '') ? new Date(`${fechaBaja.split('T')[0]}T12:00:00Z`) : new Date();
       dataAActualizar.motivoBaja = motivoBaja ? String(motivoBaja).trim() : 'Baja general';
-      
-      // Si antes estaba activo y ahora es baja, lo registramos
       if (empleadoActual.activo === true) {
         nuevosMovimientos.push({ tipoMovimiento: "BAJA", datoNuevo: dataAActualizar.motivoBaja });
       }
@@ -135,17 +181,17 @@ router.put('/:id', async (req, res) => {
       dataAActualizar.motivoBaja = null;
     }
 
-    // 4. Si hubo movimientos, le decimos a Prisma que los guarde anidados
     if (nuevosMovimientos.length > 0) {
       dataAActualizar.historial = { create: nuevosMovimientos };
     }
 
     const empleadoActualizado = await prisma.servidorPublico.update({
       where: { id: id },
-      data: dataAActualizar
+      data: dataAActualizar,
+      include: { area: true }
     });
 
-    res.json(empleadoActualizado);
+    res.json({ ...empleadoActualizado, departamento: empleadoActualizado.area ? empleadoActualizado.area.nombre : null });
 
   } catch (error) {
     console.error("====== ERROR FATAL EN PUT /EMPLEADOS ======\n", error);
@@ -157,18 +203,32 @@ router.put('/:id', async (req, res) => {
 // 4. IMPORTACIÓN MASIVA OPTIMIZADA
 // ==========================================
 router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No se subió ningún archivo' });
-  }
+  if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' });
 
   try {
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0]; 
     const dataExcel = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
+    // 1. Extraemos y guardamos todas las áreas únicas del Excel en el catálogo
+    const nombresAreasSet = new Set();
+    dataExcel.forEach(fila => {
+      const depto = fila['DEPARTAMENTO'] || fila['Departamento'] || fila['departamento'];
+      if (depto) nombresAreasSet.add(String(depto).trim().toUpperCase());
+    });
+
+    const areasMap = new Map(); // Mapa para rápido acceso: 'SISTEMAS' => 3
+    for (const nombreArea of nombresAreasSet) {
+      const area = await prisma.areaAdscripcion.upsert({
+        where: { nombre: nombreArea },
+        update: {},
+        create: { nombre: nombreArea }
+      });
+      areasMap.set(nombreArea, area.id);
+    }
+
     const empleadosAProcesar = [];
 
-    // Limpieza y preparación de registros
     for (const fila of dataExcel) {
       const rawNumEmp = fila['ID'] || fila['NumeroEmpleado'] || fila['numeroEmpleado'];
       const rawNombre = fila['NOMBRE'] || fila['Nombre'] || fila['nombreCompleto'] || fila['Name'];
@@ -180,33 +240,27 @@ router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
 
       const numEmpLimpio = String(rawNumEmp).trim();
       const nombreLimpio = String(rawNombre).trim().replace(/'/g, "''").toUpperCase();
-      const deptoLimpio = rawDepto ? String(rawDepto).trim().replace(/'/g, "''") : null;
+      const deptoLimpio = rawDepto ? String(rawDepto).trim().toUpperCase() : null;
+      const areaIdAsignada = deptoLimpio ? areasMap.get(deptoLimpio) : 'NULL';
       
       const entradaLimpia = String(rawEntrada).trim();
-      
       let regimenLimpio = String(rawRegimen).trim().toUpperCase();
       if (regimenLimpio === 'EXCENTO') regimenLimpio = 'EXENTO';
 
       let horarioIdCalculado = 2; // NORMAL
-
-      if (regimenLimpio === 'LISTA') {
-        horarioIdCalculado = 3;
-      } else if (regimenLimpio === 'EXENTO') {
-        horarioIdCalculado = 6; 
-      } else if (regimenLimpio === 'ESPECIAL') {
-        horarioIdCalculado = entradaLimpia.includes('7') ? 1 : 4;
-      }
+      if (regimenLimpio === 'LISTA') horarioIdCalculado = 3;
+      else if (regimenLimpio === 'EXENTO') horarioIdCalculado = 6; 
+      else if (regimenLimpio === 'ESPECIAL') horarioIdCalculado = entradaLimpia.includes('7') ? 1 : 4;
 
       empleadosAProcesar.push({
         numeroEmpleado: numEmpLimpio,
         nombreCompleto: nombreLimpio,
-        departamento: deptoLimpio,
+        areaId: areaIdAsignada,
         regimen: regimenLimpio,
         horarioId: horarioIdCalculado
       });
     }
 
-    // Procesamiento masivo con SQL (SQL Nivel Dios)
     const TAMANO_LOTE = 1000; 
     let registrados = 0;
 
@@ -214,16 +268,15 @@ router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
       const lote = empleadosAProcesar.slice(i, i + TAMANO_LOTE);
       
       const values = lote.map(emp => {
-        const deptoValor = emp.departamento ? `'${emp.departamento}'` : 'NULL';
-        return `('${emp.numeroEmpleado}', '${emp.nombreCompleto}', ${deptoValor}, '${emp.regimen}', ${emp.horarioId})`;
+        return `('${emp.numeroEmpleado}', '${emp.nombreCompleto}', ${emp.areaId}, '${emp.regimen}', ${emp.horarioId})`;
       }).join(',\n');
 
       const query = `
-        INSERT INTO "ServidorPublico" ("numeroEmpleado", "nombreCompleto", "departamento", "regimen", "horarioId")
+        INSERT INTO "ServidorPublico" ("numeroEmpleado", "nombreCompleto", "areaId", "regimen", "horarioId")
         VALUES ${values}
         ON CONFLICT ("numeroEmpleado") DO UPDATE SET
           "nombreCompleto" = EXCLUDED."nombreCompleto",
-          "departamento" = EXCLUDED."departamento",
+          "areaId" = EXCLUDED."areaId",
           "regimen" = EXCLUDED."regimen",
           "horarioId" = EXCLUDED."horarioId";
       `;
@@ -236,10 +289,7 @@ router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
 
   } catch (error) {
     console.error("DETALLE DEL ERROR FATAL:", error);
-    res.status(500).json({ 
-      error: 'Error al procesar el archivo Excel.', 
-      detalle: error.message || String(error) 
-    });
+    res.status(500).json({ error: 'Error al procesar el archivo Excel.', detalle: error.message || String(error) });
   }
 });
 

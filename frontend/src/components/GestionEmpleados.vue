@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import Swal from 'sweetalert2';
 import { apiUrl } from '@/utils/api';
 
@@ -8,8 +8,10 @@ import { apiUrl } from '@/utils/api';
 // ==========================================
 const empleados = ref([]);
 const horarios = ref([]); 
+const areasAdscripcion = ref([]); // NUEVO: Para guardar el catálogo de áreas
 const vistaInterna = ref('lista'); 
 const searchValue = ref('');
+const filtroArea = ref('TODAS'); // NUEVO: Para el filtro de la tabla
 
 const headers = [
   { text: "No. Empleado", value: "numeroEmpleado", sortable: true },
@@ -23,7 +25,7 @@ const headers = [
 const formulario = ref({ 
   numeroEmpleado: '', 
   nombreCompleto: '', 
-  departamento: '', 
+  departamento: '', // Seguirá llamándose departamento para el v-model, pero guardará el nombre del área seleccionada
   regimen: 'NORMAL',
   horarioId: '',
   fechaIngreso: '' 
@@ -59,9 +61,22 @@ const cargarHorarios = async () => {
   }
 };
 
+const cargarAreas = async () => {
+  try {
+    const res = await fetch(apiUrl('/api/empleados/areas')); 
+    areasAdscripcion.value = await res.json();
+  } catch (error) {
+    console.error('Error cargando áreas de adscripción', error);
+  }
+};
+
 const guardarManual = async () => {
   if (!formulario.value.horarioId) {
     Swal.fire('Atención', 'Por favor selecciona un Horario.', 'warning');
+    return;
+  }
+  if (!formulario.value.departamento) {
+    Swal.fire('Atención', 'Por favor selecciona un Área de Adscripción.', 'warning');
     return;
   }
 
@@ -76,6 +91,7 @@ const guardarManual = async () => {
       Swal.fire({ title: '¡Registro Exitoso!', icon: 'success', confirmButtonColor: '#2563eb' });
       formulario.value = { numeroEmpleado: '', nombreCompleto: '', departamento: '', regimen: 'NORMAL', horarioId: '', fechaIngreso: '' };
       cargarEmpleados();
+      cargarAreas(); // Recargar áreas por si se creó una nueva en el backend (aunque ahora usas catálogo)
       vistaInterna.value = 'lista';
     } else {
       Swal.fire({ title: 'Error', text: 'Verifica que el ID no esté duplicado.', icon: 'error' });
@@ -156,6 +172,7 @@ const procesarImportacion = async () => {
       Swal.fire({ title: '¡Catálogo Importado!', text: data.mensaje, icon: 'success' });
       archivoCatalogo.value = null;
       cargarEmpleados();
+      cargarAreas(); // Recargar áreas después de importación masiva
       vistaInterna.value = 'lista';
     }
   } catch (error) {
@@ -165,9 +182,20 @@ const procesarImportacion = async () => {
   }
 };
 
+// ==========================================
+// 6. COMPUTADOS (Filtros)
+// ==========================================
+const empleadosFiltrados = computed(() => {
+  if (filtroArea.value === 'TODAS') {
+    return empleados.value;
+  }
+  return empleados.value.filter(emp => emp.departamento === filtroArea.value);
+});
+
 onMounted(() => {
   cargarEmpleados();
   cargarHorarios(); 
+  cargarAreas();
 });
 </script>
 
@@ -183,18 +211,27 @@ onMounted(() => {
 
     <div v-if="vistaInterna === 'lista'" class="space-y-4">
       
-      <div class="flex justify-between items-center bg-white p-4 rounded-lg border-t-4 border-inst-primario">
-        <div class="w-full max-w-md">
-          <label class="block text-xs font-bold uppercase text-inst-primario mb-1">Buscar Servidor Público <i class="fa-solid fa-magnifying-glass ml-2 text-lg"></i></label>
-          <input v-model="searchValue" type="text" placeholder="ID o Nombre..." class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 transition shadow-sm text-sm" />
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-lg border-t-4 border-inst-primario gap-4">
+        <div class="flex flex-col md:flex-row w-full gap-4">
+          <div class="w-full md:w-1/2">
+            <label class="block text-xs font-bold uppercase text-inst-primario mb-1">Buscar Servidor Público <i class="fa-solid fa-magnifying-glass ml-2 text-lg"></i></label>
+            <input v-model="searchValue" type="text" placeholder="ID o Nombre..." class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 transition shadow-sm text-sm" />
+          </div>
+          <div class="w-full md:w-1/2">
+            <label class="block text-xs font-bold uppercase text-inst-primario mb-1">Filtrar por Área de Adscripción <i class="fa-solid fa-filter ml-2 text-lg"></i></label>
+            <select v-model="filtroArea" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 transition shadow-sm text-sm bg-white">
+              <option value="TODAS">TODAS LAS ÁREAS</option>
+              <option v-for="area in areasAdscripcion" :key="area.id" :value="area.nombre">{{ area.nombre }}</option>
+            </select>
+          </div>
         </div>
-        <div class="text-sm text-gray-500 font-medium">Total: <span class="font-bold text-gray-800">{{ empleados.length }}</span> registros</div>
+        <div class="text-sm text-gray-500 font-medium whitespace-nowrap md:mt-6">Total: <span class="font-bold text-gray-800">{{ empleadosFiltrados.length }}</span> registros</div>
       </div>
 
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2">
         <EasyDataTable
           :headers="headers"
-          :items="empleados"
+          :items="empleadosFiltrados"
           :search-value="searchValue"
           :rows-per-page="30"
           buttons-pagination
@@ -208,8 +245,6 @@ onMounted(() => {
               'bg-orange-100 text-orange-800': emp.regimen === 'LISTA',
               'bg-gray-100 text-gray-800': emp.regimen === 'EXENTO'
             }" class="px-2 py-1 text-xs font-bold rounded-full uppercase">{{ emp.regimen }}</span>
-            <!-- en caso de que no se requieran colores en los horarios
-            <span class="bg-slate-200 text-slate-900 text-xs rounded-full px-2 py-1">{{ emp.regimen }}</span> -->
           </template>
 
           <template #item-activo="emp" > 
@@ -250,7 +285,10 @@ onMounted(() => {
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Área de Adscripción</label>
-            <input v-model="empleadoEditar.departamento" class="w-full p-2 border rounded shadow-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase" />
+            <select v-model="empleadoEditar.departamento" class="w-full p-2 border rounded bg-white shadow-sm outline-none">
+              <option value="">Seleccione un Área...</option>
+              <option v-for="area in areasAdscripcion" :key="area.id" :value="area.nombre">{{ area.nombre }}</option>
+            </select>
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha de Ingreso</label>
@@ -412,7 +450,14 @@ onMounted(() => {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div><label class="block text-sm font-medium text-gray-700 mb-1">No. Empleado</label><input v-model="formulario.numeroEmpleado" class="w-full p-2 border rounded outline-none" /></div>
         <div class="lg:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label><input v-model="formulario.nombreCompleto" class="w-full p-2 border rounded outline-none uppercase" /></div>
-        <div class="lg:col-span-3"><label class="block text-sm font-medium text-gray-700 mb-1">Área de Adscripción</label><input v-model="formulario.departamento" class="w-full p-2 border rounded outline-none uppercase" /></div>
+        
+        <div class="lg:col-span-3">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Área de Adscripción</label>
+          <select v-model="formulario.departamento" class="w-full p-2 border rounded outline-none bg-white">
+            <option value="">Seleccione un Área...</option>
+            <option v-for="area in areasAdscripcion" :key="area.id" :value="area.nombre">{{ area.nombre }}</option>
+          </select>
+        </div>
         
         <div><label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Ingreso</label><input type="date" v-model="formulario.fechaIngreso" class="w-full p-2 border rounded outline-none" /></div>
         <div><label class="block text-sm font-medium text-gray-700 mb-1">Régimen</label><select v-model="formulario.regimen" class="w-full p-2 border rounded outline-none bg-white"><option value="NORMAL">NORMAL</option><option value="ESPECIAL">ESPECIAL</option><option value="LISTA">POR LISTA</option><option value="EXENTO">EXENTO</option></select></div>
