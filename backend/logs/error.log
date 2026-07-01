@@ -242,3 +242,767 @@
 2026-07-01 16:50:35: 
 2026-07-01 16:50:35: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 2026-07-01 16:50:35: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-01 17:03:43: Error obteniendo departamentos: PrismaClientValidationError: 
+2026-07-01 17:03:43: Invalid `prisma.servidorPublico.findMany()` invocation in
+2026-07-01 17:03:43: /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:891:56
+2026-07-01 17:03:43: 
+2026-07-01 17:03:43:   888 // ==============================================================================
+2026-07-01 17:03:43:   889 router.get('/departamentos', async (req, res) => {
+2026-07-01 17:03:43:   890   try {
+2026-07-01 17:03:43: → 891     const departamentos = await prisma.servidorPublico.findMany({
+2026-07-01 17:03:43:             select: {
+2026-07-01 17:03:43:               departamento: true
+2026-07-01 17:03:43:             },
+2026-07-01 17:03:43:             distinct: [
+2026-07-01 17:03:43:               "departamento"
+2026-07-01 17:03:43:             ],
+2026-07-01 17:03:43:             where: {
+2026-07-01 17:03:43:               departamento: {
+2026-07-01 17:03:43:               ~~~~~~~~~~~~
+2026-07-01 17:03:43:                 not: null
+2026-07-01 17:03:43:               },
+2026-07-01 17:03:43:           ?   AND?: ServidorPublicoWhereInput | ServidorPublicoWhereInput[],
+2026-07-01 17:03:43:           ?   OR?: ServidorPublicoWhereInput[],
+2026-07-01 17:03:43:           ?   NOT?: ServidorPublicoWhereInput | ServidorPublicoWhereInput[],
+2026-07-01 17:03:43:           ?   id?: IntFilter | Int,
+2026-07-01 17:03:43:           ?   nombreCompleto?: StringFilter | String,
+2026-07-01 17:03:43:           ?   numeroEmpleado?: StringFilter | String,
+2026-07-01 17:03:43:           ?   areaId?: IntNullableFilter | Int | Null,
+2026-07-01 17:03:43:           ?   regimen?: EnumRegimenFilter | Regimen,
+2026-07-01 17:03:43:           ?   activo?: BoolFilter | Boolean,
+2026-07-01 17:03:43:           ?   horarioId?: IntFilter | Int,
+2026-07-01 17:03:43:           ?   fechaIngreso?: DateTimeNullableFilter | DateTime | Null,
+2026-07-01 17:03:43:           ?   fechaBaja?: DateTimeNullableFilter | DateTime | Null,
+2026-07-01 17:03:43:           ?   motivoBaja?: StringNullableFilter | String | Null,
+2026-07-01 17:03:43:           ?   area?: AreaAdscripcionNullableScalarRelationFilter | AreaAdscripcionWhereInput | Null,
+2026-07-01 17:03:43:           ?   horario?: HorarioScalarRelationFilter | HorarioWhereInput,
+2026-07-01 17:03:43:           ?   asistencias?: AsistenciaListRelationFilter,
+2026-07-01 17:03:43:           ?   historial?: HistorialMovimientoListRelationFilter,
+2026-07-01 17:03:43:           ?   justificaciones?: JustificacionListRelationFilter,
+2026-07-01 17:03:43:           ?   sanciones?: SancionMensualListRelationFilter
+2026-07-01 17:03:43:             }
+2026-07-01 17:03:43:           })
+2026-07-01 17:03:43: 
+2026-07-01 17:03:43: Unknown argument `departamento`. Available options are marked with ?.
+2026-07-01 17:03:43:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:03:43:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:03:43:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:03:43:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:03:43:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:03:43:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:03:43:     at async /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:891:27 {
+2026-07-01 17:03:43:   clientVersion: '7.8.0'
+2026-07-01 17:03:43: }
+2026-07-01 17:11:13: (node:342564) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-01 17:11:13: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-01 17:11:13: 
+2026-07-01 17:11:13: To prepare for this change:
+2026-07-01 17:11:13: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-01 17:11:13: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-01 17:11:13: 
+2026-07-01 17:11:13: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-01 17:11:13: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-01 17:12:27: Error al recuperar asistencias pendientes: PrismaClientValidationError: 
+2026-07-01 17:12:27: Invalid `prisma.asistencia.findMany()` invocation in
+2026-07-01 17:12:27: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:10:48
+2026-07-01 17:12:27: 
+2026-07-01 17:12:27:    7 // ==============================================================================
+2026-07-01 17:12:27:    8 router.get('/pendientes', async (req, res) => {
+2026-07-01 17:12:27:    9   try {
+2026-07-01 17:12:27: → 10     const pendientes = await prisma.asistencia.findMany({
+2026-07-01 17:12:27:            where: {
+2026-07-01 17:12:27:              AND: [
+2026-07-01 17:12:27:                {
+2026-07-01 17:12:27:                  incidencia: {
+2026-07-01 17:12:27:                    in: [
+2026-07-01 17:12:27:                      "RETARDO",
+2026-07-01 17:12:27:                      "RETARDO_ESPECIAL",
+2026-07-01 17:12:27:                      "OMISION_E",
+2026-07-01 17:12:27:                      "OMISION_S",
+2026-07-01 17:12:27:                      "RETARDO_Y_OMISION",
+2026-07-01 17:12:27:                      "FALTA"
+2026-07-01 17:12:27:                    ]
+2026-07-01 17:12:27:                  }
+2026-07-01 17:12:27:                },
+2026-07-01 17:12:27:                {
+2026-07-01 17:12:27:                  justificacion: null
+2026-07-01 17:12:27:                }
+2026-07-01 17:12:27:              ]
+2026-07-01 17:12:27:            },
+2026-07-01 17:12:27:            include: {
+2026-07-01 17:12:27:              servidor: {
+2026-07-01 17:12:27:                select: {
+2026-07-01 17:12:27:                  id: true,
+2026-07-01 17:12:27:                  numeroEmpleado: true,
+2026-07-01 17:12:27:                  nombreCompleto: true,
+2026-07-01 17:12:27:                  departamento: true,
+2026-07-01 17:12:27:                  ~~~~~~~~~~~~
+2026-07-01 17:12:27:                  regimen: true,
+2026-07-01 17:12:27:          ?       areaId?: true,
+2026-07-01 17:12:27:          ?       activo?: true,
+2026-07-01 17:12:27:          ?       horarioId?: true,
+2026-07-01 17:12:27:          ?       fechaIngreso?: true,
+2026-07-01 17:12:27:          ?       fechaBaja?: true,
+2026-07-01 17:12:27:          ?       motivoBaja?: true,
+2026-07-01 17:12:27:          ?       area?: true,
+2026-07-01 17:12:27:          ?       horario?: true,
+2026-07-01 17:12:27:          ?       asistencias?: true,
+2026-07-01 17:12:27:          ?       historial?: true,
+2026-07-01 17:12:27:          ?       justificaciones?: true,
+2026-07-01 17:12:27:          ?       sanciones?: true,
+2026-07-01 17:12:27:          ?       _count?: true
+2026-07-01 17:12:27:                }
+2026-07-01 17:12:27:              }
+2026-07-01 17:12:27:            },
+2026-07-01 17:12:27:            orderBy: {
+2026-07-01 17:12:27:              fecha: "desc"
+2026-07-01 17:12:27:            }
+2026-07-01 17:12:27:          })
+2026-07-01 17:12:27: 
+2026-07-01 17:12:27: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:12:27:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:12:27:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:12:27:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:12:27:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:12:27:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:12:27:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:12:27:     at async /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:10:24 {
+2026-07-01 17:12:27:   clientVersion: '7.8.0'
+2026-07-01 17:12:27: }
+2026-07-01 17:12:27: Error al recuperar el archivo histórico: PrismaClientValidationError: 
+2026-07-01 17:12:27: Invalid `prisma.justificacion.findMany()` invocation in
+2026-07-01 17:12:27: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:157:50
+2026-07-01 17:12:27: 
+2026-07-01 17:12:27:   154 // ==============================================================================
+2026-07-01 17:12:27:   155 router.get('/historial', async (req, res) => {
+2026-07-01 17:12:27:   156   try {
+2026-07-01 17:12:27: → 157     const historial = await prisma.justificacion.findMany({
+2026-07-01 17:12:27:             include: {
+2026-07-01 17:12:27:               servidor: {
+2026-07-01 17:12:27:                 select: {
+2026-07-01 17:12:27:                   numeroEmpleado: true,
+2026-07-01 17:12:27:                   nombreCompleto: true,
+2026-07-01 17:12:27:                   departamento: true,
+2026-07-01 17:12:27:                   ~~~~~~~~~~~~
+2026-07-01 17:12:27:           ?       id?: true,
+2026-07-01 17:12:27:           ?       areaId?: true,
+2026-07-01 17:12:27:           ?       regimen?: true,
+2026-07-01 17:12:27:           ?       activo?: true,
+2026-07-01 17:12:27:           ?       horarioId?: true,
+2026-07-01 17:12:27:           ?       fechaIngreso?: true,
+2026-07-01 17:12:27:           ?       fechaBaja?: true,
+2026-07-01 17:12:27:           ?       motivoBaja?: true,
+2026-07-01 17:12:27:           ?       area?: true,
+2026-07-01 17:12:27:           ?       horario?: true,
+2026-07-01 17:12:27:           ?       asistencias?: true,
+2026-07-01 17:12:27:           ?       historial?: true,
+2026-07-01 17:12:27:           ?       justificaciones?: true,
+2026-07-01 17:12:27:           ?       sanciones?: true,
+2026-07-01 17:12:27:           ?       _count?: true
+2026-07-01 17:12:27:                 }
+2026-07-01 17:12:27:               },
+2026-07-01 17:12:27:               asistencia: {
+2026-07-01 17:12:27:                 select: {
+2026-07-01 17:12:27:                   fecha: true,
+2026-07-01 17:12:27:                   entrada: true,
+2026-07-01 17:12:27:                   salida: true
+2026-07-01 17:12:27:                 }
+2026-07-01 17:12:27:               }
+2026-07-01 17:12:27:             },
+2026-07-01 17:12:27:             orderBy: {
+2026-07-01 17:12:27:               fechaRegistro: "desc"
+2026-07-01 17:12:27:             }
+2026-07-01 17:12:27:           })
+2026-07-01 17:12:27: 
+2026-07-01 17:12:27: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:12:27:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:12:27:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:12:27:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:12:27:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:12:27:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:12:27:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:12:27:     at async /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:157:23 {
+2026-07-01 17:12:27:   clientVersion: '7.8.0'
+2026-07-01 17:12:27: }
+2026-07-01 17:13:51: Error al recuperar asistencias pendientes: PrismaClientValidationError: 
+2026-07-01 17:13:51: Invalid `prisma.asistencia.findMany()` invocation in
+2026-07-01 17:13:51: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:10:48
+2026-07-01 17:13:51: 
+2026-07-01 17:13:51:    7 // ==============================================================================
+2026-07-01 17:13:51:    8 router.get('/pendientes', async (req, res) => {
+2026-07-01 17:13:51:    9   try {
+2026-07-01 17:13:51: → 10     const pendientes = await prisma.asistencia.findMany({
+2026-07-01 17:13:51:            where: {
+2026-07-01 17:13:51:              AND: [
+2026-07-01 17:13:51:                {
+2026-07-01 17:13:51:                  incidencia: {
+2026-07-01 17:13:51:                    in: [
+2026-07-01 17:13:51:                      "RETARDO",
+2026-07-01 17:13:51:                      "RETARDO_ESPECIAL",
+2026-07-01 17:13:51:                      "OMISION_E",
+2026-07-01 17:13:51:                      "OMISION_S",
+2026-07-01 17:13:51:                      "RETARDO_Y_OMISION",
+2026-07-01 17:13:51:                      "FALTA"
+2026-07-01 17:13:51:                    ]
+2026-07-01 17:13:51:                  }
+2026-07-01 17:13:51:                },
+2026-07-01 17:13:51:                {
+2026-07-01 17:13:51:                  justificacion: null
+2026-07-01 17:13:51:                }
+2026-07-01 17:13:51:              ]
+2026-07-01 17:13:51:            },
+2026-07-01 17:13:51:            include: {
+2026-07-01 17:13:51:              servidor: {
+2026-07-01 17:13:51:                select: {
+2026-07-01 17:13:51:                  id: true,
+2026-07-01 17:13:51:                  numeroEmpleado: true,
+2026-07-01 17:13:51:                  nombreCompleto: true,
+2026-07-01 17:13:51:                  departamento: true,
+2026-07-01 17:13:51:                  ~~~~~~~~~~~~
+2026-07-01 17:13:51:                  regimen: true,
+2026-07-01 17:13:51:          ?       areaId?: true,
+2026-07-01 17:13:51:          ?       activo?: true,
+2026-07-01 17:13:51:          ?       horarioId?: true,
+2026-07-01 17:13:51:          ?       fechaIngreso?: true,
+2026-07-01 17:13:51:          ?       fechaBaja?: true,
+2026-07-01 17:13:51:          ?       motivoBaja?: true,
+2026-07-01 17:13:51:          ?       area?: true,
+2026-07-01 17:13:51:          ?       horario?: true,
+2026-07-01 17:13:51:          ?       asistencias?: true,
+2026-07-01 17:13:51:          ?       historial?: true,
+2026-07-01 17:13:51:          ?       justificaciones?: true,
+2026-07-01 17:13:51:          ?       sanciones?: true,
+2026-07-01 17:13:51:          ?       _count?: true
+2026-07-01 17:13:51:                }
+2026-07-01 17:13:51:              }
+2026-07-01 17:13:51:            },
+2026-07-01 17:13:51:            orderBy: {
+2026-07-01 17:13:51:              fecha: "desc"
+2026-07-01 17:13:51:            }
+2026-07-01 17:13:51:          })
+2026-07-01 17:13:51: 
+2026-07-01 17:13:51: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:13:51:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:13:51:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:13:51:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:13:51:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:13:51:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:13:51:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:13:51:     at async /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:10:24 {
+2026-07-01 17:13:51:   clientVersion: '7.8.0'
+2026-07-01 17:13:51: }
+2026-07-01 17:13:51: Error al recuperar el archivo histórico: PrismaClientValidationError: 
+2026-07-01 17:13:51: Invalid `prisma.justificacion.findMany()` invocation in
+2026-07-01 17:13:51: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:157:50
+2026-07-01 17:13:51: 
+2026-07-01 17:13:51:   154 // ==============================================================================
+2026-07-01 17:13:51:   155 router.get('/historial', async (req, res) => {
+2026-07-01 17:13:51:   156   try {
+2026-07-01 17:13:51: → 157     const historial = await prisma.justificacion.findMany({
+2026-07-01 17:13:51:             include: {
+2026-07-01 17:13:51:               servidor: {
+2026-07-01 17:13:51:                 select: {
+2026-07-01 17:13:51:                   numeroEmpleado: true,
+2026-07-01 17:13:51:                   nombreCompleto: true,
+2026-07-01 17:13:51:                   departamento: true,
+2026-07-01 17:13:51:                   ~~~~~~~~~~~~
+2026-07-01 17:13:51:           ?       id?: true,
+2026-07-01 17:13:51:           ?       areaId?: true,
+2026-07-01 17:13:51:           ?       regimen?: true,
+2026-07-01 17:13:51:           ?       activo?: true,
+2026-07-01 17:13:51:           ?       horarioId?: true,
+2026-07-01 17:13:51:           ?       fechaIngreso?: true,
+2026-07-01 17:13:51:           ?       fechaBaja?: true,
+2026-07-01 17:13:51:           ?       motivoBaja?: true,
+2026-07-01 17:13:51:           ?       area?: true,
+2026-07-01 17:13:51:           ?       horario?: true,
+2026-07-01 17:13:51:           ?       asistencias?: true,
+2026-07-01 17:13:51:           ?       historial?: true,
+2026-07-01 17:13:51:           ?       justificaciones?: true,
+2026-07-01 17:13:51:           ?       sanciones?: true,
+2026-07-01 17:13:51:           ?       _count?: true
+2026-07-01 17:13:51:                 }
+2026-07-01 17:13:51:               },
+2026-07-01 17:13:51:               asistencia: {
+2026-07-01 17:13:51:                 select: {
+2026-07-01 17:13:51:                   fecha: true,
+2026-07-01 17:13:51:                   entrada: true,
+2026-07-01 17:13:51:                   salida: true
+2026-07-01 17:13:51:                 }
+2026-07-01 17:13:51:               }
+2026-07-01 17:13:51:             },
+2026-07-01 17:13:51:             orderBy: {
+2026-07-01 17:13:51:               fechaRegistro: "desc"
+2026-07-01 17:13:51:             }
+2026-07-01 17:13:51:           })
+2026-07-01 17:13:51: 
+2026-07-01 17:13:51: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:13:51:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:13:51:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:13:51:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:13:51:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:13:51:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:13:51:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:13:51:     at async /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:157:23 {
+2026-07-01 17:13:51:   clientVersion: '7.8.0'
+2026-07-01 17:13:51: }
+2026-07-01 17:13:58: Error al recuperar asistencias pendientes: PrismaClientValidationError: 
+2026-07-01 17:13:58: Invalid `prisma.asistencia.findMany()` invocation in
+2026-07-01 17:13:58: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:10:48
+2026-07-01 17:13:58: 
+2026-07-01 17:13:58:    7 // ==============================================================================
+2026-07-01 17:13:58:    8 router.get('/pendientes', async (req, res) => {
+2026-07-01 17:13:58:    9   try {
+2026-07-01 17:13:58: → 10     const pendientes = await prisma.asistencia.findMany({
+2026-07-01 17:13:58:            where: {
+2026-07-01 17:13:58:              AND: [
+2026-07-01 17:13:58:                {
+2026-07-01 17:13:58:                  incidencia: {
+2026-07-01 17:13:58:                    in: [
+2026-07-01 17:13:58:                      "RETARDO",
+2026-07-01 17:13:58:                      "RETARDO_ESPECIAL",
+2026-07-01 17:13:58:                      "OMISION_E",
+2026-07-01 17:13:58:                      "OMISION_S",
+2026-07-01 17:13:58:                      "RETARDO_Y_OMISION",
+2026-07-01 17:13:58:                      "FALTA"
+2026-07-01 17:13:58:                    ]
+2026-07-01 17:13:58:                  }
+2026-07-01 17:13:58:                },
+2026-07-01 17:13:58:                {
+2026-07-01 17:13:58:                  justificacion: null
+2026-07-01 17:13:58:                }
+2026-07-01 17:13:58:              ]
+2026-07-01 17:13:58:            },
+2026-07-01 17:13:58:            include: {
+2026-07-01 17:13:58:              servidor: {
+2026-07-01 17:13:58:                select: {
+2026-07-01 17:13:58:                  id: true,
+2026-07-01 17:13:58:                  numeroEmpleado: true,
+2026-07-01 17:13:58:                  nombreCompleto: true,
+2026-07-01 17:13:58:                  departamento: true,
+2026-07-01 17:13:58:                  ~~~~~~~~~~~~
+2026-07-01 17:13:58:                  regimen: true,
+2026-07-01 17:13:58:          ?       areaId?: true,
+2026-07-01 17:13:58:          ?       activo?: true,
+2026-07-01 17:13:58:          ?       horarioId?: true,
+2026-07-01 17:13:58:          ?       fechaIngreso?: true,
+2026-07-01 17:13:58:          ?       fechaBaja?: true,
+2026-07-01 17:13:58:          ?       motivoBaja?: true,
+2026-07-01 17:13:58:          ?       area?: true,
+2026-07-01 17:13:58:          ?       horario?: true,
+2026-07-01 17:13:58:          ?       asistencias?: true,
+2026-07-01 17:13:58:          ?       historial?: true,
+2026-07-01 17:13:58:          ?       justificaciones?: true,
+2026-07-01 17:13:58:          ?       sanciones?: true,
+2026-07-01 17:13:58:          ?       _count?: true
+2026-07-01 17:13:58:                }
+2026-07-01 17:13:58:              }
+2026-07-01 17:13:58:            },
+2026-07-01 17:13:58:            orderBy: {
+2026-07-01 17:13:58:              fecha: "desc"
+2026-07-01 17:13:58:            }
+2026-07-01 17:13:58:          })
+2026-07-01 17:13:58: 
+2026-07-01 17:13:58: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:13:58:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:13:58:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:13:58:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:13:58:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:13:58:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:13:58:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:13:58:     at async /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:10:24 {
+2026-07-01 17:13:58:   clientVersion: '7.8.0'
+2026-07-01 17:13:58: }
+2026-07-01 17:29:09: Error al recuperar el archivo histórico: PrismaClientValidationError: 
+2026-07-01 17:29:09: Invalid `prisma.justificacion.findMany()` invocation:
+2026-07-01 17:29:09: 
+2026-07-01 17:29:09: {
+2026-07-01 17:29:09:   include: {
+2026-07-01 17:29:09:     servidor: {
+2026-07-01 17:29:09:       select: {
+2026-07-01 17:29:09:         numeroEmpleado: true,
+2026-07-01 17:29:09:         nombreCompleto: true,
+2026-07-01 17:29:09:         departamento: true,
+2026-07-01 17:29:09:         ~~~~~~~~~~~~
+2026-07-01 17:29:09: ?       id?: true,
+2026-07-01 17:29:09: ?       areaId?: true,
+2026-07-01 17:29:09: ?       regimen?: true,
+2026-07-01 17:29:09: ?       activo?: true,
+2026-07-01 17:29:09: ?       horarioId?: true,
+2026-07-01 17:29:09: ?       fechaIngreso?: true,
+2026-07-01 17:29:09: ?       fechaBaja?: true,
+2026-07-01 17:29:09: ?       motivoBaja?: true,
+2026-07-01 17:29:09: ?       area?: true,
+2026-07-01 17:29:09: ?       horario?: true,
+2026-07-01 17:29:09: ?       asistencias?: true,
+2026-07-01 17:29:09: ?       historial?: true,
+2026-07-01 17:29:09: ?       justificaciones?: true,
+2026-07-01 17:29:09: ?       sanciones?: true,
+2026-07-01 17:29:09: ?       _count?: true
+2026-07-01 17:29:09:       }
+2026-07-01 17:29:09:     },
+2026-07-01 17:29:09:     asistencia: {
+2026-07-01 17:29:09:       select: {
+2026-07-01 17:29:09:         fecha: true,
+2026-07-01 17:29:09:         entrada: true,
+2026-07-01 17:29:09:         salida: true
+2026-07-01 17:29:09:       }
+2026-07-01 17:29:09:     }
+2026-07-01 17:29:09:   },
+2026-07-01 17:29:09:   orderBy: {
+2026-07-01 17:29:09:     fechaRegistro: "desc"
+2026-07-01 17:29:09:   }
+2026-07-01 17:29:09: }
+2026-07-01 17:29:09: 
+2026-07-01 17:29:09: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:29:09:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:29:09:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:29:09:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:29:09:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:29:09:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:29:09:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:29:09:     at async /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:157:23 {
+2026-07-01 17:29:09:   clientVersion: '7.8.0'
+2026-07-01 17:29:09: }
+2026-07-01 17:29:09: Error al recuperar asistencias pendientes: PrismaClientValidationError: 
+2026-07-01 17:29:09: Invalid `prisma.asistencia.findMany()` invocation in
+2026-07-01 17:29:09: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:10:48
+2026-07-01 17:29:09: 
+2026-07-01 17:29:09:    7 // ==============================================================================
+2026-07-01 17:29:09:    8 router.get('/pendientes', async (req, res) => {
+2026-07-01 17:29:09:    9   try {
+2026-07-01 17:29:09: → 10     const pendientes = await prisma.asistencia.findMany({
+2026-07-01 17:29:09:            where: {
+2026-07-01 17:29:09:              AND: [
+2026-07-01 17:29:09:                {
+2026-07-01 17:29:09:                  incidencia: {
+2026-07-01 17:29:09:                    in: [
+2026-07-01 17:29:09:                      "RETARDO",
+2026-07-01 17:29:09:                      "RETARDO_ESPECIAL",
+2026-07-01 17:29:09:                      "OMISION_E",
+2026-07-01 17:29:09:                      "OMISION_S",
+2026-07-01 17:29:09:                      "RETARDO_Y_OMISION",
+2026-07-01 17:29:09:                      "FALTA"
+2026-07-01 17:29:09:                    ]
+2026-07-01 17:29:09:                  }
+2026-07-01 17:29:09:                },
+2026-07-01 17:29:09:                {
+2026-07-01 17:29:09:                  justificacion: null
+2026-07-01 17:29:09:                }
+2026-07-01 17:29:09:              ]
+2026-07-01 17:29:09:            },
+2026-07-01 17:29:09:            include: {
+2026-07-01 17:29:09:              servidor: {
+2026-07-01 17:29:09:                select: {
+2026-07-01 17:29:09:                  id: true,
+2026-07-01 17:29:09:                  numeroEmpleado: true,
+2026-07-01 17:29:09:                  nombreCompleto: true,
+2026-07-01 17:29:09:                  departamento: true,
+2026-07-01 17:29:09:                  ~~~~~~~~~~~~
+2026-07-01 17:29:09:                  regimen: true,
+2026-07-01 17:29:09:          ?       areaId?: true,
+2026-07-01 17:29:09:          ?       activo?: true,
+2026-07-01 17:29:09:          ?       horarioId?: true,
+2026-07-01 17:29:09:          ?       fechaIngreso?: true,
+2026-07-01 17:29:09:          ?       fechaBaja?: true,
+2026-07-01 17:29:09:          ?       motivoBaja?: true,
+2026-07-01 17:29:09:          ?       area?: true,
+2026-07-01 17:29:09:          ?       horario?: true,
+2026-07-01 17:29:09:          ?       asistencias?: true,
+2026-07-01 17:29:09:          ?       historial?: true,
+2026-07-01 17:29:09:          ?       justificaciones?: true,
+2026-07-01 17:29:09:          ?       sanciones?: true,
+2026-07-01 17:29:09:          ?       _count?: true
+2026-07-01 17:29:09:                }
+2026-07-01 17:29:09:              }
+2026-07-01 17:29:09:            },
+2026-07-01 17:29:09:            orderBy: {
+2026-07-01 17:29:09:              fecha: "desc"
+2026-07-01 17:29:09:            }
+2026-07-01 17:29:09:          })
+2026-07-01 17:29:09: 
+2026-07-01 17:29:09: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:29:09:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:29:09:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:29:09:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:29:09:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:29:09:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:29:09:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:29:09:     at async /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:10:24 {
+2026-07-01 17:29:09:   clientVersion: '7.8.0'
+2026-07-01 17:29:09: }
+2026-07-01 17:29:21: (node:342718) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-01 17:29:21: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-01 17:29:21: 
+2026-07-01 17:29:21: To prepare for this change:
+2026-07-01 17:29:21: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-01 17:29:21: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-01 17:29:21: 
+2026-07-01 17:29:21: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-01 17:29:21: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-01 17:46:46: Error obteniendo historial: PrismaClientValidationError: 
+2026-07-01 17:46:46: Invalid `prisma.sancionMensual.findMany()` invocation in
+2026-07-01 17:46:46: /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:143:51
+2026-07-01 17:46:46: 
+2026-07-01 17:46:46:   140 // ==============================================================================
+2026-07-01 17:46:46:   141 router.get('/historial', async (req, res) => {
+2026-07-01 17:46:46:   142   try {
+2026-07-01 17:46:46: → 143     const historial = await prisma.sancionMensual.findMany({
+2026-07-01 17:46:46:             include: {
+2026-07-01 17:46:46:               servidor: {
+2026-07-01 17:46:46:                 select: {
+2026-07-01 17:46:46:                   numeroEmpleado: true,
+2026-07-01 17:46:46:                   nombreCompleto: true,
+2026-07-01 17:46:46:                   departamento: true,
+2026-07-01 17:46:46:                   ~~~~~~~~~~~~
+2026-07-01 17:46:46:           ?       id?: true,
+2026-07-01 17:46:46:           ?       areaId?: true,
+2026-07-01 17:46:46:           ?       regimen?: true,
+2026-07-01 17:46:46:           ?       activo?: true,
+2026-07-01 17:46:46:           ?       horarioId?: true,
+2026-07-01 17:46:46:           ?       fechaIngreso?: true,
+2026-07-01 17:46:46:           ?       fechaBaja?: true,
+2026-07-01 17:46:46:           ?       motivoBaja?: true,
+2026-07-01 17:46:46:           ?       area?: true,
+2026-07-01 17:46:46:           ?       horario?: true,
+2026-07-01 17:46:46:           ?       asistencias?: true,
+2026-07-01 17:46:46:           ?       historial?: true,
+2026-07-01 17:46:46:           ?       justificaciones?: true,
+2026-07-01 17:46:46:           ?       sanciones?: true,
+2026-07-01 17:46:46:           ?       _count?: true
+2026-07-01 17:46:46:                 }
+2026-07-01 17:46:46:               }
+2026-07-01 17:46:46:             },
+2026-07-01 17:46:46:             orderBy: [
+2026-07-01 17:46:46:               {
+2026-07-01 17:46:46:                 anio: "desc"
+2026-07-01 17:46:46:               },
+2026-07-01 17:46:46:               {
+2026-07-01 17:46:46:                 mes: "desc"
+2026-07-01 17:46:46:               }
+2026-07-01 17:46:46:             ]
+2026-07-01 17:46:46:           })
+2026-07-01 17:46:46: 
+2026-07-01 17:46:46: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:46:46:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:46:46:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:46:46:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:46:46:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:46:46:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:46:46:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:46:46:     at async /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:143:23 {
+2026-07-01 17:46:46:   clientVersion: '7.8.0'
+2026-07-01 17:46:46: }
+2026-07-01 17:46:49: Error calculando sanciones: PrismaClientValidationError: 
+2026-07-01 17:46:49: Invalid `prisma.asistencia.findMany()` invocation in
+2026-07-01 17:46:49: /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:21:52
+2026-07-01 17:46:49: 
+2026-07-01 17:46:49:   18 const fechaFin = new Date(Date.UTC(anio, parseInt(mes) + 1, 0, 23, 59, 59));
+2026-07-01 17:46:49:   19 
+2026-07-01 17:46:49:   20 // Traemos TODAS las asistencias del mes
+2026-07-01 17:46:49: → 21 const asistenciasMes = await prisma.asistencia.findMany({
+2026-07-01 17:46:49:        where: {
+2026-07-01 17:46:49:          fecha: {
+2026-07-01 17:46:49:            gte: new Date("2026-06-01T00:00:00.000Z"),
+2026-07-01 17:46:49:            lte: new Date("2026-06-30T23:59:59.000Z")
+2026-07-01 17:46:49:          }
+2026-07-01 17:46:49:        },
+2026-07-01 17:46:49:        include: {
+2026-07-01 17:46:49:          servidor: {
+2026-07-01 17:46:49:            select: {
+2026-07-01 17:46:49:              id: true,
+2026-07-01 17:46:49:              numeroEmpleado: true,
+2026-07-01 17:46:49:              nombreCompleto: true,
+2026-07-01 17:46:49:              departamento: true,
+2026-07-01 17:46:49:              ~~~~~~~~~~~~
+2026-07-01 17:46:49:      ?       areaId?: true,
+2026-07-01 17:46:49:      ?       regimen?: true,
+2026-07-01 17:46:49:      ?       activo?: true,
+2026-07-01 17:46:49:      ?       horarioId?: true,
+2026-07-01 17:46:49:      ?       fechaIngreso?: true,
+2026-07-01 17:46:49:      ?       fechaBaja?: true,
+2026-07-01 17:46:49:      ?       motivoBaja?: true,
+2026-07-01 17:46:49:      ?       area?: true,
+2026-07-01 17:46:49:      ?       horario?: true,
+2026-07-01 17:46:49:      ?       asistencias?: true,
+2026-07-01 17:46:49:      ?       historial?: true,
+2026-07-01 17:46:49:      ?       justificaciones?: true,
+2026-07-01 17:46:49:      ?       sanciones?: true,
+2026-07-01 17:46:49:      ?       _count?: true
+2026-07-01 17:46:49:            }
+2026-07-01 17:46:49:          }
+2026-07-01 17:46:49:        }
+2026-07-01 17:46:49:      })
+2026-07-01 17:46:49: 
+2026-07-01 17:46:49: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:46:49:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:46:49:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:46:49:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:46:49:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:46:49:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:46:49:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:46:49:     at async /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:21:28 {
+2026-07-01 17:46:49:   clientVersion: '7.8.0'
+2026-07-01 17:46:49: }
+2026-07-01 17:47:00: Error obteniendo historial: PrismaClientValidationError: 
+2026-07-01 17:47:00: Invalid `prisma.sancionMensual.findMany()` invocation in
+2026-07-01 17:47:00: /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:143:51
+2026-07-01 17:47:00: 
+2026-07-01 17:47:00:   140 // ==============================================================================
+2026-07-01 17:47:00:   141 router.get('/historial', async (req, res) => {
+2026-07-01 17:47:00:   142   try {
+2026-07-01 17:47:00: → 143     const historial = await prisma.sancionMensual.findMany({
+2026-07-01 17:47:00:             include: {
+2026-07-01 17:47:00:               servidor: {
+2026-07-01 17:47:00:                 select: {
+2026-07-01 17:47:00:                   numeroEmpleado: true,
+2026-07-01 17:47:00:                   nombreCompleto: true,
+2026-07-01 17:47:00:                   departamento: true,
+2026-07-01 17:47:00:                   ~~~~~~~~~~~~
+2026-07-01 17:47:00:           ?       id?: true,
+2026-07-01 17:47:00:           ?       areaId?: true,
+2026-07-01 17:47:00:           ?       regimen?: true,
+2026-07-01 17:47:00:           ?       activo?: true,
+2026-07-01 17:47:00:           ?       horarioId?: true,
+2026-07-01 17:47:00:           ?       fechaIngreso?: true,
+2026-07-01 17:47:00:           ?       fechaBaja?: true,
+2026-07-01 17:47:00:           ?       motivoBaja?: true,
+2026-07-01 17:47:00:           ?       area?: true,
+2026-07-01 17:47:00:           ?       horario?: true,
+2026-07-01 17:47:00:           ?       asistencias?: true,
+2026-07-01 17:47:00:           ?       historial?: true,
+2026-07-01 17:47:00:           ?       justificaciones?: true,
+2026-07-01 17:47:00:           ?       sanciones?: true,
+2026-07-01 17:47:00:           ?       _count?: true
+2026-07-01 17:47:00:                 }
+2026-07-01 17:47:00:               }
+2026-07-01 17:47:00:             },
+2026-07-01 17:47:00:             orderBy: [
+2026-07-01 17:47:00:               {
+2026-07-01 17:47:00:                 anio: "desc"
+2026-07-01 17:47:00:               },
+2026-07-01 17:47:00:               {
+2026-07-01 17:47:00:                 mes: "desc"
+2026-07-01 17:47:00:               }
+2026-07-01 17:47:00:             ]
+2026-07-01 17:47:00:           })
+2026-07-01 17:47:00: 
+2026-07-01 17:47:00: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:47:00:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:47:00:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:47:00:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:47:00:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:47:00:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:47:00:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:47:00:     at async /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:143:23 {
+2026-07-01 17:47:00:   clientVersion: '7.8.0'
+2026-07-01 17:47:00: }
+2026-07-01 17:48:47: Error obteniendo historial: PrismaClientValidationError: 
+2026-07-01 17:48:47: Invalid `prisma.sancionMensual.findMany()` invocation:
+2026-07-01 17:48:47: 
+2026-07-01 17:48:47: {
+2026-07-01 17:48:47:   include: {
+2026-07-01 17:48:47:     servidor: {
+2026-07-01 17:48:47:       select: {
+2026-07-01 17:48:47:         numeroEmpleado: true,
+2026-07-01 17:48:47:         nombreCompleto: true,
+2026-07-01 17:48:47:         departamento: true,
+2026-07-01 17:48:47:         ~~~~~~~~~~~~
+2026-07-01 17:48:47: ?       id?: true,
+2026-07-01 17:48:47: ?       areaId?: true,
+2026-07-01 17:48:47: ?       regimen?: true,
+2026-07-01 17:48:47: ?       activo?: true,
+2026-07-01 17:48:47: ?       horarioId?: true,
+2026-07-01 17:48:47: ?       fechaIngreso?: true,
+2026-07-01 17:48:47: ?       fechaBaja?: true,
+2026-07-01 17:48:47: ?       motivoBaja?: true,
+2026-07-01 17:48:47: ?       area?: true,
+2026-07-01 17:48:47: ?       horario?: true,
+2026-07-01 17:48:47: ?       asistencias?: true,
+2026-07-01 17:48:47: ?       historial?: true,
+2026-07-01 17:48:47: ?       justificaciones?: true,
+2026-07-01 17:48:47: ?       sanciones?: true,
+2026-07-01 17:48:47: ?       _count?: true
+2026-07-01 17:48:47:       }
+2026-07-01 17:48:47:     }
+2026-07-01 17:48:47:   },
+2026-07-01 17:48:47:   orderBy: [
+2026-07-01 17:48:47:     {
+2026-07-01 17:48:47:       anio: "desc"
+2026-07-01 17:48:47:     },
+2026-07-01 17:48:47:     {
+2026-07-01 17:48:47:       mes: "desc"
+2026-07-01 17:48:47:     }
+2026-07-01 17:48:47:   ]
+2026-07-01 17:48:47: }
+2026-07-01 17:48:47: 
+2026-07-01 17:48:47: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:48:47:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:48:47:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:48:47:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:48:47:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:48:47:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:48:47:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:48:47:     at async /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:143:23 {
+2026-07-01 17:48:47:   clientVersion: '7.8.0'
+2026-07-01 17:48:47: }
+2026-07-01 17:48:50: Error calculando sanciones: PrismaClientValidationError: 
+2026-07-01 17:48:50: Invalid `prisma.asistencia.findMany()` invocation in
+2026-07-01 17:48:50: /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:21:52
+2026-07-01 17:48:50: 
+2026-07-01 17:48:50:   18 const fechaFin = new Date(Date.UTC(anio, parseInt(mes) + 1, 0, 23, 59, 59));
+2026-07-01 17:48:50:   19 
+2026-07-01 17:48:50:   20 // Traemos TODAS las asistencias del mes
+2026-07-01 17:48:50: → 21 const asistenciasMes = await prisma.asistencia.findMany({
+2026-07-01 17:48:50:        where: {
+2026-07-01 17:48:50:          fecha: {
+2026-07-01 17:48:50:            gte: new Date("2026-06-01T00:00:00.000Z"),
+2026-07-01 17:48:50:            lte: new Date("2026-06-30T23:59:59.000Z")
+2026-07-01 17:48:50:          }
+2026-07-01 17:48:50:        },
+2026-07-01 17:48:50:        include: {
+2026-07-01 17:48:50:          servidor: {
+2026-07-01 17:48:50:            select: {
+2026-07-01 17:48:50:              id: true,
+2026-07-01 17:48:50:              numeroEmpleado: true,
+2026-07-01 17:48:50:              nombreCompleto: true,
+2026-07-01 17:48:50:              departamento: true,
+2026-07-01 17:48:50:              ~~~~~~~~~~~~
+2026-07-01 17:48:50:      ?       areaId?: true,
+2026-07-01 17:48:50:      ?       regimen?: true,
+2026-07-01 17:48:50:      ?       activo?: true,
+2026-07-01 17:48:50:      ?       horarioId?: true,
+2026-07-01 17:48:50:      ?       fechaIngreso?: true,
+2026-07-01 17:48:50:      ?       fechaBaja?: true,
+2026-07-01 17:48:50:      ?       motivoBaja?: true,
+2026-07-01 17:48:50:      ?       area?: true,
+2026-07-01 17:48:50:      ?       horario?: true,
+2026-07-01 17:48:50:      ?       asistencias?: true,
+2026-07-01 17:48:50:      ?       historial?: true,
+2026-07-01 17:48:50:      ?       justificaciones?: true,
+2026-07-01 17:48:50:      ?       sanciones?: true,
+2026-07-01 17:48:50:      ?       _count?: true
+2026-07-01 17:48:50:            }
+2026-07-01 17:48:50:          }
+2026-07-01 17:48:50:        }
+2026-07-01 17:48:50:      })
+2026-07-01 17:48:50: 
+2026-07-01 17:48:50: Unknown field `departamento` for select statement on model `ServidorPublico`. Available options are marked with ?.
+2026-07-01 17:48:50:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 17:48:50:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 17:48:50:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 17:48:50:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 17:48:50:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 17:48:50:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 17:48:50:     at async /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:21:28 {
+2026-07-01 17:48:50:   clientVersion: '7.8.0'
+2026-07-01 17:48:50: }
+2026-07-01 17:49:15: (node:342877) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-01 17:49:15: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-01 17:49:15: 
+2026-07-01 17:49:15: To prepare for this change:
+2026-07-01 17:49:15: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-01 17:49:15: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-01 17:49:15: 
+2026-07-01 17:49:15: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-01 17:49:15: (Use `node --trace-warnings ...` to show where the warning was created)

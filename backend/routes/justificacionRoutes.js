@@ -26,7 +26,7 @@ router.get('/pendientes', async (req, res) => {
             id: true,
             numeroEmpleado: true,
             nombreCompleto: true,
-            departamento: true,
+            area: { select: { nombre: true } }, // 💡 El arreglo: traemos el nombre desde el catálogo
             regimen: true
           }
         }
@@ -36,7 +36,19 @@ router.get('/pendientes', async (req, res) => {
       }
     });
 
-    res.json(pendientes);
+    // 💡 EL DISFRAZ: Mapeamos el nombre del área de vuelta a la propiedad 'departamento'
+    const respuesta = pendientes.map(p => ({
+      ...p,
+      servidor: {
+        id: p.servidor.id,
+        numeroEmpleado: p.servidor.numeroEmpleado,
+        nombreCompleto: p.servidor.nombreCompleto,
+        departamento: p.servidor.area ? p.servidor.area.nombre : 'Sin Área',
+        regimen: p.servidor.regimen
+      }
+    }));
+
+    res.json(respuesta);
   } catch (error) {
     console.error("Error al recuperar asistencias pendientes:", error);
     res.status(500).json({ error: "Error al recuperar incidencias pendientes de la base de datos." });
@@ -115,7 +127,6 @@ router.post('/registrar-masiva', async (req, res) => {
       dataAsistencia.salida = siglas;
     }
 
-    // Preparamos todas las instrucciones para la base de datos
     const transacciones = [];
     
     for (const ast of asistencias) {
@@ -139,7 +150,6 @@ router.post('/registrar-masiva', async (req, res) => {
       );
     }
 
-    // Ejecutamos todo de un solo golpe. Si uno falla, ninguno se guarda (seguridad total)
     await prisma.$transaction(transacciones);
 
     res.json({ mensaje: `Se justificaron ${asistencias.length} registros exitosamente.` });
@@ -160,7 +170,7 @@ router.get('/historial', async (req, res) => {
           select: {
             numeroEmpleado: true,
             nombreCompleto: true,
-            departamento: true
+            area: { select: { nombre: true } } // 💡 El arreglo en el historial
           }
         },
         asistencia: {
@@ -184,7 +194,8 @@ router.get('/historial', async (req, res) => {
       folio: item.folioDocumento || 'N/A',
       servidor: {
         numeroEmpleado: item.servidor?.numeroEmpleado || 'N/A',
-        nombreCompleto: item.servidor?.nombreCompleto || 'Desconocido'
+        nombreCompleto: item.servidor?.nombreCompleto || 'Desconocido',
+        departamento: item.servidor?.area ? item.servidor.area.nombre : 'Sin Área' // 💡 Se manda por si el frontend decide mostrarlo en el historial futuro
       },
       asistencia: {
         fecha: item.asistencia?.fecha || null

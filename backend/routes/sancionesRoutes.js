@@ -23,7 +23,8 @@ router.get('/calcular', async (req, res) => {
         fecha: { gte: fechaInicio, lte: fechaFin }
       },
       include: {
-        servidor: { select: { id: true, numeroEmpleado: true, nombreCompleto: true, departamento: true } }
+        // 💡 IMPORTANTE: Pedimos el nombre del área desde el catálogo
+        servidor: { select: { id: true, numeroEmpleado: true, nombreCompleto: true, area: { select: { nombre: true } } } }
       }
     });
 
@@ -37,7 +38,7 @@ router.get('/calcular', async (req, res) => {
           servidorId: s.id,
           numeroEmpleado: s.numeroEmpleado,
           nombreCompleto: s.nombreCompleto,
-          departamento: s.departamento,
+          departamento: s.area ? s.area.nombre : 'Sin Área', // 💡 EL DISFRAZ
           totalFaltas: 0,
           totalRetardos: 0,
           totalOmisiones: 0,
@@ -142,7 +143,8 @@ router.get('/historial', async (req, res) => {
   try {
     const historial = await prisma.sancionMensual.findMany({
       include: {
-        servidor: { select: { numeroEmpleado: true, nombreCompleto: true, departamento: true } }
+        // 💡 IMPORTANTE: Pedimos el nombre del área desde el catálogo
+        servidor: { select: { numeroEmpleado: true, nombreCompleto: true, area: { select: { nombre: true } } } }
       },
       orderBy: [
         { anio: 'desc' }, 
@@ -150,7 +152,17 @@ router.get('/historial', async (req, res) => {
       ]
     });
 
-    res.json(historial);
+    // 💡 EL DISFRAZ: Formateamos el historial para que devuelva la estructura que espera Vue
+    const historialFormateado = historial.map(sancion => ({
+      ...sancion,
+      servidor: {
+        numeroEmpleado: sancion.servidor.numeroEmpleado,
+        nombreCompleto: sancion.servidor.nombreCompleto,
+        departamento: sancion.servidor.area ? sancion.servidor.area.nombre : 'Sin Área'
+      }
+    }));
+
+    res.json(historialFormateado);
   } catch (error) {
     console.error("Error obteniendo historial:", error);
     res.status(500).json({ error: 'Error al consultar el expediente histórico.' });
