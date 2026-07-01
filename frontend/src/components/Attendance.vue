@@ -41,6 +41,9 @@ const getCalendarISODate = (fechaObj) => {
 // Helper para extraer la parte de fecha en UTC ("YYYY-MM-DD") de los registros de asistencia
 const getLocalISODate = (fechaObj) => {
   if (!fechaObj) return '';
+  if (typeof fechaObj === 'string') {
+    return fechaObj.includes('T') ? fechaObj.split('T')[0] : fechaObj.split(' ')[0];
+  }
   const d = new Date(fechaObj);
   if (isNaN(d.getTime())) return '';
   return d.toISOString().split('T')[0];
@@ -96,9 +99,20 @@ const registrosFiltrados = computed(() => {
     resultado = resultado.filter(reg => String(reg.clockName || '').toLowerCase().includes(query));
   }
 
+  // Helper local para formatear el timestamp de tipo String sin conversiones horarias
+  const formatTimestampString = (rawStr) => {
+    if (!rawStr) return '---';
+    let str = typeof rawStr === 'string' ? rawStr : (rawStr instanceof Date ? rawStr.toISOString().split('.')[0] : String(rawStr));
+    const parts = str.includes('T') ? str.split('T') : str.split(' ');
+    if (parts.length !== 2) return str;
+    const dateParts = parts[0].split('-');
+    if (dateParts.length !== 3) return str;
+    const time = parts[1];
+    return `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}, ${time}`;
+  };
+
   // 4. Formatear datos y calcular la Quincena dinámicamente usando la hora local
   return resultado.map(reg => {
-    const ts = new Date(reg.timestamp);
     const sd = new Date(reg.syncDate);
     
     // Determinar la fecha local de la checada para saber la quincena
@@ -109,7 +123,7 @@ const registrosFiltrados = computed(() => {
     return {
       ...reg,
       quincena: quincenaVal,
-      timestampFormatted: isNaN(ts.getTime()) ? '---' : ts.toLocaleString('es-MX', { timeZone: 'UTC' }),
+      timestampFormatted: formatTimestampString(reg.timestamp),
       syncDateFormatted: isNaN(sd.getTime()) ? '---' : sd.toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })
     };
   });

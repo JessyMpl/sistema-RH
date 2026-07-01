@@ -55,10 +55,8 @@ async function processAttendanceBatch(req, res, expectedSource) {
         continue;
       }
 
-      // 💡 Regresamos a la normalidad: Node lo leerá como hora local de México
-      // y la base de datos lo guardará correctamente en UTC.
+      // Validar que sea una representación de fecha válida
       const parsedTimestamp = new Date(timestamp);
-      
       if (isNaN(parsedTimestamp.getTime())) {
         errors++;
         continue;
@@ -66,7 +64,7 @@ async function processAttendanceBatch(req, res, expectedSource) {
 
       validData.push({
         employeeId: String(employeeId).trim(),
-        timestamp: parsedTimestamp,
+        timestamp: String(timestamp).trim().replace('T', ' '), // Se guarda con espacio en lugar de 'T'
         serialNumber: String(serialNumber).trim(),
         cardNumber: cardNumber ? String(cardNumber).trim() : '',
         source: source,
@@ -183,25 +181,38 @@ router.get('/registros', async (req, res) => {
     const minFecha = new Date(Math.min(...fechas));
     const maxFecha = new Date(Math.max(...fechas));
 
-    // Ajustar límites de hora para no perder ningún registro del día
-    const startDate = new Date(minFecha.setUTCHours(0, 0, 0, 0));
-    const endDate = new Date(maxFecha.setUTCHours(23, 59, 59, 999));
+    // Construir los límites de comparación como strings soportando formatos con espacio y con 'T'
+    const minDateStrSpace = minFecha.toISOString().split('T')[0] + " 00:00:00";
+    const maxDateStrSpace = maxFecha.toISOString().split('T')[0] + " 23:59:59";
+    const minDateStrT = minFecha.toISOString().split('T')[0] + "T00:00:00";
+    const maxDateStrT = maxFecha.toISOString().split('T')[0] + "T23:59:59";
 
-    // 3. Obtener los registros de asistencia en dicho rango
+    // 3. Obtener los registros de asistencia en dicho rango comparando cadenas
     const registros = await prisma.attendanceRecord.findMany({
       where: {
-        timestamp: {
-          gte: startDate,
-          lte: endDate
-        }
+        OR: [
+          {
+            timestamp: {
+              gte: minDateStrSpace,
+              lte: maxDateStrSpace
+            }
+          },
+          {
+            timestamp: {
+              gte: minDateStrT,
+              lte: maxDateStrT
+            }
+          }
+        ]
       },
       orderBy: { timestamp: 'asc' }
     });
 
-    // 4. Mapear BigInt a string para evitar errores de serialización de JSON en Node
+    // 4. Mapear BigInt a string y omitir la 'T' del timestamp en la respuesta JSON
     const registrosFormateados = registros.map(reg => ({
       ...reg,
-      id: reg.id.toString() // Evita: TypeError: Do not know how to serialize a BigInt
+      id: reg.id.toString(), // Evita: TypeError: Do not know how to serialize a BigInt
+      timestamp: reg.timestamp.replace('T', ' ') // Omitir la 'T' si existe
     }));
 
     res.json({

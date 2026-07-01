@@ -338,14 +338,18 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       return res.status(400).json({ error: 'Faltan las fechas de inicio y fin para el periodo.' });
     }
 
-    // 🔥 COMO ESTAMOS USANDO EL TRUCO DE LA 'Z', LA BD TIENE LAS HORAS VISUALES.
-    // Esto significa que si pides desde las 00:00 hasta las 23:59 en UTC, atraparás todo el día perfecto.
-    const fechaInicio = new Date(`${inicio}T00:00:00Z`);
-    const fechaFin = new Date(`${fin}T23:59:59Z`);
+    // 🔥 MODIFICACIÓN: Construir límites de tiempo como cadenas de texto, igual que en attendanceRoutes
+    const minDateStrSpace = `${inicio} 00:00:00`;
+    const maxDateStrSpace = `${fin} 23:59:59`;
+    const minDateStrT = `${inicio}T00:00:00`;
+    const maxDateStrT = `${fin}T23:59:59`;
 
     const rawData = await prisma.attendanceRecord.findMany({
       where: {
-        timestamp: { gte: fechaInicio, lte: fechaFin }
+        OR: [
+          { timestamp: { gte: minDateStrSpace, lte: maxDateStrSpace } },
+          { timestamp: { gte: minDateStrT, lte: maxDateStrT } }
+        ]
       },
       orderBy: { timestamp: 'asc' }
     });
@@ -356,18 +360,20 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 
     const registrosPorDia = {};
     rawData.forEach(record => {
-      const numEmp = String(record.employeeId).trim().replace(/^0+/, ''); // Eliminar ceros a la izquierda del num de empleado
+      const numEmp = String(record.employeeId).trim().replace(/^0+/, ''); 
       
-      // 🔥 LA MAGIA CORRECTA:
-      // Como guardaste '2026-06-01T09:05:00Z' en la BD, simplemente le decimos a Node
-      // que corte el texto directamente. Sin formateadores, sin restar horas.
-      const isoString = record.timestamp.toISOString(); 
-      const localDateStr = isoString.split('T')[0]; // Extrae "2026-06-01"
-      const localTimeStr = isoString.substring(11, 16); // Extrae "09:05" y "18:02" puros
+      // 🔥 LA NUEVA MAGIA: El timestamp ahora es String. Solo reemplazamos la 'T' por espacio y partimos
+      const timestampTexto = String(record.timestamp).replace('T', ' '); 
+      const partesTexto = timestampTexto.split(' ');
+      
+      if (partesTexto.length >= 2) {
+        const localDateStr = partesTexto[0]; // Extrae "2026-06-01"
+        const localTimeStr = partesTexto[1].substring(0, 5); // Extrae "09:05" (sin segundos)
 
-      const llave = `${numEmp}_${localDateStr}`;
-      if (!registrosPorDia[llave]) registrosPorDia[llave] = { numEmp, fecha: localDateStr, horas: [] };
-      registrosPorDia[llave].horas.push(localTimeStr);
+        const llave = `${numEmp}_${localDateStr}`;
+        if (!registrosPorDia[llave]) registrosPorDia[llave] = { numEmp, fecha: localDateStr, horas: [] };
+        registrosPorDia[llave].horas.push(localTimeStr);
+      }
     });
 
     const empleados = await prisma.servidorPublico.findMany({ include: { horario: true } });

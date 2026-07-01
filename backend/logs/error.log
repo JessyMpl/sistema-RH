@@ -97,3 +97,139 @@
 2026-06-29 16:36:14: 
 2026-06-29 16:36:14: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 2026-06-29 16:36:14: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-06-29 16:56:53: PrismaClientKnownRequestError: 
+2026-06-29 16:56:53: Invalid `prisma.horario.findMany()` invocation in
+2026-06-29 16:56:53: /var/www/html/sites/biometrico/backend/controllers/horariosController.js:18:47
+2026-06-29 16:56:53: 
+2026-06-29 16:56:53:   15 
+2026-06-29 16:56:53:   16 const obtenerHorarios = async (req, res) => {
+2026-06-29 16:56:53:   17     try {
+2026-06-29 16:56:53: → 18         const horarios = await prisma.horario.findMany(
+2026-06-29 16:56:53: 
+2026-06-29 16:56:53:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+2026-06-29 16:56:53:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-06-29 16:56:53:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-06-29 16:56:53:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-06-29 16:56:53:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-06-29 16:56:53:     at async obtenerHorarios (/var/www/html/sites/biometrico/backend/controllers/horariosController.js:18:26) {
+2026-06-29 16:56:53:   code: 'ETIMEDOUT',
+2026-06-29 16:56:53:   meta: { modelName: 'Horario' },
+2026-06-29 16:56:53:   clientVersion: '7.8.0'
+2026-06-29 16:56:53: }
+2026-06-29 17:51:33: (node:304115) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-06-29 17:51:33: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-06-29 17:51:33: 
+2026-06-29 17:51:33: To prepare for this change:
+2026-06-29 17:51:33: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-06-29 17:51:33: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-06-29 17:51:33: 
+2026-06-29 17:51:33: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-06-29 17:51:33: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-06-29 17:55:50: (node:305012) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-06-29 17:55:50: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-06-29 17:55:50: 
+2026-06-29 17:55:50: To prepare for this change:
+2026-06-29 17:55:50: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-06-29 17:55:50: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-06-29 17:55:50: 
+2026-06-29 17:55:50: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-06-29 17:55:50: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-01 14:12:35: Error previsualizando desde BD: PrismaClientValidationError: 
+2026-07-01 14:12:35: Invalid `prisma.attendanceRecord.findMany()` invocation in
+2026-07-01 14:12:35: /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:346:51
+2026-07-01 14:12:35: 
+2026-07-01 14:12:35:   343 const fechaInicio = new Date(`${inicio}T00:00:00Z`);
+2026-07-01 14:12:35:   344 const fechaFin = new Date(`${fin}T23:59:59Z`);
+2026-07-01 14:12:35:   345 
+2026-07-01 14:12:35: → 346 const rawData = await prisma.attendanceRecord.findMany({
+2026-07-01 14:12:35:         where: {
+2026-07-01 14:12:35:           timestamp: {
+2026-07-01 14:12:35:             gte: new Date("2026-06-16T00:00:00.000Z"),
+2026-07-01 14:12:35:                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2026-07-01 14:12:35:             lte: new Date("2026-06-29T23:59:59.000Z")
+2026-07-01 14:12:35:           }
+2026-07-01 14:12:35:         },
+2026-07-01 14:12:35:         orderBy: {
+2026-07-01 14:12:35:           timestamp: "asc"
+2026-07-01 14:12:35:         }
+2026-07-01 14:12:35:       })
+2026-07-01 14:12:35: 
+2026-07-01 14:12:35: Argument `gte`: Invalid value provided. Expected String or StringFieldRefInput, provided DateTime.
+2026-07-01 14:12:35:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 14:12:35:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 14:12:35:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 14:12:35:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 14:12:35:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 14:12:35:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 14:12:35:     at async /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:346:21 {
+2026-07-01 14:12:35:   clientVersion: '7.8.0'
+2026-07-01 14:12:35: }
+2026-07-01 14:12:54: Error previsualizando desde BD: PrismaClientValidationError: 
+2026-07-01 14:12:54: Invalid `prisma.attendanceRecord.findMany()` invocation in
+2026-07-01 14:12:54: /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:346:51
+2026-07-01 14:12:54: 
+2026-07-01 14:12:54:   343 const fechaInicio = new Date(`${inicio}T00:00:00Z`);
+2026-07-01 14:12:54:   344 const fechaFin = new Date(`${fin}T23:59:59Z`);
+2026-07-01 14:12:54:   345 
+2026-07-01 14:12:54: → 346 const rawData = await prisma.attendanceRecord.findMany({
+2026-07-01 14:12:54:         where: {
+2026-07-01 14:12:54:           timestamp: {
+2026-07-01 14:12:54:             gte: new Date("2026-06-16T00:00:00.000Z"),
+2026-07-01 14:12:54:                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2026-07-01 14:12:54:             lte: new Date("2026-06-17T23:59:59.000Z")
+2026-07-01 14:12:54:           }
+2026-07-01 14:12:54:         },
+2026-07-01 14:12:54:         orderBy: {
+2026-07-01 14:12:54:           timestamp: "asc"
+2026-07-01 14:12:54:         }
+2026-07-01 14:12:54:       })
+2026-07-01 14:12:54: 
+2026-07-01 14:12:54: Argument `gte`: Invalid value provided. Expected String or StringFieldRefInput, provided DateTime.
+2026-07-01 14:12:54:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 14:12:54:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 14:12:54:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 14:12:54:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 14:12:54:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 14:12:54:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 14:12:54:     at async /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:346:21 {
+2026-07-01 14:12:54:   clientVersion: '7.8.0'
+2026-07-01 14:12:54: }
+2026-07-01 14:13:04: Error previsualizando desde BD: PrismaClientValidationError: 
+2026-07-01 14:13:04: Invalid `prisma.attendanceRecord.findMany()` invocation in
+2026-07-01 14:13:04: /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:346:51
+2026-07-01 14:13:04: 
+2026-07-01 14:13:04:   343 const fechaInicio = new Date(`${inicio}T00:00:00Z`);
+2026-07-01 14:13:04:   344 const fechaFin = new Date(`${fin}T23:59:59Z`);
+2026-07-01 14:13:04:   345 
+2026-07-01 14:13:04: → 346 const rawData = await prisma.attendanceRecord.findMany({
+2026-07-01 14:13:04:         where: {
+2026-07-01 14:13:04:           timestamp: {
+2026-07-01 14:13:04:             gte: new Date("2026-06-16T00:00:00.000Z"),
+2026-07-01 14:13:04:                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2026-07-01 14:13:04:             lte: new Date("2026-06-17T23:59:59.000Z")
+2026-07-01 14:13:04:           }
+2026-07-01 14:13:04:         },
+2026-07-01 14:13:04:         orderBy: {
+2026-07-01 14:13:04:           timestamp: "asc"
+2026-07-01 14:13:04:         }
+2026-07-01 14:13:04:       })
+2026-07-01 14:13:04: 
+2026-07-01 14:13:04: Argument `gte`: Invalid value provided. Expected String or StringFieldRefInput, provided DateTime.
+2026-07-01 14:13:04:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-01 14:13:04:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-01 14:13:04:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-01 14:13:04:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-01 14:13:04:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-01 14:13:04:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-01 14:13:04:     at async /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:346:21 {
+2026-07-01 14:13:04:   clientVersion: '7.8.0'
+2026-07-01 14:13:04: }
+2026-07-01 14:37:15: (node:339176) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-01 14:37:15: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-01 14:37:15: 
+2026-07-01 14:37:15: To prepare for this change:
+2026-07-01 14:37:15: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-01 14:37:15: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-01 14:37:15: 
+2026-07-01 14:37:15: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-01 14:37:15: (Use `node --trace-warnings ...` to show where the warning was created)

@@ -31,7 +31,7 @@ const headersCalculo = [
   { text: "FALTAS", value: "totalFaltas", align: "center", sortable: true },
   { text: "RETARDOS", value: "totalRetardos", align: "center", sortable: true },
   { text: "SANCIÓN NORMATIVA", value: "sancionTexto" },
-  { text: "DÍAS DESC.", value: "diasDescuento", align: "center" },
+  { text: "DÍAS SUSPENSIÓN", value: "diasDescuento", align: "center" },
   { text: "ACCIONES", value: "acciones", align: "center" }
 ];
 
@@ -209,7 +209,7 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
             <span class="text-[11px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100">{{ item.sancionTexto }}</span>
           </template>
           <template #item-diasDescuento="item">
-            <span :class="item.diasDescuento > 0 ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-500'" class="px-3 py-1 font-bold rounded-full text-xs shadow-sm">{{ item.diasDescuento }} d</span>
+            <span :class="item.diasDescuento > 0 ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-500'" class="px-3 py-1 font-bold rounded-full text-xs shadow-sm">{{ item.diasDescuento }} </span>
           </template>
           <template #item-acciones="item">
             <button @click="procesarSancion(item)" class="bg-inst-primario hover:bg-inst-secundario text-white px-3 py-1.5 rounded text-xs font-bold transition shadow-sm whitespace-nowrap">

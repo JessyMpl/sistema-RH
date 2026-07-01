@@ -105,7 +105,7 @@ model Justificacion {
 model AttendanceRecord {
   id           BigInt   @id @default(autoincrement())
   employeeId   String   @map("employee_id") @db.VarChar(50)
-  timestamp    DateTime @map("timestamp") @db.Timestamptz
+  timestamp    String   @map("timestamp") @db.VarChar(50)
   serialNumber String   @map("serial_number") @db.VarChar(50)
   cardNumber   String?  @default("") @map("card_number") @db.VarChar(50)
   source       String   @default("unknown") @map("source") @db.VarChar(30)
