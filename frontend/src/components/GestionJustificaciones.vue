@@ -9,6 +9,7 @@ const pestanaActiva = ref('pendientes');
 // Estados de datos
 const listaPendientes = ref([]);
 const listaHistorial = ref([]);
+const areasAdscripcion = ref([]); // NUEVO: Para guardar el catálogo de áreas
 const cargando = ref(false);
 const valorBusquedaPendientes = ref('');
 const valorBusquedaHistorial = ref('');
@@ -25,8 +26,11 @@ const formulario = ref({
 // Variables del Formulario de Registro MASIVO
 const filtroMasivo = ref({
   fecha: '',
-  tipoAlerta: ''
+  tipoAlerta: '',
+  area: 'TODAS' // NUEVO: Filtro por área
 });
+const registrosSeleccionados = ref([]); // NUEVO: Mantiene los items que el usuario seleccionó con checkbox
+const mostrarModalMasivo = ref(false); // NUEVO: Controla la visibilidad del modal de afectación
 const formularioMasivo = ref({
   cobertura: '',
   tipoIncidencia: '',
@@ -45,17 +49,18 @@ const catalogoIncidencias = [
   "16. Comisión sindical", "17. Salida antes con autorización", "18. Otros"
 ];
 
-// 💡 CAMBIO 1: Lenguaje humano para los filtros de justificación masiva
+// Lenguaje humano para los filtros de justificación masiva
 const tiposAlerta = [
   { valor: 'ENTRADA', texto: 'Solo Entrada (Retardos y Omisiones)' },
   { valor: 'SALIDA', texto: 'Solo Salida (Omisiones de Salida)' },
   { valor: 'COMPLETO', texto: 'Día Completo (Faltas)' }
 ];
 
-// Encabezados de la Tabla de Pendientes 
+// Encabezados de Tablas
 const headersPendientes = [
   { text: "NUM. EMP", value: "servidor.numeroEmpleado", sortable: true },
   { text: "SERVIDOR PÚBLICO", value: "servidor.nombreCompleto", sortable: true },
+  { text: "ÁREA", value: "servidor.departamento", sortable: true }, // NUEVO
   { text: "FECHA", value: "fecha", sortable: true },
   { text: "ENTRADA", value: "entrada" },
   { text: "SALIDA", value: "salida" },
@@ -63,7 +68,13 @@ const headersPendientes = [
   { text: "ACCIONES", value: "acciones" }
 ];
 
-// Encabezados de la Tabla de Historial 
+const headersMasivos = [
+  { text: "NUM. EMP", value: "servidor.numeroEmpleado", sortable: true },
+  { text: "SERVIDOR PÚBLICO", value: "servidor.nombreCompleto", sortable: true },
+  { text: "ÁREA", value: "servidor.departamento", sortable: true },
+  { text: "ALERTA", value: "incidencia", sortable: true }
+];
+
 const headersHistorial = [
   { text: "FECHA INCIDENCIA", value: "fechaIncidencia", sortable: true },
   { text: "NUM. EMP", value: "servidor.numeroEmpleado", sortable: true, align: 'center' },
@@ -74,13 +85,12 @@ const headersHistorial = [
   { text: "FECHA CAPTURA", value: "fechaRegistro", sortable: true }
 ];
 
-// Lógica Computada para la Justificación Masiva
+// Lógica Computada
 const fechasDisponibles = computed(() => {
   const fechas = listaPendientes.value.map(item => formatearFecha(item.fecha));
   return [...new Set(fechas)].sort((a, b) => new Date(b) - new Date(a));
 });
 
-// 💡 CAMBIO 1 (Lógica): Relacionamos la opción elegida por el usuario con las incidencias reales de la BD
 const registrosAfectados = computed(() => {
   if (!filtroMasivo.value.fecha || !filtroMasivo.value.tipoAlerta) return [];
   
@@ -93,13 +103,21 @@ const registrosAfectados = computed(() => {
     incidenciasValidas = ['FALTA'];
   }
 
-  return listaPendientes.value.filter(item => 
-    formatearFecha(item.fecha) === filtroMasivo.value.fecha && 
-    incidenciasValidas.includes(item.incidencia)
-  );
+  return listaPendientes.value.filter(item => {
+    const coincideFecha = formatearFecha(item.fecha) === filtroMasivo.value.fecha;
+    const coincideAlerta = incidenciasValidas.includes(item.incidencia);
+    const coincideArea = filtroMasivo.value.area === 'TODAS' || item.servidor.departamento === filtroMasivo.value.area;
+    
+    return coincideFecha && coincideAlerta && coincideArea;
+  });
 });
 
-// Extrae las siglas oficiales según la normatividad interna
+// Resetea las selecciones cuando cambian los filtros masivos
+import { watch } from 'vue';
+watch([() => filtroMasivo.value.fecha, () => filtroMasivo.value.tipoAlerta, () => filtroMasivo.value.area], () => {
+  registrosSeleccionados.value = []; 
+});
+
 const obtenerSiglasJustificacion = (motivo) => {
   if (motivo.includes("Comisión de Servicios") || motivo.includes("Comisión sindical")) return "CS";
   if (motivo.includes("médica") || motivo.includes("Enfermedad") || motivo.includes("Riesgo") || motivo.includes("lactancia")) return "IN";
@@ -108,7 +126,6 @@ const obtenerSiglasJustificacion = (motivo) => {
   return "JU"; 
 };
 
-// Formateador de fechas
 const formatearFecha = (fechaInput) => {
   if (!fechaInput) return '';
   const d = new Date(fechaInput);
@@ -131,7 +148,6 @@ const cargarPendientes = async () => {
   }
 };
 
-// 💡 CAMBIO 2: Agrupación mágica para el historial
 const cargarHistorial = async () => {
   try {
     const res = await fetch(apiUrl('/api/justificaciones/historial'));
@@ -139,40 +155,38 @@ const cargarHistorial = async () => {
     const data = await res.json();
 
     const agrupado = {};
-
-    // Al usar una transacción en el backend, todos los registros masivos tienen el MISMO milisegundo exacto
     data.forEach(item => {
       const key = item.fechaRegistro; 
       if (!agrupado[key]) {
-        agrupado[key] = {
-          ...item,
-          fechaIncidencia: item.asistencia?.fecha,
-          count: 1
-        };
+        agrupado[key] = { ...item, fechaIncidencia: item.asistencia?.fecha, count: 1 };
       } else {
-        agrupado[key].count++; // Si hay otro con el mismo milisegundo, sumamos el contador
+        agrupado[key].count++; 
       }
     });
 
-    // Mapeamos los resultados para cambiarles el nombre si son masivos
     listaHistorial.value = Object.values(agrupado).map(grupo => {
       if (grupo.count > 1) {
         return {
           ...grupo,
-          servidor: {
-            numeroEmpleado: 'MASIVO',
-            nombreCompleto: `JUSTIFICACIÓN MASIVA EN LOTE (${grupo.count} EMPLEADOS)`
-          }
+          servidor: { numeroEmpleado: 'MASIVO', nombreCompleto: `JUSTIFICACIÓN MASIVA EN LOTE (${grupo.count} EMPLEADOS)` }
         };
       }
       return grupo;
     });
 
-    // Ordenar del más reciente al más antiguo
     listaHistorial.value.sort((a, b) => new Date(b.fechaRegistro) - new Date(a.fechaRegistro));
-
   } catch (error) {
     console.error(error);
+  }
+};
+
+// NUEVO: Cargar catálogo de áreas para los filtros
+const cargarAreas = async () => {
+  try {
+    const res = await fetch(apiUrl('/api/empleados/areas')); 
+    areasAdscripcion.value = await res.json();
+  } catch (error) {
+    console.error('Error cargando áreas de adscripción', error);
   }
 };
 
@@ -186,6 +200,8 @@ const cancelarRegistro = () => {
   empleadoSeleccionado.value = null;
   formulario.value = { cobertura: '', tipoIncidencia: '', folio: '', observaciones: '' };
   formularioMasivo.value = { cobertura: '', tipoIncidencia: '', folio: '', observaciones: '' };
+  registrosSeleccionados.value = [];
+  mostrarModalMasivo.value = false;
   pestanaActiva.value = 'pendientes';
 };
 
@@ -227,30 +243,15 @@ const guardarJustificacion = async () => {
 
 // Guardado Masivo
 const guardarJustificacionMasiva = async () => {
-  if (registrosAfectados.value.length === 0) {
-    Swal.fire('Atención', 'No hay registros que coincidan con estos filtros.', 'warning');
-    return;
-  }
   if (!formularioMasivo.value.cobertura || !formularioMasivo.value.tipoIncidencia) {
     Swal.fire('Atención', 'Debes seleccionar el alcance y motivo del catálogo.', 'warning');
     return;
   }
 
-  const result = await Swal.fire({
-    title: '¿Estás seguro?',
-    text: `Vas a justificar masivamente a ${registrosAfectados.value.length} empleados. Esta acción es definitiva.`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#902c3e',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: 'Sí, aplicar a todos'
-  });
-
-  if (!result.isConfirmed) return;
-
   const siglasOficiales = obtenerSiglasJustificacion(formularioMasivo.value.tipoIncidencia);
   
-  const asistenciasPayload = registrosAfectados.value.map(item => ({
+  // 💡 CLAVE: Solo enviamos al backend los registros que el usuario palomeó en la tabla
+  const asistenciasPayload = registrosSeleccionados.value.map(item => ({
     id: item.id,
     servidorId: item.servidorId
   }));
@@ -265,6 +266,7 @@ const guardarJustificacionMasiva = async () => {
   };
 
   try {
+    mostrarModalMasivo.value = false;
     Swal.fire({ title: 'Procesando...', text: 'Aplicando justificaciones masivas', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
     const respuesta = await fetch(apiUrl('/api/justificaciones/registrar-masiva'), {
@@ -284,9 +286,19 @@ const guardarJustificacionMasiva = async () => {
   }
 };
 
+const abrirModalAfectacion = () => {
+  if (registrosSeleccionados.value.length === 0) {
+    Swal.fire('Atención', 'Debes seleccionar al menos un registro de la tabla.', 'warning');
+    return;
+  }
+  formularioMasivo.value = { cobertura: '', tipoIncidencia: '', folio: '', observaciones: '' };
+  mostrarModalMasivo.value = true;
+};
+
 onMounted(() => {
   cargarPendientes();
   cargarHistorial();
+  cargarAreas(); // Cargamos áreas al iniciar
 });
 </script>
 
@@ -315,7 +327,6 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- PESTAÑA: BANDEJA PENDIENTES -->
     <div v-if="pestanaActiva === 'pendientes'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-4 space-y-4">
       <div class="flex justify-between items-center bg-gray-50 p-3 rounded border border-gray-200">
         <div class="w-full max-w-md">
@@ -364,7 +375,6 @@ onMounted(() => {
       </EasyDataTable>
     </div>
 
-    <!-- PESTAÑA: REGISTRO INDIVIDUAL -->
     <div v-if="pestanaActiva === 'registrar'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 max-w-3xl mx-auto">
       <h2 class="text-base font-bold text-gray-700 border-b pb-3 mb-6 uppercase tracking-wide">Captura de Justificación Individual</h2>
       
@@ -426,79 +436,78 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- PESTAÑA NUEVA: JUSTIFICACIÓN MASIVA -->
-    <div v-if="pestanaActiva === 'masiva'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 max-w-4xl mx-auto space-y-6">
-      <div class="border-b pb-3">
-        <h2 class="text-base font-bold text-gray-700 uppercase tracking-wide"><i class="fa-solid fa-bolt text-yellow-500 mr-2"></i> Aplicador de Justificaciones Masivas</h2>
-        <p class="text-sm text-gray-500 mt-1">Usa esta herramienta cuando un evento general (ej. falla de red) haya provocado incidencias a múltiples empleados.</p>
+    <div v-if="pestanaActiva === 'masiva'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 max-w-6xl mx-auto space-y-6">
+      <div class="border-b pb-3 flex justify-between items-end">
+        <div>
+          <h2 class="text-base font-bold text-gray-700 uppercase tracking-wide"><i class="fa-solid fa-bolt text-yellow-500 mr-2"></i> Justificación Masiva en Lote</h2>
+          <p class="text-sm text-gray-500 mt-1">Busca los registros afectados, selecciona a quiénes aplicar y genera el formato general.</p>
+        </div>
       </div>
 
-      <!-- Filtros para detectar masivos (CON TEXTOS HUMANOS) -->
-      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Día de la Incidencia <span class="text-red-500">*</span></label>
-          <select v-model="filtroMasivo.fecha" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm shadow-sm bg-white">
-            <option value="" disabled>Selecciona la fecha afectada...</option>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">1. Día de Incidencia <span class="text-red-500">*</span></label>
+          <select v-model="filtroMasivo.fecha" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white">
+            <option value="" disabled>Selecciona la fecha...</option>
             <option v-for="fecha in fechasDisponibles" :key="fecha" :value="fecha">{{ fecha }}</option>
           </select>
         </div>
         <div>
-          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Filtro de Afectación <span class="text-red-500">*</span></label>
-          <select v-model="filtroMasivo.tipoAlerta" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm shadow-sm bg-white">
-            <option value="" disabled>Selecciona a quiénes justificar...</option>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">2. Tipo de Afectación <span class="text-red-500">*</span></label>
+          <select v-model="filtroMasivo.tipoAlerta" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white">
+            <option value="" disabled>Selecciona qué falló...</option>
             <option v-for="tipo in tiposAlerta" :key="tipo.valor" :value="tipo.valor">{{ tipo.texto }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-600 uppercase mb-1">3. Área (Opcional)</label>
+          <select v-model="filtroMasivo.area" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white">
+            <option value="TODAS">TODAS LAS ÁREAS</option>
+            <option v-for="area in areasAdscripcion" :key="area.id" :value="area.nombre">{{ area.nombre }}</option>
           </select>
         </div>
       </div>
 
-      <!-- Conteo de afectados -->
-      <div v-if="filtroMasivo.fecha && filtroMasivo.tipoAlerta" class="flex justify-between items-center bg-blue-50 border border-blue-200 p-4 rounded-lg">
-        <div>
-          <p class="text-sm text-blue-800">Se encontraron <strong class="text-2xl ml-1 mr-1 text-blue-900">{{ registrosAfectados.length }}</strong> registros que coinciden con este problema listos para ser justificados.</p>
-        </div>
-      </div>
-
-      <!-- Formulario para planchar a todos -->
-      <div v-if="registrosAfectados.length > 0" class="space-y-4 pt-4 border-t border-gray-100">
-        <h3 class="text-sm font-bold text-gray-700 uppercase">Detalles del Formato Oficial para Todos</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Alcance <span class="text-red-500">*</span></label>
-            <select v-model="formularioMasivo.cobertura" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm shadow-sm bg-white">
-              <option value="" disabled>Selecciona...</option>
-              <option value="ENTRADA">Planchar Entradas</option>
-              <option value="SALIDA">Planchar Salidas</option>
-              <option value="COMPLETO">Planchar Día Completo</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Motivo <span class="text-red-500">*</span></label>
-            <select v-model="formularioMasivo.tipoIncidencia" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm shadow-sm bg-white">
-              <option value="" disabled>Seleccione...</option>
-              <option v-for="(motivo, index) in catalogoIncidencias" :key="index" :value="motivo">{{ motivo }}</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-           <div>
-             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Folio (Opcional)</label>
-             <input v-model="formularioMasivo.folio" type="text" placeholder="Ej. Minuta General" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm shadow-sm" />
-           </div>
-           <div>
-             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observaciones</label>
-             <input v-model="formularioMasivo.observaciones" type="text" placeholder="Falla general de energía..." class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm shadow-sm" />
-           </div>
-        </div>
-
-        <div class="flex justify-end pt-4">
-          <button @click="guardarJustificacionMasiva" class="px-6 py-3 bg-inst-primario text-white font-bold rounded-lg text-sm shadow-md hover:bg-inst-secundario transition w-full md:w-auto">
-            <i class="fa-solid fa-layer-group mr-2"></i> Procesar a los {{ registrosAfectados.length }} Empleados
+      <div v-if="filtroMasivo.fecha && filtroMasivo.tipoAlerta">
+        
+        <div class="flex justify-between items-center mb-3">
+          <p class="text-sm font-bold text-gray-600">
+            Registros encontrados: <span class="text-inst-primario">{{ registrosAfectados.length }}</span> | 
+            Seleccionados: <span class="text-green-600">{{ registrosSeleccionados.length }}</span>
+          </p>
+          <button 
+            @click="abrirModalAfectacion" 
+            :disabled="registrosSeleccionados.length === 0"
+            class="px-5 py-2 bg-inst-primario text-white font-bold rounded-lg text-sm shadow-md hover:bg-inst-secundario transition disabled:opacity-50 disabled:cursor-not-allowed">
+            Generar Justificación ({{ registrosSeleccionados.length }}) <i class="fa-solid fa-arrow-right ml-1"></i>
           </button>
         </div>
+
+        <div class="border border-gray-200 rounded-lg overflow-hidden">
+          <EasyDataTable
+            v-model:items-selected="registrosSeleccionados"
+            :headers="headersMasivos"
+            :items="registrosAfectados"
+            :rows-per-page="50"
+            table-class-name="img-strattia-style"
+          >
+            <template #item-incidencia="item">
+              <span :class="{
+                  'text-[10px] font-bold bg-red-100 text-red-800': item.incidencia === 'FALTA',
+                  'text-[10px] font-bold bg-amber-100 text-yellow-700': item.incidencia === 'RETARDO' || item.incidencia === 'RETARDO_ESPECIAL' || item.incidencia === 'RETARDO_Y_OMISION',
+                  'text-[10px] font-bold bg-orange-200 text-orange-800': item.incidencia === 'OMISION_E' || item.incidencia === 'OMISION_S',
+                }" class="px-2 py-0.5 rounded uppercase">{{ item.incidencia }}</span>
+            </template>
+          </EasyDataTable>
+        </div>
+      </div>
+      
+      <div v-else class="text-center py-10 bg-gray-50 border border-dashed border-gray-200 rounded-lg">
+        <i class="fa-solid fa-magnifying-glass text-3xl text-gray-300 mb-2"></i>
+        <p class="text-gray-500 font-medium text-sm">Selecciona una Fecha y un Tipo de Afectación arriba para ver los registros.</p>
       </div>
     </div>
 
-    <!-- PESTAÑA: HISTORIAL -->
     <div v-if="pestanaActiva === 'historial'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-4 space-y-4">
       <div class="w-full max-w-md bg-gray-50 p-2 rounded border border-gray-200">
         <input v-model="valorBusquedaHistorial" type="text" placeholder="Buscar en el archivo histórico..." class="w-full p-2 border border-gray-300 rounded outline-none focus:border-inst-primario text-sm" />
@@ -516,7 +525,6 @@ onMounted(() => {
           <span class="tabular-nums text-gray-800">{{ formatearFecha(item.fechaIncidencia) }}</span>
         </template>
         
-        <!-- 💡 CAMBIO 2: Si es masivo, pintamos una placa especial en el número de empleado -->
         <template #item-servidor.numeroEmpleado="item">
           <span v-if="item.count > 1" class="px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
             <i class="fa-solid fa-layer-group mr-1"></i> LOTE
@@ -526,7 +534,6 @@ onMounted(() => {
           </span>
         </template>
 
-        <!-- 💡 CAMBIO 2: Destacamos el texto si fue justificación masiva -->
         <template #item-servidor.nombreCompleto="item">
           <span v-if="item.count > 1" class="text-indigo-700 font-bold">
             <i class="fa-solid fa-users mr-1"></i> {{ item.servidor.nombreCompleto }}
@@ -551,10 +558,64 @@ onMounted(() => {
       </EasyDataTable>
     </div>
 
+    <div v-if="mostrarModalMasivo" class="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all" style="background-color: rgba(0,0,0,0.4); backdrop-filter: blur(4px);">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate__animated animate__fadeInDown">
+        <div class="bg-inst-cafe-oscuro p-4 text-white font-bold flex justify-between items-center">
+          <h3 class="font-bold text-lg uppercase"><i class="fa-solid fa-layer-group mr-2"></i> Formato de Justificación</h3>
+          <button @click="mostrarModalMasivo = false" class="text-white text-2xl hover:text-gray-300">&times;</button>
+        </div>
+        
+        <div class="p-6 space-y-4">
+          <div class="bg-blue-50 border border-blue-200 p-3 rounded text-sm text-blue-800 mb-2">
+            Se aplicará el formato a <strong>{{ registrosSeleccionados.length }} empleados</strong> seleccionados.
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Alcance <span class="text-red-500">*</span></label>
+            <select v-model="formularioMasivo.cobertura" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white">
+              <option value="" disabled>Selecciona...</option>
+              <option value="ENTRADA">Justificar Entradas</option>
+              <option value="SALIDA">Justificar Salidas</option>
+              <option value="COMPLETO">Justificar Día Completo</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Motivo <span class="text-red-500">*</span></label>
+            <select v-model="formularioMasivo.tipoIncidencia" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white">
+              <option value="" disabled>Seleccione...</option>
+              <option v-for="(motivo, index) in catalogoIncidencias" :key="index" :value="motivo">{{ motivo }}</option>
+            </select>
+          </div>
+          <div>
+             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Folio (Opcional)</label>
+             <input v-model="formularioMasivo.folio" type="text" placeholder="Ej. Minuta General" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm" />
+           </div>
+           <div>
+             <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observaciones</label>
+             <input v-model="formularioMasivo.observaciones" type="text" placeholder="Falla general de energía..." class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm" />
+           </div>
+        </div>
+
+        <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3">
+          <button @click="mostrarModalMasivo = false" class="px-5 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg text-sm">Cancelar</button>
+          <button @click="guardarJustificacionMasiva" class="px-6 py-2 bg-inst-primario text-white font-bold rounded-lg text-sm shadow-md hover:bg-inst-secundario transition">
+            <i class="fa-solid fa-check-double mr-2"></i> Aplicar a Todos
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <style scoped>
+.bg-inst-primario { background-color: #6B1C3A; }
+.text-inst-primario { color: #6B1C3A; }
+.border-inst-primario { border-color: #6B1C3A; }
+.bg-inst-secundario { background-color: #902c3e; }
+.bg-inst-cafe-oscuro { background-color: #4b5563; } 
+.bg-inst-vino-claro { background-color: #a8475c; }
+
 .img-strattia-style {
   --easy-table-header-background-color: #f8fafc;
   --easy-table-header-font-color: #475569;
