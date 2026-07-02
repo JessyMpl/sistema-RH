@@ -26,12 +26,13 @@ const meses = [
 ];
 
 const headersCalculo = [
-  { text: "NUM. EMP", value: "numeroEmpleado", sortable: true },
+  { text: "NÚM. EMP.", value: "numeroEmpleado", sortable: true },
   { text: "SERVIDOR PÚBLICO", value: "nombreCompleto", sortable: true },
   { text: "FALTAS", value: "totalFaltas", align: "center", sortable: true },
   { text: "RETARDOS", value: "totalRetardos", align: "center", sortable: true },
-  { text: "SANCIÓN NORMATIVA", value: "sancionTexto" },
-  { text: "DÍAS SUSPENSIÓN", value: "diasDescuento", align: "center" },
+  { text: "DETALLE DE LA SANCIÓN", value: "sancionTexto" },
+  { text: "DÍAS DE SUSPENSIÓN", value: "diasDescuento", align: "center" },
+  { text: "MINUTOS ACUMULADOS", value: "totalMinutosRetardo", align: "center", sortable: true },
   { text: "ACCIONES", value: "acciones", align: "center" }
 ];
 
@@ -39,6 +40,7 @@ const headersHistorial = [
   { text: "MES / AÑO", value: "periodo", sortable: true },
   { text: "NUM. EMP", value: "servidor.numeroEmpleado", sortable: true },
   { text: "SERVIDOR PÚBLICO", value: "servidor.nombreCompleto", sortable: true },
+  { text: "TIPO", value: "tipoSancion", sortable: true },
   { text: "SANCIÓN APLICADA", value: "sancionAplicada" },
   { text: "DÍAS", value: "diasDescuento", align: "center" },
   { text: "FOLIO OFICIO", value: "folioOficio" }
@@ -67,23 +69,50 @@ const calcularMes = async () => {
   }
 };
 
+// 1.5 DESCARGAR A EXCEL (Delegado al Backend)
+const exportarAExcel = () => {
+  if (mesSeleccionado.value === '') {
+    Swal.fire('Atención', 'Selecciona el mes calculado para poder descargar el reporte.', 'warning');
+    return;
+  }
+  
+  if (listaInfractores.value.length === 0) {
+    Swal.fire('Atención', 'No hay datos calculados para exportar en este momento.', 'warning');
+    return;
+  }
+  
+  const urlDescarga = apiUrl(`/api/sanciones/descargar-excel?mes=${mesSeleccionado.value}&anio=${anioSeleccionado.value}`);
+  window.location.href = urlDescarga;
+};
+
 // 2. GENERAR OFICIO Y GUARDAR SANCIÓN
 const procesarSancion = async (empleado) => {
+  const colorTipo = empleado.tipoSancion === 'RETARDOS' ? 'text-amber-600' : 'text-red-600';
+  
   const { value: folioForm } = await Swal.fire({
-    title: 'Emitir Documento de Sanción',
+    title: 'Emitir Documento Oficial',
     html: `
-      <div class="text-left text-sm text-gray-700">
-        <p><strong>Servidor Público:</strong> ${empleado.nombreCompleto}</p>
-        <p><strong>Infracciones:</strong> ${empleado.totalFaltas} Faltas | ${empleado.totalRetardos} Retardos</p>
-        <p class="text-red-600 font-bold mt-2">Normatividad a aplicar:</p>
-        <p class="mb-4 text-xs bg-red-50 p-2 rounded border border-red-200">${empleado.sancionTexto}</p>
-        <label class="block text-xs font-bold uppercase mb-1">Folio del Oficio (Opcional):</label>
-        <input id="swal-input-folio" class="w-full p-2 border border-gray-300 rounded outline-none focus:border-inst-primario" placeholder="Ej. RH/045/2026">
+      <div class="text-left space-y-4">
+        <div class="bg-blue-50 border border-blue-200 p-3 rounded text-sm text-blue-800">
+          Se aplicará el formato a <strong>${empleado.nombreCompleto}</strong>.
+        </div>
+        <div>
+          <p class="text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Oficio:</p>
+          <p class="text-sm font-bold ${colorTipo} uppercase">${empleado.tipoSancion}</p>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-gray-500 uppercase mb-1">Normatividad a aplicar:</p>
+          <p class="text-xs bg-gray-50 p-2 rounded border border-gray-200 text-gray-700 font-semibold">${empleado.sancionTexto}</p>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Folio del Oficio (Opcional):</label>
+          <input id="swal-input-folio" class="w-full p-2 border border-gray-300 rounded outline-none focus:border-inst-primario text-sm" placeholder="Ej. RH/045/2026">
+        </div>
       </div>
     `,
     focusConfirm: false,
     showCancelButton: true,
-    confirmButtonText: '<i class="fa-solid fa-file-signature"></i> Guardar en Expediente',
+    confirmButtonText: '<i class="fa-solid fa-file-signature"></i> Registrar Sanción',
     cancelButtonText: 'Cancelar',
     confirmButtonColor: '#902c3e',
     preConfirm: () => {
@@ -99,6 +128,7 @@ const procesarSancion = async (empleado) => {
         servidorId: empleado.servidorId,
         mes: mesSeleccionado.value,
         anio: anioSeleccionado.value,
+        tipoSancion: empleado.tipoSancion, 
         totalRetardos: empleado.totalRetardos,
         totalFaltas: empleado.totalFaltas,
         totalOmisiones: empleado.totalOmisiones,
@@ -117,7 +147,10 @@ const procesarSancion = async (empleado) => {
       if (!res.ok) throw new Error(data.error || 'Error al guardar');
       
       Swal.fire('¡Guardado!', 'La sanción ha quedado registrada en el expediente.', 'success');
-      cargarHistorial(); // Actualizamos el historial en segundo plano
+      
+      listaInfractores.value = listaInfractores.value.filter(item => !(item.servidorId === empleado.servidorId && item.tipoSancion === empleado.tipoSancion));
+      
+      cargarHistorial(); 
     } catch (error) {
       Swal.fire('Error', error.message, 'error');
     }
@@ -149,7 +182,6 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
 <template>
   <div class="space-y-6">
     
-    <!-- Pestañas de Navegación -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-2 flex gap-2">
       <button @click="vistaInterna = 'calcular'" 
         :class="['px-6 py-2 rounded-md font-bold text-sm transition', vistaInterna === 'calcular' ? 'bg-inst-primario text-white' : 'text-gray-600 hover:bg-gray-100']">
@@ -161,7 +193,6 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
       </button>
     </div>
 
-    <!-- PESTAÑA: CALCULAR MES (Infractores) -->
     <div v-if="vistaInterna === 'calcular'" class="space-y-4">
       <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div class="flex flex-col md:flex-row justify-between items-end gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -177,15 +208,19 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
             <input type="number" v-model="anioSeleccionado" class="w-full p-2 border border-gray-300 rounded outline-none text-sm bg-white" />
           </div>
           <button @click="calcularMes" :disabled="cargandoCalculo" class="px-6 py-2 bg-inst-primario text-white font-bold rounded shadow-sm hover:bg-inst-secundario transition text-sm flex items-center gap-2">
-            <i class="fa-solid" :class="cargandoCalculo ? 'fa-spinner fa-spin' : 'fa-scale-balanced'"></i> Generar Sanciones
+            <i class="fa-solid" :class="cargandoCalculo ? 'fa-spinner fa-spin' : 'fa-scale-balanced'"></i> Calcular Sanciones
           </button>
         </div>
       </div>
 
-      <!-- Tabla de Resultados Matemáticos -->
       <div v-if="listaInfractores.length > 0" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-fade-in">
-        <div class="mb-4">
+        
+        <div class="mb-4 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gray-100 pb-4">
           <input v-model="valorBusquedaCalculo" type="text" placeholder="Filtrar servidor público..." class="w-full max-w-md p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario" />
+          
+          <button @click="exportarAExcel" class="px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded shadow-sm transition text-sm flex items-center gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-file-excel"></i>  Descarga 
+          </button>
         </div>
 
         <EasyDataTable
@@ -193,34 +228,46 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
           :items="listaInfractores"
           :search-value="valorBusquedaCalculo"
           :search-field="['numeroEmpleado', 'nombreCompleto']"
-          :rows-per-page="15"
+          :rows-per-page="30"
           table-class-name="img-strattia-style"
         >
           <template #item-numeroEmpleado="item">
              <span class="font-mono font-bold text-gray-700">{{ item.numeroEmpleado }}</span>
           </template>
+
           <template #item-totalFaltas="item">
-             <span :class="item.totalFaltas > 0 ? 'bg-red-100 text-red-800' : 'text-gray-400'" class="px-2 py-0.5 rounded font-bold">{{ item.totalFaltas }}</span>
+             <span v-if="item.totalFaltas > 0" class="px-2 py-0.5 rounded font-bold bg-red-100 text-red-800">{{ item.totalFaltas }}</span>
+             <span v-else class="text-gray-300">-</span>
           </template>
+          
           <template #item-totalRetardos="item">
-             <span :class="item.totalRetardos > 0 ? 'bg-amber-100 text-amber-800' : 'text-gray-400'" class="px-2 py-0.5 rounded font-bold">{{ item.totalRetardos }}</span>
+             <span v-if="item.totalRetardos > 0" class="px-2 py-0.5 rounded font-bold bg-amber-100 text-amber-800">{{ item.totalRetardos }}</span>
+             <span v-else class="text-gray-300">-</span>
           </template>
+
           <template #item-sancionTexto="item">
-            <span class="text-[11px] font-bold text-red-600 bg-red-50 px-2 py-1 rounded border border-red-100">{{ item.sancionTexto }}</span>
+            <span class="text-xs font-bold text-gray-800 uppercase tracking-wide">{{ item.sancionTexto }}</span>
           </template>
+
           <template #item-diasDescuento="item">
-            <span :class="item.diasDescuento > 0 ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-500'" class="px-3 py-1 font-bold rounded-full text-xs shadow-sm">{{ item.diasDescuento }} </span>
+            <span v-if="item.diasDescuento > 0" class="bg-gray-800 text-white px-3 py-1 font-bold rounded-full text-xs shadow-sm">{{ item.diasDescuento }} </span>
+            <span v-else class="text-gray-400 text-xs">-</span>
           </template>
+
+          <template #item-totalMinutosRetardo="item">
+             <span v-if="item.totalMinutosRetardo > 0" class="font-bold text-gray-700">{{ item.totalMinutosRetardo }} min</span>
+             <span v-else class="text-gray-300">-</span>
+          </template>
+
           <template #item-acciones="item">
             <button @click="procesarSancion(item)" class="bg-inst-primario hover:bg-inst-secundario text-white px-3 py-1.5 rounded text-xs font-bold transition shadow-sm whitespace-nowrap">
-              <i class="fa-solid fa-file-pen mr-1"></i> Generar doc
+              <i class="fa-solid fa-file-pen mr-1"></i> Doc
             </button>
           </template>
         </EasyDataTable>
       </div>
     </div>
 
-    <!-- PESTAÑA: HISTORIAL -->
     <div v-if="vistaInterna === 'historial'" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 space-y-4">
       <div class="flex justify-between items-center bg-gray-50 p-3 rounded border border-gray-200">
         <input v-model="valorBusquedaHistorial" type="text" placeholder="Buscar empleado o folio..." class="w-full max-w-md p-2 border border-gray-300 rounded outline-none focus:border-inst-primario text-sm" />
@@ -239,6 +286,13 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
         <template #item-periodo="item">
           <span class="font-bold text-gray-600 uppercase text-xs">{{ getNombreMes(item.mes) }} {{ item.anio }}</span>
         </template>
+        
+        <template #item-tipoSancion="item">
+          <span :class="item.tipoSancion === 'RETARDOS' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+            {{ item.tipoSancion }}
+          </span>
+        </template>
+
         <template #item-sancionAplicada="item">
           <span class="text-[11px] text-gray-700 bg-gray-100 px-2 py-1 rounded">{{ item.sancionAplicada }}</span>
         </template>
@@ -255,6 +309,12 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
 </template>
 
 <style scoped>
+.bg-inst-primario { background-color: #6B1C3A; }
+.text-inst-primario { color: #6B1C3A; }
+.border-inst-primario { border-color: #6B1C3A; }
+.bg-inst-secundario { background-color: #902c3e; }
+.bg-inst-cafe-oscuro { background-color: #4b5563; } 
+
 .img-strattia-style {
   --easy-table-header-background-color: #f8fafc;
   --easy-table-header-font-color: #475569;

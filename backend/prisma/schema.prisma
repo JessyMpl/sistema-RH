@@ -148,20 +148,21 @@ model Calendario {
   @@map("calendario")
 }
 
-// 10. NUEVA TABLA: Historial de Sanciones Mensuales
+// 10. TABLA DE HISTORIAL DE SANCIONES MENSUALES (Actualizada)
 model SancionMensual {
   id               Int             @id @default(autoincrement())
   servidorId       Int
   mes              Int             // Ej. 6 para Junio
   anio             Int             // Ej. 2026
+  tipoSancion      String          // 🔥 NUEVO: "RETARDOS" o "FALTAS"
   
-  // Evidencia matemática de ese mes específico
+  // Evidencia matemática específica de esta sanción
   totalRetardos    Int             @default(0)
   totalFaltas      Int             @default(0)
-  totalOmisiones   Int             @default(0) // Agregado por si la norma cambia en el futuro
+  totalOmisiones   Int             @default(0) 
   
   // Castigos aplicados
-  sancionAplicada  String          @db.Text // Ej. "Suspensión de 3 días sin goce de sueldo"
+  sancionAplicada  String          @db.Text // Ej. "Severa llamada de atención escrita"
   diasDescuento    Int             @default(0)
   
   // Rastro documental
@@ -171,6 +172,5 @@ model SancionMensual {
   // Relación con el empleado
   servidor         ServidorPublico @relation(fields: [servidorId], references: [id])
   
-  // Restricción: Un empleado solo puede tener una sanción generada por mes y año
-  @@unique([servidorId, mes, anio])
+  // 🔥 Se eliminó la restricción @@unique anterior para permitir múltiples oficios al mes
 }
