@@ -8,10 +8,10 @@ import { apiUrl } from '@/utils/api';
 // ==========================================
 const empleados = ref([]);
 const horarios = ref([]); 
-const areasAdscripcion = ref([]); // NUEVO: Para guardar el catálogo de áreas
+const areasAdscripcion = ref([]);
 const vistaInterna = ref('lista'); 
 const searchValue = ref('');
-const filtroArea = ref('TODAS'); // NUEVO: Para el filtro de la tabla
+const filtroArea = ref('TODAS'); 
 
 const headers = [
   { text: "No. Empleado", value: "numeroEmpleado", sortable: true },
@@ -25,7 +25,7 @@ const headers = [
 const formulario = ref({ 
   numeroEmpleado: '', 
   nombreCompleto: '', 
-  departamento: '', // Seguirá llamándose departamento para el v-model, pero guardará el nombre del área seleccionada
+  departamento: '',
   regimen: 'NORMAL',
   horarioId: '',
   fechaIngreso: '' 
@@ -35,7 +35,7 @@ const formulario = ref({
 const mostrarModalEditar = ref(false);
 const empleadoEditar = ref(null);
 
-// Variables para Modal de Detalles/Expediente (Ojo)
+// Variables para Modal de Detalles/Expediente
 const mostrarModalDetalle = ref(false);
 const empleadoDetalle = ref(null);
 const tabActiva = ref('datos'); 
@@ -91,7 +91,7 @@ const guardarManual = async () => {
       Swal.fire({ title: '¡Registro Exitoso!', icon: 'success', confirmButtonColor: '#2563eb' });
       formulario.value = { numeroEmpleado: '', nombreCompleto: '', departamento: '', regimen: 'NORMAL', horarioId: '', fechaIngreso: '' };
       cargarEmpleados();
-      cargarAreas(); // Recargar áreas por si se creó una nueva en el backend (aunque ahora usas catálogo)
+      cargarAreas(); 
       vistaInterna.value = 'lista';
     } else {
       Swal.fire({ title: 'Error', text: 'Verifica que el ID no esté duplicado.', icon: 'error' });
@@ -116,10 +116,22 @@ const abrirEditar = (emp) => {
 };
 
 const actualizarEmpleado = async () => {
+  const idEmpleado = empleadoEditar.value.id;
+  if (!idEmpleado) {
+    Swal.fire('Error', 'No se encontró el ID del empleado para actualizar.', 'error');
+    return;
+  }
+
+  const urlFinal = apiUrl(`/api/empleados/${idEmpleado}`);
+  console.log("Intentando actualizar en:", urlFinal, "con método PUT");
+
   try {
-    const res = await fetch(apiUrl(`/api/empleados/${empleadoEditar.value.id}`), {
+    const res = await fetch(urlFinal, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json' 
+      },
       body: JSON.stringify(empleadoEditar.value)
     });
 
@@ -128,9 +140,12 @@ const actualizarEmpleado = async () => {
       mostrarModalEditar.value = false;
       cargarEmpleados();
     } else {
+      const errorData = await res.text();
+      console.error("Respuesta del servidor:", res.status, errorData);
       Swal.fire('Error', 'No se pudo actualizar el registro.', 'error');
     }
   } catch (error) {
+    console.error("Fallo de conexión en PUT:", error);
     Swal.fire('Error', 'Fallo de conexión.', 'error');
   }
 };
@@ -172,7 +187,7 @@ const procesarImportacion = async () => {
       Swal.fire({ title: '¡Catálogo Importado!', text: data.mensaje, icon: 'success' });
       archivoCatalogo.value = null;
       cargarEmpleados();
-      cargarAreas(); // Recargar áreas después de importación masiva
+      cargarAreas(); 
       vistaInterna.value = 'lista';
     }
   } catch (error) {
@@ -491,7 +506,7 @@ onMounted(() => {
 .bg-inst-cafe { background-color: #e5e7eb; } 
 .bg-inst-cafe-oscuro { background-color: #4b5563; } 
 
-.img-strattia-style { /* estilos de la tabla de empleados */
+.img-strattia-style {
   --easy-table-header-background-color: #924156;
   --easy-table-header-font-color: #ffffff;
   --easy-table-border: 1px solid #cbd5e1;
@@ -501,5 +516,5 @@ onMounted(() => {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #e0d2ba; } /* estilos para los scrollbars en modales y tablas */
+::-webkit-scrollbar-thumb:hover { background: #e0d2ba; }
 </style>

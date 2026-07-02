@@ -1006,3 +1006,460 @@
 2026-07-01 17:49:15: 
 2026-07-01 17:49:15: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 2026-07-01 17:49:15: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-02 15:16:06: ====== ERROR FATAL EN PUT /EMPLEADOS ======
+2026-07-02 15:16:06:  PrismaClientValidationError: 
+2026-07-02 15:16:06: Invalid `prisma.servidorPublico.update()` invocation in
+2026-07-02 15:16:06: /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:62
+2026-07-02 15:16:06: 
+2026-07-02 15:16:06:   185   dataAActualizar.historial = { create: nuevosMovimientos };
+2026-07-02 15:16:06:   186 }
+2026-07-02 15:16:06:   187 
+2026-07-02 15:16:06: → 188 const empleadoActualizado = await prisma.servidorPublico.update({
+2026-07-02 15:16:06:         where: {
+2026-07-02 15:16:06:           id: 6702
+2026-07-02 15:16:06:         },
+2026-07-02 15:16:06:         data: {
+2026-07-02 15:16:06:           nombreCompleto: "REYES MENDOZA VIRIDIANA",
+2026-07-02 15:16:06:           numeroEmpleado: "1042",
+2026-07-02 15:16:06:           areaId: 1,
+2026-07-02 15:16:06:           ~~~~~~
+2026-07-02 15:16:06:           regimen: "NORMAL",
+2026-07-02 15:16:06:           activo: true,
+2026-07-02 15:16:06:           horario: {
+2026-07-02 15:16:06:             connect: {
+2026-07-02 15:16:06:               id: 2
+2026-07-02 15:16:06:             }
+2026-07-02 15:16:06:           },
+2026-07-02 15:16:06:           fechaBaja: null,
+2026-07-02 15:16:06:           motivoBaja: null,
+2026-07-02 15:16:06:           historial: {
+2026-07-02 15:16:06:             create: [
+2026-07-02 15:16:06:               {
+2026-07-02 15:16:06:                 tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
+2026-07-02 15:16:06:                 datoAnterior: "COORDINACION ADMINISTRATIVA",
+2026-07-02 15:16:06:                 datoNuevo: "AREA DE TECNOLOGIAS"
+2026-07-02 15:16:06:               }
+2026-07-02 15:16:06:             ]
+2026-07-02 15:16:06:           },
+2026-07-02 15:16:06:       ?   fechaIngreso?: DateTime | NullableDateTimeFieldUpdateOperationsInput | Null,
+2026-07-02 15:16:06:       ?   area?: AreaAdscripcionUpdateOneWithoutServidoresNestedInput,
+2026-07-02 15:16:06:       ?   asistencias?: AsistenciaUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:16:06:       ?   justificaciones?: JustificacionUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:16:06:       ?   sanciones?: SancionMensualUpdateManyWithoutServidorNestedInput
+2026-07-02 15:16:06:         },
+2026-07-02 15:16:06:         include: {
+2026-07-02 15:16:06:           area: true
+2026-07-02 15:16:06:         }
+2026-07-02 15:16:06:       })
+2026-07-02 15:16:06: 
+2026-07-02 15:16:06: Unknown argument `areaId`. Did you mean `area`? Available options are marked with ?.
+2026-07-02 15:16:06:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-02 15:16:06:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-02 15:16:06:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-02 15:16:06:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-02 15:16:06:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-02 15:16:06:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-02 15:16:06:     at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:33 {
+2026-07-02 15:16:06:   clientVersion: '7.8.0'
+2026-07-02 15:16:06: }
+2026-07-02 15:16:09: ====== ERROR FATAL EN PUT /EMPLEADOS ======
+2026-07-02 15:16:09:  PrismaClientValidationError: 
+2026-07-02 15:16:09: Invalid `prisma.servidorPublico.update()` invocation in
+2026-07-02 15:16:09: /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:62
+2026-07-02 15:16:09: 
+2026-07-02 15:16:09:   185   dataAActualizar.historial = { create: nuevosMovimientos };
+2026-07-02 15:16:09:   186 }
+2026-07-02 15:16:09:   187 
+2026-07-02 15:16:09: → 188 const empleadoActualizado = await prisma.servidorPublico.update({
+2026-07-02 15:16:09:         where: {
+2026-07-02 15:16:09:           id: 6702
+2026-07-02 15:16:09:         },
+2026-07-02 15:16:09:         data: {
+2026-07-02 15:16:09:           nombreCompleto: "REYES MENDOZA VIRIDIANA",
+2026-07-02 15:16:09:           numeroEmpleado: "1042",
+2026-07-02 15:16:09:           areaId: 1,
+2026-07-02 15:16:09:           ~~~~~~
+2026-07-02 15:16:09:           regimen: "NORMAL",
+2026-07-02 15:16:09:           activo: true,
+2026-07-02 15:16:09:           horario: {
+2026-07-02 15:16:09:             connect: {
+2026-07-02 15:16:09:               id: 2
+2026-07-02 15:16:09:             }
+2026-07-02 15:16:09:           },
+2026-07-02 15:16:09:           fechaBaja: null,
+2026-07-02 15:16:09:           motivoBaja: null,
+2026-07-02 15:16:09:           historial: {
+2026-07-02 15:16:09:             create: [
+2026-07-02 15:16:09:               {
+2026-07-02 15:16:09:                 tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
+2026-07-02 15:16:09:                 datoAnterior: "COORDINACION ADMINISTRATIVA",
+2026-07-02 15:16:09:                 datoNuevo: "AREA DE TECNOLOGIAS"
+2026-07-02 15:16:09:               }
+2026-07-02 15:16:09:             ]
+2026-07-02 15:16:09:           },
+2026-07-02 15:16:09:       ?   fechaIngreso?: DateTime | NullableDateTimeFieldUpdateOperationsInput | Null,
+2026-07-02 15:16:09:       ?   area?: AreaAdscripcionUpdateOneWithoutServidoresNestedInput,
+2026-07-02 15:16:09:       ?   asistencias?: AsistenciaUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:16:09:       ?   justificaciones?: JustificacionUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:16:09:       ?   sanciones?: SancionMensualUpdateManyWithoutServidorNestedInput
+2026-07-02 15:16:09:         },
+2026-07-02 15:16:09:         include: {
+2026-07-02 15:16:09:           area: true
+2026-07-02 15:16:09:         }
+2026-07-02 15:16:09:       })
+2026-07-02 15:16:09: 
+2026-07-02 15:16:09: Unknown argument `areaId`. Did you mean `area`? Available options are marked with ?.
+2026-07-02 15:16:09:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-02 15:16:09:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-02 15:16:09:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-02 15:16:09:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-02 15:16:09:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-02 15:16:09:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-02 15:16:09:     at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:33 {
+2026-07-02 15:16:09:   clientVersion: '7.8.0'
+2026-07-02 15:16:09: }
+2026-07-02 15:16:11: ====== ERROR FATAL EN PUT /EMPLEADOS ======
+2026-07-02 15:16:11:  PrismaClientValidationError: 
+2026-07-02 15:16:11: Invalid `prisma.servidorPublico.update()` invocation in
+2026-07-02 15:16:11: /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:62
+2026-07-02 15:16:11: 
+2026-07-02 15:16:11:   185   dataAActualizar.historial = { create: nuevosMovimientos };
+2026-07-02 15:16:11:   186 }
+2026-07-02 15:16:11:   187 
+2026-07-02 15:16:11: → 188 const empleadoActualizado = await prisma.servidorPublico.update({
+2026-07-02 15:16:11:         where: {
+2026-07-02 15:16:11:           id: 6702
+2026-07-02 15:16:11:         },
+2026-07-02 15:16:11:         data: {
+2026-07-02 15:16:11:           nombreCompleto: "REYES MENDOZA VIRIDIANA",
+2026-07-02 15:16:11:           numeroEmpleado: "1042",
+2026-07-02 15:16:11:           areaId: 1,
+2026-07-02 15:16:11:           ~~~~~~
+2026-07-02 15:16:11:           regimen: "NORMAL",
+2026-07-02 15:16:11:           activo: true,
+2026-07-02 15:16:11:           horario: {
+2026-07-02 15:16:11:             connect: {
+2026-07-02 15:16:11:               id: 2
+2026-07-02 15:16:11:             }
+2026-07-02 15:16:11:           },
+2026-07-02 15:16:11:           fechaBaja: null,
+2026-07-02 15:16:11:           motivoBaja: null,
+2026-07-02 15:16:11:           historial: {
+2026-07-02 15:16:11:             create: [
+2026-07-02 15:16:11:               {
+2026-07-02 15:16:11:                 tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
+2026-07-02 15:16:11:                 datoAnterior: "COORDINACION ADMINISTRATIVA",
+2026-07-02 15:16:11:                 datoNuevo: "AREA DE TECNOLOGIAS"
+2026-07-02 15:16:11:               }
+2026-07-02 15:16:11:             ]
+2026-07-02 15:16:11:           },
+2026-07-02 15:16:11:       ?   fechaIngreso?: DateTime | NullableDateTimeFieldUpdateOperationsInput | Null,
+2026-07-02 15:16:11:       ?   area?: AreaAdscripcionUpdateOneWithoutServidoresNestedInput,
+2026-07-02 15:16:11:       ?   asistencias?: AsistenciaUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:16:11:       ?   justificaciones?: JustificacionUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:16:11:       ?   sanciones?: SancionMensualUpdateManyWithoutServidorNestedInput
+2026-07-02 15:16:11:         },
+2026-07-02 15:16:11:         include: {
+2026-07-02 15:16:11:           area: true
+2026-07-02 15:16:11:         }
+2026-07-02 15:16:11:       })
+2026-07-02 15:16:11: 
+2026-07-02 15:16:11: Unknown argument `areaId`. Did you mean `area`? Available options are marked with ?.
+2026-07-02 15:16:11:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-02 15:16:11:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-02 15:16:11:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-02 15:16:11:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-02 15:16:11:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-02 15:16:11:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-02 15:16:11:     at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:33 {
+2026-07-02 15:16:11:   clientVersion: '7.8.0'
+2026-07-02 15:16:11: }
+2026-07-02 15:18:09: ====== ERROR FATAL EN PUT /EMPLEADOS ======
+2026-07-02 15:18:09:  PrismaClientValidationError: 
+2026-07-02 15:18:09: Invalid `prisma.servidorPublico.update()` invocation in
+2026-07-02 15:18:09: /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:62
+2026-07-02 15:18:09: 
+2026-07-02 15:18:09:   185   dataAActualizar.historial = { create: nuevosMovimientos };
+2026-07-02 15:18:09:   186 }
+2026-07-02 15:18:09:   187 
+2026-07-02 15:18:09: → 188 const empleadoActualizado = await prisma.servidorPublico.update({
+2026-07-02 15:18:09:         where: {
+2026-07-02 15:18:09:           id: 6702
+2026-07-02 15:18:09:         },
+2026-07-02 15:18:09:         data: {
+2026-07-02 15:18:09:           nombreCompleto: "REYES MENDOZA VIRIDIANA",
+2026-07-02 15:18:09:           numeroEmpleado: "1042",
+2026-07-02 15:18:09:           areaId: 1,
+2026-07-02 15:18:09:           ~~~~~~
+2026-07-02 15:18:09:           regimen: "NORMAL",
+2026-07-02 15:18:09:           activo: true,
+2026-07-02 15:18:09:           horario: {
+2026-07-02 15:18:09:             connect: {
+2026-07-02 15:18:09:               id: 2
+2026-07-02 15:18:09:             }
+2026-07-02 15:18:09:           },
+2026-07-02 15:18:09:           fechaIngreso: new Date("2020-04-10T12:00:00.000Z"),
+2026-07-02 15:18:09:           fechaBaja: null,
+2026-07-02 15:18:09:           motivoBaja: null,
+2026-07-02 15:18:09:           historial: {
+2026-07-02 15:18:09:             create: [
+2026-07-02 15:18:09:               {
+2026-07-02 15:18:09:                 tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
+2026-07-02 15:18:09:                 datoAnterior: "COORDINACION ADMINISTRATIVA",
+2026-07-02 15:18:09:                 datoNuevo: "AREA DE TECNOLOGIAS"
+2026-07-02 15:18:09:               }
+2026-07-02 15:18:09:             ]
+2026-07-02 15:18:09:           },
+2026-07-02 15:18:09:       ?   area?: AreaAdscripcionUpdateOneWithoutServidoresNestedInput,
+2026-07-02 15:18:09:       ?   asistencias?: AsistenciaUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:18:09:       ?   justificaciones?: JustificacionUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:18:09:       ?   sanciones?: SancionMensualUpdateManyWithoutServidorNestedInput
+2026-07-02 15:18:09:         },
+2026-07-02 15:18:09:         include: {
+2026-07-02 15:18:09:           area: true
+2026-07-02 15:18:09:         }
+2026-07-02 15:18:09:       })
+2026-07-02 15:18:09: 
+2026-07-02 15:18:09: Unknown argument `areaId`. Did you mean `area`? Available options are marked with ?.
+2026-07-02 15:18:09:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-02 15:18:09:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-02 15:18:09:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-02 15:18:09:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-02 15:18:09:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-02 15:18:09:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-02 15:18:09:     at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:33 {
+2026-07-02 15:18:09:   clientVersion: '7.8.0'
+2026-07-02 15:18:09: }
+2026-07-02 15:20:46: ====== ERROR FATAL EN PUT /EMPLEADOS ======
+2026-07-02 15:20:46:  PrismaClientValidationError: 
+2026-07-02 15:20:46: Invalid `prisma.servidorPublico.update()` invocation in
+2026-07-02 15:20:46: /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:62
+2026-07-02 15:20:46: 
+2026-07-02 15:20:46:   185   dataAActualizar.historial = { create: nuevosMovimientos };
+2026-07-02 15:20:46:   186 }
+2026-07-02 15:20:46:   187 
+2026-07-02 15:20:46: → 188 const empleadoActualizado = await prisma.servidorPublico.update({
+2026-07-02 15:20:46:         where: {
+2026-07-02 15:20:46:           id: 6702
+2026-07-02 15:20:46:         },
+2026-07-02 15:20:46:         data: {
+2026-07-02 15:20:46:           nombreCompleto: "REYES MENDOZA VIRIDIANA",
+2026-07-02 15:20:46:           numeroEmpleado: "1042",
+2026-07-02 15:20:46:           areaId: 1,
+2026-07-02 15:20:46:           ~~~~~~
+2026-07-02 15:20:46:           regimen: "NORMAL",
+2026-07-02 15:20:46:           activo: true,
+2026-07-02 15:20:46:           horario: {
+2026-07-02 15:20:46:             connect: {
+2026-07-02 15:20:46:               id: 2
+2026-07-02 15:20:46:             }
+2026-07-02 15:20:46:           },
+2026-07-02 15:20:46:           fechaIngreso: new Date("2020-04-10T12:00:00.000Z"),
+2026-07-02 15:20:46:           fechaBaja: null,
+2026-07-02 15:20:46:           motivoBaja: null,
+2026-07-02 15:20:46:           historial: {
+2026-07-02 15:20:46:             create: [
+2026-07-02 15:20:46:               {
+2026-07-02 15:20:46:                 tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
+2026-07-02 15:20:46:                 datoAnterior: "COORDINACION ADMINISTRATIVA",
+2026-07-02 15:20:46:                 datoNuevo: "AREA DE TECNOLOGIAS"
+2026-07-02 15:20:46:               }
+2026-07-02 15:20:46:             ]
+2026-07-02 15:20:46:           },
+2026-07-02 15:20:46:       ?   area?: AreaAdscripcionUpdateOneWithoutServidoresNestedInput,
+2026-07-02 15:20:46:       ?   asistencias?: AsistenciaUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:20:46:       ?   justificaciones?: JustificacionUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:20:46:       ?   sanciones?: SancionMensualUpdateManyWithoutServidorNestedInput
+2026-07-02 15:20:46:         },
+2026-07-02 15:20:46:         include: {
+2026-07-02 15:20:46:           area: true
+2026-07-02 15:20:46:         }
+2026-07-02 15:20:46:       })
+2026-07-02 15:20:46: 
+2026-07-02 15:20:46: Unknown argument `areaId`. Did you mean `area`? Available options are marked with ?.
+2026-07-02 15:20:46:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-02 15:20:46:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-02 15:20:46:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-02 15:20:46:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-02 15:20:46:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-02 15:20:46:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-02 15:20:46:     at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:33 {
+2026-07-02 15:20:46:   clientVersion: '7.8.0'
+2026-07-02 15:20:46: }
+2026-07-02 15:21:02: ====== ERROR FATAL EN PUT /EMPLEADOS ======
+2026-07-02 15:21:02:  PrismaClientValidationError: 
+2026-07-02 15:21:02: Invalid `prisma.servidorPublico.update()` invocation in
+2026-07-02 15:21:02: /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:62
+2026-07-02 15:21:02: 
+2026-07-02 15:21:02:   185   dataAActualizar.historial = { create: nuevosMovimientos };
+2026-07-02 15:21:02:   186 }
+2026-07-02 15:21:02:   187 
+2026-07-02 15:21:02: → 188 const empleadoActualizado = await prisma.servidorPublico.update({
+2026-07-02 15:21:02:         where: {
+2026-07-02 15:21:02:           id: 6702
+2026-07-02 15:21:02:         },
+2026-07-02 15:21:02:         data: {
+2026-07-02 15:21:02:           nombreCompleto: "REYES MENDOZA VIRIDIANA",
+2026-07-02 15:21:02:           numeroEmpleado: "1042",
+2026-07-02 15:21:02:           areaId: 1,
+2026-07-02 15:21:02:           ~~~~~~
+2026-07-02 15:21:02:           regimen: "NORMAL",
+2026-07-02 15:21:02:           activo: true,
+2026-07-02 15:21:02:           horario: {
+2026-07-02 15:21:02:             connect: {
+2026-07-02 15:21:02:               id: 2
+2026-07-02 15:21:02:             }
+2026-07-02 15:21:02:           },
+2026-07-02 15:21:02:           fechaIngreso: new Date("2020-04-10T12:00:00.000Z"),
+2026-07-02 15:21:02:           fechaBaja: null,
+2026-07-02 15:21:02:           motivoBaja: null,
+2026-07-02 15:21:02:           historial: {
+2026-07-02 15:21:02:             create: [
+2026-07-02 15:21:02:               {
+2026-07-02 15:21:02:                 tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
+2026-07-02 15:21:02:                 datoAnterior: "COORDINACION ADMINISTRATIVA",
+2026-07-02 15:21:02:                 datoNuevo: "AREA DE TECNOLOGIAS"
+2026-07-02 15:21:02:               }
+2026-07-02 15:21:02:             ]
+2026-07-02 15:21:02:           },
+2026-07-02 15:21:02:       ?   area?: AreaAdscripcionUpdateOneWithoutServidoresNestedInput,
+2026-07-02 15:21:02:       ?   asistencias?: AsistenciaUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:21:02:       ?   justificaciones?: JustificacionUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:21:02:       ?   sanciones?: SancionMensualUpdateManyWithoutServidorNestedInput
+2026-07-02 15:21:02:         },
+2026-07-02 15:21:02:         include: {
+2026-07-02 15:21:02:           area: true
+2026-07-02 15:21:02:         }
+2026-07-02 15:21:02:       })
+2026-07-02 15:21:02: 
+2026-07-02 15:21:02: Unknown argument `areaId`. Did you mean `area`? Available options are marked with ?.
+2026-07-02 15:21:02:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-02 15:21:02:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-02 15:21:02:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-02 15:21:02:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-02 15:21:02:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-02 15:21:02:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-02 15:21:02:     at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:33 {
+2026-07-02 15:21:02:   clientVersion: '7.8.0'
+2026-07-02 15:21:02: }
+2026-07-02 15:21:17: ====== ERROR FATAL EN PUT /EMPLEADOS ======
+2026-07-02 15:21:17:  PrismaClientValidationError: 
+2026-07-02 15:21:17: Invalid `prisma.servidorPublico.update()` invocation in
+2026-07-02 15:21:17: /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:62
+2026-07-02 15:21:17: 
+2026-07-02 15:21:17:   185   dataAActualizar.historial = { create: nuevosMovimientos };
+2026-07-02 15:21:17:   186 }
+2026-07-02 15:21:17:   187 
+2026-07-02 15:21:17: → 188 const empleadoActualizado = await prisma.servidorPublico.update({
+2026-07-02 15:21:17:         where: {
+2026-07-02 15:21:17:           id: 6702
+2026-07-02 15:21:17:         },
+2026-07-02 15:21:17:         data: {
+2026-07-02 15:21:17:           nombreCompleto: "REYES MENDOZA VIRIDIANA",
+2026-07-02 15:21:17:           numeroEmpleado: "1042",
+2026-07-02 15:21:17:           areaId: 1,
+2026-07-02 15:21:17:           ~~~~~~
+2026-07-02 15:21:17:           regimen: "NORMAL",
+2026-07-02 15:21:17:           activo: true,
+2026-07-02 15:21:17:           horario: {
+2026-07-02 15:21:17:             connect: {
+2026-07-02 15:21:17:               id: 2
+2026-07-02 15:21:17:             }
+2026-07-02 15:21:17:           },
+2026-07-02 15:21:17:           fechaIngreso: new Date("2020-04-10T12:00:00.000Z"),
+2026-07-02 15:21:17:           fechaBaja: null,
+2026-07-02 15:21:17:           motivoBaja: null,
+2026-07-02 15:21:17:           historial: {
+2026-07-02 15:21:17:             create: [
+2026-07-02 15:21:17:               {
+2026-07-02 15:21:17:                 tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
+2026-07-02 15:21:17:                 datoAnterior: "COORDINACION ADMINISTRATIVA",
+2026-07-02 15:21:17:                 datoNuevo: "AREA DE TECNOLOGIAS"
+2026-07-02 15:21:17:               }
+2026-07-02 15:21:17:             ]
+2026-07-02 15:21:17:           },
+2026-07-02 15:21:17:       ?   area?: AreaAdscripcionUpdateOneWithoutServidoresNestedInput,
+2026-07-02 15:21:17:       ?   asistencias?: AsistenciaUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:21:17:       ?   justificaciones?: JustificacionUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:21:17:       ?   sanciones?: SancionMensualUpdateManyWithoutServidorNestedInput
+2026-07-02 15:21:17:         },
+2026-07-02 15:21:17:         include: {
+2026-07-02 15:21:17:           area: true
+2026-07-02 15:21:17:         }
+2026-07-02 15:21:17:       })
+2026-07-02 15:21:17: 
+2026-07-02 15:21:17: Unknown argument `areaId`. Did you mean `area`? Available options are marked with ?.
+2026-07-02 15:21:17:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-02 15:21:17:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-02 15:21:17:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-02 15:21:17:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-02 15:21:17:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-02 15:21:17:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-02 15:21:17:     at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:33 {
+2026-07-02 15:21:17:   clientVersion: '7.8.0'
+2026-07-02 15:21:17: }
+2026-07-02 15:21:17: ====== ERROR FATAL EN PUT /EMPLEADOS ======
+2026-07-02 15:21:17:  PrismaClientValidationError: 
+2026-07-02 15:21:17: Invalid `prisma.servidorPublico.update()` invocation in
+2026-07-02 15:21:17: /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:62
+2026-07-02 15:21:17: 
+2026-07-02 15:21:17:   185   dataAActualizar.historial = { create: nuevosMovimientos };
+2026-07-02 15:21:17:   186 }
+2026-07-02 15:21:17:   187 
+2026-07-02 15:21:17: → 188 const empleadoActualizado = await prisma.servidorPublico.update({
+2026-07-02 15:21:17:         where: {
+2026-07-02 15:21:17:           id: 6702
+2026-07-02 15:21:17:         },
+2026-07-02 15:21:17:         data: {
+2026-07-02 15:21:17:           nombreCompleto: "REYES MENDOZA VIRIDIANA",
+2026-07-02 15:21:17:           numeroEmpleado: "1042",
+2026-07-02 15:21:17:           areaId: 1,
+2026-07-02 15:21:17:           ~~~~~~
+2026-07-02 15:21:17:           regimen: "NORMAL",
+2026-07-02 15:21:17:           activo: true,
+2026-07-02 15:21:17:           horario: {
+2026-07-02 15:21:17:             connect: {
+2026-07-02 15:21:17:               id: 2
+2026-07-02 15:21:17:             }
+2026-07-02 15:21:17:           },
+2026-07-02 15:21:17:           fechaIngreso: new Date("2020-04-10T12:00:00.000Z"),
+2026-07-02 15:21:17:           fechaBaja: null,
+2026-07-02 15:21:17:           motivoBaja: null,
+2026-07-02 15:21:17:           historial: {
+2026-07-02 15:21:17:             create: [
+2026-07-02 15:21:17:               {
+2026-07-02 15:21:17:                 tipoMovimiento: "CAMBIO DE DEPARTAMENTO",
+2026-07-02 15:21:17:                 datoAnterior: "COORDINACION ADMINISTRATIVA",
+2026-07-02 15:21:17:                 datoNuevo: "AREA DE TECNOLOGIAS"
+2026-07-02 15:21:17:               }
+2026-07-02 15:21:17:             ]
+2026-07-02 15:21:17:           },
+2026-07-02 15:21:17:       ?   area?: AreaAdscripcionUpdateOneWithoutServidoresNestedInput,
+2026-07-02 15:21:17:       ?   asistencias?: AsistenciaUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:21:17:       ?   justificaciones?: JustificacionUpdateManyWithoutServidorNestedInput,
+2026-07-02 15:21:17:       ?   sanciones?: SancionMensualUpdateManyWithoutServidorNestedInput
+2026-07-02 15:21:17:         },
+2026-07-02 15:21:17:         include: {
+2026-07-02 15:21:17:           area: true
+2026-07-02 15:21:17:         }
+2026-07-02 15:21:17:       })
+2026-07-02 15:21:17: 
+2026-07-02 15:21:17: Unknown argument `areaId`. Did you mean `area`? Available options are marked with ?.
+2026-07-02 15:21:17:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-07-02 15:21:17:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-07-02 15:21:17:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-02 15:21:17:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-02 15:21:17:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-02 15:21:17:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-02 15:21:17:     at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:188:33 {
+2026-07-02 15:21:17:   clientVersion: '7.8.0'
+2026-07-02 15:21:17: }
+2026-07-02 15:27:32: (node:368127) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-02 15:27:32: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-02 15:27:32: 
+2026-07-02 15:27:32: To prepare for this change:
+2026-07-02 15:27:32: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-02 15:27:32: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-02 15:27:32: 
+2026-07-02 15:27:32: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-02 15:27:32: (Use `node --trace-warnings ...` to show where the warning was created)

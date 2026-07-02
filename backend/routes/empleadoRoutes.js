@@ -29,13 +29,13 @@ router.get('/', async (req, res) => {
     const empleados = await prisma.servidorPublico.findMany({
       include: {
         horario: true,
-        area: true, // 💡 IMPORTANTE: Traemos el catálogo
+        area: true, // Traemos el catálogo
         historial: { orderBy: { fecha: 'desc' } }
       },
       orderBy: { nombreCompleto: 'asc' }
     });
 
-    // 💡 EL DISFRAZ: Para que el frontend y reportes no truenen, mapeamos el area.nombre a 'departamento'
+    // EL DISFRAZ: Mapeamos el area.nombre a 'departamento'
     const empleadosDisfrazados = empleados.map(emp => ({
       ...emp,
       departamento: emp.area ? emp.area.nombre : null
@@ -55,12 +55,11 @@ router.post('/', async (req, res) => {
   try {
     let areaAsignadaId = null;
 
-    // 💡 Si nos mandan un departamento en texto, lo buscamos en el catálogo o lo creamos
     if (departamento && String(departamento).trim() !== '') {
       const deptoLimpio = String(departamento).trim().toUpperCase();
       const area = await prisma.areaAdscripcion.upsert({
         where: { nombre: deptoLimpio },
-        update: {}, // No hace nada si existe
+        update: {}, 
         create: { nombre: deptoLimpio }
       });
       areaAsignadaId = area.id;
@@ -76,7 +75,7 @@ router.post('/', async (req, res) => {
     };
 
     if (fechaIngreso) {
-      dataNuevo.fechaIngreso = new Date(`${fechaIngreso.split('T')[0]}T12:00:00Z`);
+      dataNuevo.fechaIngreso = new Date(`${String(fechaIngreso).split('T')[0]}T12:00:00Z`);
     }
 
     const nuevo = await prisma.servidorPublico.create({
@@ -89,7 +88,7 @@ router.post('/', async (req, res) => {
           }]
         }
       },
-      include: { area: true } // Devolvemos con el área poblada
+      include: { area: true }
     });
     
     res.json({ ...nuevo, departamento: nuevo.area ? nuevo.area.nombre : null });
@@ -100,7 +99,7 @@ router.post('/', async (req, res) => {
 });
 
 // ==========================================
-// 3. EDITAR EMPLEADO
+// 3. EDITAR EMPLEADO (Blindado)
 // ==========================================
 router.put('/:id', async (req, res) => {
   try {
@@ -116,12 +115,13 @@ router.put('/:id', async (req, res) => {
     if (!empleadoActual) return res.status(404).json({ error: 'Empleado no encontrado' });
 
     const isActivo = activo === true || activo === 'true' || activo === 1;
-    const deptoLimpio = departamento ? String(departamento).trim().toUpperCase() : null;
+    
+    // Blindaje de nulos
+    const deptoLimpio = (departamento && String(departamento).trim() !== '') ? String(departamento).trim().toUpperCase() : null;
     const regimenLimpio = String(regimen).trim();
 
     let nuevaAreaId = empleadoActual.areaId;
 
-    // 💡 Si el departamento cambió, actualizamos el catálogo
     const nombreDeptoActual = empleadoActual.area ? empleadoActual.area.nombre : null;
     if (deptoLimpio !== nombreDeptoActual) {
       if (deptoLimpio) {
@@ -149,7 +149,7 @@ router.put('/:id', async (req, res) => {
     if (empleadoActual.regimen !== regimenLimpio) {
       nuevosMovimientos.push({
         tipoMovimiento: "CAMBIO DE RÉGIMEN",
-        datoAnterior: empleadoActual.regimen,
+        datoAnterior: String(empleadoActual.regimen),
         datoNuevo: regimenLimpio
       });
     }
@@ -162,16 +162,20 @@ router.put('/:id', async (req, res) => {
       activo: isActivo
     };
 
+    // Usamos el ID escalar directo
     if (horarioId && !isNaN(parseInt(horarioId))) {
-      dataAActualizar.horario = { connect: { id: parseInt(horarioId) } };
+      dataAActualizar.horarioId = parseInt(horarioId);
     }
 
-    if (fechaIngreso && fechaIngreso.trim() !== '') {
-      dataAActualizar.fechaIngreso = new Date(`${fechaIngreso.split('T')[0]}T12:00:00Z`);
+    // Blindaje de Fechas
+    if (fechaIngreso && String(fechaIngreso).trim() !== '') {
+      dataAActualizar.fechaIngreso = new Date(`${String(fechaIngreso).split('T')[0]}T12:00:00Z`);
+    } else {
+      dataAActualizar.fechaIngreso = null;
     }
 
     if (!isActivo) {
-      dataAActualizar.fechaBaja = (fechaBaja && fechaBaja.trim() !== '') ? new Date(`${fechaBaja.split('T')[0]}T12:00:00Z`) : new Date();
+      dataAActualizar.fechaBaja = (fechaBaja && String(fechaBaja).trim() !== '') ? new Date(`${String(fechaBaja).split('T')[0]}T12:00:00Z`) : new Date();
       dataAActualizar.motivoBaja = motivoBaja ? String(motivoBaja).trim() : 'Baja general';
       if (empleadoActual.activo === true) {
         nuevosMovimientos.push({ tipoMovimiento: "BAJA", datoNuevo: dataAActualizar.motivoBaja });
@@ -195,7 +199,10 @@ router.put('/:id', async (req, res) => {
 
   } catch (error) {
     console.error("====== ERROR FATAL EN PUT /EMPLEADOS ======\n", error);
-    res.status(500).json({ error: 'Error interno al actualizar.' });
+    res.status(500).json({ 
+      error: 'Error interno al actualizar.', 
+      detalle: error.message || String(error) 
+    });
   }
 });
 
@@ -210,14 +217,13 @@ router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
     const sheetName = workbook.SheetNames[0]; 
     const dataExcel = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-    // 1. Extraemos y guardamos todas las áreas únicas del Excel en el catálogo
     const nombresAreasSet = new Set();
     dataExcel.forEach(fila => {
       const depto = fila['DEPARTAMENTO'] || fila['Departamento'] || fila['departamento'];
       if (depto) nombresAreasSet.add(String(depto).trim().toUpperCase());
     });
 
-    const areasMap = new Map(); // Mapa para rápido acceso: 'SISTEMAS' => 3
+    const areasMap = new Map(); 
     for (const nombreArea of nombresAreasSet) {
       const area = await prisma.areaAdscripcion.upsert({
         where: { nombre: nombreArea },
@@ -247,7 +253,7 @@ router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
       let regimenLimpio = String(rawRegimen).trim().toUpperCase();
       if (regimenLimpio === 'EXCENTO') regimenLimpio = 'EXENTO';
 
-      let horarioIdCalculado = 2; // NORMAL
+      let horarioIdCalculado = 2; 
       if (regimenLimpio === 'LISTA') horarioIdCalculado = 3;
       else if (regimenLimpio === 'EXENTO') horarioIdCalculado = 6; 
       else if (regimenLimpio === 'ESPECIAL') horarioIdCalculado = entradaLimpia.includes('7') ? 1 : 4;
