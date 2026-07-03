@@ -150,7 +150,10 @@ router.post('/registrar-masiva', async (req, res) => {
       );
     }
 
-    await prisma.$transaction(transacciones);
+  await prisma.$transaction(transacciones, {
+  maxWait: 10000, // 10 segundos máximo esperando conexión
+  timeout: 60000  // 60 segundos para procesar todo el lote masivo
+});
 
     res.json({ mensaje: `Se justificaron ${asistencias.length} registros exitosamente.` });
   } catch (error) {

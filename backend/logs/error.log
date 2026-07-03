@@ -1545,3 +1545,144 @@
 2026-07-02 16:13:53: 
 2026-07-02 16:13:53: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 2026-07-02 16:13:53: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-03 13:55:24: Error al registrar: PrismaClientKnownRequestError: 
+2026-07-03 13:55:24: Invalid `prisma.servidorPublico.create()` invocation in
+2026-07-03 13:55:24: /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:81:48
+2026-07-03 13:55:24: 
+2026-07-03 13:55:24:   78   dataNuevo.fechaIngreso = new Date(`${String(fechaIngreso).split('T')[0]}T12:00:00Z`);
+2026-07-03 13:55:24:   79 }
+2026-07-03 13:55:24:   80 
+2026-07-03 13:55:24: → 81 const nuevo = await prisma.servidorPublico.create(
+2026-07-03 13:55:24: Unique constraint failed on the fields: (`"numeroEmpleado"`)
+2026-07-03 13:55:24:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+2026-07-03 13:55:24:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-03 13:55:24:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-03 13:55:24:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-03 13:55:24:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-03 13:55:24:     at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:81:19 {
+2026-07-03 13:55:24:   code: 'P2002',
+2026-07-03 13:55:24:   meta: {
+2026-07-03 13:55:24:     modelName: 'ServidorPublico',
+2026-07-03 13:55:24:     driverAdapterError: DriverAdapterError: UniqueConstraintViolation
+2026-07-03 13:55:24:         at PgTransaction.onError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+adapter-pg@7.8.0/node_modules/@prisma/adapter-pg/dist/index.js:678:11)
+2026-07-03 13:55:24:         at PgTransaction.performIO (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+adapter-pg@7.8.0/node_modules/@prisma/adapter-pg/dist/index.js:673:12)
+2026-07-03 13:55:24:         at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-03 13:55:24:         at async PgTransaction.queryRaw (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+adapter-pg@7.8.0/node_modules/@prisma/adapter-pg/dist/index.js:604:30)
+2026-07-03 13:55:24:         at async e.interpretNode (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+2026-07-03 13:55:24:         at async e.interpretNode (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+2026-07-03 13:55:24:         at async e.interpretNode (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:128:29)
+2026-07-03 13:55:24:         at async e.interpretNode (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+2026-07-03 13:55:24:         at async e.interpretNode (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:262:25)
+2026-07-03 13:55:24:         at async e.run (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+2026-07-03 13:55:24:         at async e.execute (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+2026-07-03 13:55:24:         at async jt.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:504:22)
+2026-07-03 13:55:24:         at async Object.singleLoader (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:112:26)
+2026-07-03 13:55:24:         at async zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:149:14)
+2026-07-03 13:55:24:         at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-07-03 13:55:24:         at async /var/www/html/sites/biometrico/backend/routes/empleadoRoutes.js:81:19 {
+2026-07-03 13:55:24:       cause: [Object]
+2026-07-03 13:55:24:     }
+2026-07-03 13:55:24:   },
+2026-07-03 13:55:24:   clientVersion: '7.8.0'
+2026-07-03 13:55:24: }
+2026-07-03 14:08:35: Error crítico durante justificación masiva: PrismaClientKnownRequestError: 
+2026-07-03 14:08:35: Invalid `prisma.justificacion.create()` invocation in
+2026-07-03 14:08:35: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:134:30
+2026-07-03 14:08:35: 
+2026-07-03 14:08:35:   131 
+2026-07-03 14:08:35:   132 for (const ast of asistencias) {
+2026-07-03 14:08:35:   133   transacciones.push(
+2026-07-03 14:08:35: → 134     prisma.justificacion.create(
+2026-07-03 14:08:35: Transaction API error: A rollback cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5603 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.
+2026-07-03 14:08:35:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+2026-07-03 14:08:35:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-03 14:08:35:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-03 14:08:35:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-03 14:08:35:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24) {
+2026-07-03 14:08:35:   code: 'P2028',
+2026-07-03 14:08:35:   meta: {
+2026-07-03 14:08:35:     modelName: 'Justificacion',
+2026-07-03 14:08:35:     operation: 'rollback',
+2026-07-03 14:08:35:     timeout: 5000,
+2026-07-03 14:08:35:     timeTaken: 5603
+2026-07-03 14:08:35:   },
+2026-07-03 14:08:35:   clientVersion: '7.8.0'
+2026-07-03 14:08:35: }
+2026-07-03 14:14:15: Error crítico durante justificación masiva: PrismaClientKnownRequestError: 
+2026-07-03 14:14:15: Invalid `prisma.justificacion.create()` invocation in
+2026-07-03 14:14:15: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:134:30
+2026-07-03 14:14:15: 
+2026-07-03 14:14:15:   131 
+2026-07-03 14:14:15:   132 for (const ast of asistencias) {
+2026-07-03 14:14:15:   133   transacciones.push(
+2026-07-03 14:14:15: → 134     prisma.justificacion.create(
+2026-07-03 14:14:15: Transaction API error: A rollback cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5556 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.
+2026-07-03 14:14:15:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+2026-07-03 14:14:15:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-03 14:14:15:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-03 14:14:15:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-03 14:14:15:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24) {
+2026-07-03 14:14:15:   code: 'P2028',
+2026-07-03 14:14:15:   meta: {
+2026-07-03 14:14:15:     modelName: 'Justificacion',
+2026-07-03 14:14:15:     operation: 'rollback',
+2026-07-03 14:14:15:     timeout: 5000,
+2026-07-03 14:14:15:     timeTaken: 5556
+2026-07-03 14:14:15:   },
+2026-07-03 14:14:15:   clientVersion: '7.8.0'
+2026-07-03 14:14:15: }
+2026-07-03 14:18:02: Error crítico durante justificación masiva: PrismaClientKnownRequestError: 
+2026-07-03 14:18:02: Invalid `prisma.justificacion.create()` invocation in
+2026-07-03 14:18:02: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:134:30
+2026-07-03 14:18:02: 
+2026-07-03 14:18:02:   131 
+2026-07-03 14:18:02:   132 for (const ast of asistencias) {
+2026-07-03 14:18:02:   133   transacciones.push(
+2026-07-03 14:18:02: → 134     prisma.justificacion.create(
+2026-07-03 14:18:02: Transaction API error: A rollback cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5558 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.
+2026-07-03 14:18:02:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+2026-07-03 14:18:02:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-03 14:18:02:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-03 14:18:02:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-03 14:18:02:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24) {
+2026-07-03 14:18:02:   code: 'P2028',
+2026-07-03 14:18:02:   meta: {
+2026-07-03 14:18:02:     modelName: 'Justificacion',
+2026-07-03 14:18:02:     operation: 'rollback',
+2026-07-03 14:18:02:     timeout: 5000,
+2026-07-03 14:18:02:     timeTaken: 5558
+2026-07-03 14:18:02:   },
+2026-07-03 14:18:02:   clientVersion: '7.8.0'
+2026-07-03 14:18:02: }
+2026-07-03 14:19:49: Error crítico durante justificación masiva: PrismaClientKnownRequestError: 
+2026-07-03 14:19:49: Invalid `prisma.justificacion.create()` invocation in
+2026-07-03 14:19:49: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:134:30
+2026-07-03 14:19:49: 
+2026-07-03 14:19:49:   131 
+2026-07-03 14:19:49:   132 for (const ast of asistencias) {
+2026-07-03 14:19:49:   133   transacciones.push(
+2026-07-03 14:19:49: → 134     prisma.justificacion.create(
+2026-07-03 14:19:49: Transaction API error: A rollback cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5563 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.
+2026-07-03 14:19:49:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+2026-07-03 14:19:49:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-03 14:19:49:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-03 14:19:49:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-03 14:19:49:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24) {
+2026-07-03 14:19:49:   code: 'P2028',
+2026-07-03 14:19:49:   meta: {
+2026-07-03 14:19:49:     modelName: 'Justificacion',
+2026-07-03 14:19:49:     operation: 'rollback',
+2026-07-03 14:19:49:     timeout: 5000,
+2026-07-03 14:19:49:     timeTaken: 5563
+2026-07-03 14:19:49:   },
+2026-07-03 14:19:49:   clientVersion: '7.8.0'
+2026-07-03 14:19:49: }
+2026-07-03 14:22:09: (node:399956) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-03 14:22:09: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-03 14:22:09: 
+2026-07-03 14:22:09: To prepare for this change:
+2026-07-03 14:22:09: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-03 14:22:09: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-03 14:22:09: 
+2026-07-03 14:22:09: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-03 14:22:09: (Use `node --trace-warnings ...` to show where the warning was created)

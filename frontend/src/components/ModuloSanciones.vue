@@ -250,12 +250,12 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
           </template>
 
           <template #item-diasDescuento="item">
-            <span v-if="item.diasDescuento > 0" class="bg-gray-800 text-white px-3 py-1 font-bold rounded-full text-xs shadow-sm">{{ item.diasDescuento }} </span>
+            <span v-if="item.diasDescuento > 0" class="bg-orange-300 text-black px-3 py-1 font-bold rounded-full text-xs shadow-sm">{{ item.diasDescuento }} </span>
             <span v-else class="text-gray-400 text-xs">-</span>
           </template>
 
           <template #item-totalMinutosRetardo="item">
-             <span v-if="item.totalMinutosRetardo > 0" class="font-bold text-gray-700">{{ item.totalMinutosRetardo }} min</span>
+             <span v-if="item.totalMinutosRetardo > 0" class="font-bold text-gray-700">{{ item.totalMinutosRetardo }} </span>
              <span v-else class="text-gray-300">-</span>
           </template>
 
