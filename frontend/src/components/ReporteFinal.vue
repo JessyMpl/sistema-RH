@@ -3,9 +3,6 @@ import { ref, computed, watch } from 'vue';
 import Swal from 'sweetalert2';
 import { apiUrl } from '@/utils/api';
 
-// Estado de las pestañas
-const pestanaActiva = ref('sabana');
-
 // --- VARIABLES PARA LA SÁBANA QUINCENAL ---
 const mesSeleccionadoSabana = ref('');
 const quincenaSeleccionada = ref('');
@@ -18,22 +15,6 @@ const datosExtraidos = ref([]);
 const busquedaSabana = ref('');
 const elementosPorPaginaSabana = ref(15);
 const paginaActualSabana = ref(1);
-
-// --- VARIABLES PARA EL REPORTE DE SANCIONES ---
-const mesSeleccionadoSanciones = ref('');
-const cargandoSanciones = ref(false);
-const listaSanciones = ref([]);
-const valorBusquedaSanciones = ref('');
-
-const headersSanciones = [
-  { text: "NUM. EMP", value: "numeroEmpleado", sortable: true, align: "center" },
-  { text: "SERVIDOR PÚBLICO", value: "nombreCompleto", sortable: true },
-  { text: "DEPARTAMENTO", value: "departamento", sortable: true },
-  { text: "FALTAS", value: "totalFaltas", sortable: true, align: "center" },
-  { text: "RETARDOS", value: "totalRetardos", sortable: true, align: "center" },
-  { text: "OMISIONES", value: "totalOmisiones", sortable: true, align: "center" },
-  { text: "DÍAS A DESCONTAR", value: "diasDescuento", sortable: true, align: "center" }
-];
 
 // Lista de meses para los selectores
 const meses = [
@@ -226,249 +207,160 @@ const descargarSabanaOficial = async () => {
     estaDescargando.value = false;
   }
 };
-
-// --- LÓGICA: GENERAR REPORTE DE SANCIONES ---
-const generarReporteSanciones = async () => {
-  if (mesSeleccionadoSanciones.value === '') {
-    Swal.fire('Atención', 'Selecciona un mes para calcular las sanciones.', 'warning');
-    return;
-  }
-
-  cargandoSanciones.value = true;
-  
-  try {
-    // 💡 Datos de prueba temporales para ver la tabla viva
-    listaSanciones.value = [
-      { numeroEmpleado: '1408', nombreCompleto: 'YENY ANDREA', departamento: 'SISTEMAS', totalFaltas: 1, totalRetardos: 3, totalOmisiones: 0, diasDescuento: 2 },
-      { numeroEmpleado: '2272', nombreCompleto: 'MERCEDES ALBARRAN', departamento: 'FINANZAS', totalFaltas: 0, totalRetardos: 2, totalOmisiones: 1, diasDescuento: 1 }
-    ];
-
-  } catch (error) {
-    console.error(error);
-    Swal.fire('Error', 'No se pudo calcular el reporte de sanciones.', 'error');
-  } finally {
-    cargandoSanciones.value = false;
-  }
-};
-
 </script>
 
 <template>
   <div class="space-y-6">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-2 flex gap-2">
-      <button @click="pestanaActiva = 'sabana'" 
-        :class="['px-6 py-2 rounded-md font-bold text-sm transition', pestanaActiva === 'sabana' ? 'bg-inst-primario text-white' : 'text-gray-600 hover:bg-gray-100']">
-        <i class="fa-solid fa-file-excel mr-2"></i> Sábana Oficial
-      </button>
-      
-      <button @click="pestanaActiva = 'sanciones'" 
-        :class="['px-6 py-2 rounded-md font-bold text-sm transition', pestanaActiva === 'sanciones' ? 'bg-inst-primario text-white' : 'text-gray-600 hover:bg-gray-100']">
-        <i class="fa-solid fa-scale-balanced mr-2"></i> Reporte de Sanciones
-      </button>
-    </div>
 
-    <div v-if="pestanaActiva === 'sabana'" class="space-y-4">
-      
-      <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div class="text-center mb-6">
-          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-3">
-            <i class="fa-solid fa-calendar-check text-3xl"></i>
-          </div>
-          <h2 class="text-xl font-bold text-gray-800">Sábana Quincenal Oficial</h2>
-          <p class="text-sm text-gray-500 mt-1">Previsualiza los datos definitivos con justificaciones aplicadas antes de exportar el Excel.</p>
+    <!-- Panel de Controles -->
+    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-3">
+          <i class="fa-solid fa-calendar-check text-3xl"></i>
         </div>
-
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4 max-w-3xl mx-auto">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mes del Reporte</label>
-              <select v-model="mesSeleccionadoSabana" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm">
-                <option value="" disabled>Selecciona un mes...</option>
-                <option v-for="mes in meses" :key="mes.valor" :value="mes.valor">{{ mes.texto }} {{ anioActual }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quincena</label>
-              <select v-model="quincenaSeleccionada" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm">
-                <option value="" disabled>Selecciona la quincena...</option>
-                <option value="1">Primera Quincena (Días 1 al 15)</option>
-                <option value="2">Segunda Quincena (Días 16 al fin de mes)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="pt-2 flex justify-center">
-            <button @click="generarPrevisualizacion" :disabled="cargandoPrevisualizacion" class="px-8 py-2.5 bg-inst-primario text-white font-bold rounded-lg hover:bg-inst-secundario transition shadow-md flex items-center gap-2 disabled:opacity-50">
-              <i class="fa-solid" :class="cargandoPrevisualizacion ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart'"></i> 
-              {{ cargandoPrevisualizacion ? 'Cargando datos...' : 'Generar Previsualización' }}
-            </button>
-          </div>
-        </div>
+        <h2 class="text-xl font-bold text-gray-800">Sábana Quincenal Oficial</h2>
+        <p class="text-sm text-gray-500 mt-1">Previsualiza los datos definitivos con justificaciones aplicadas antes de exportar el Excel.</p>
       </div>
 
-      <div v-if="mostrarTablaPrevisualizacion" class="animate-fade-in">
-        <div class="flex justify-between mb-4 gap-4 items-center">
-          
-          <div class="flex flex-col md:flex-row gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200 w-full lg:w-auto">
-            <div class="flex items-center w-full md:w-64 relative">
-              <i class="fa-solid fa-magnifying-glass absolute left-3 text-gray-400"></i>
-              <input type="text" v-model="busquedaSabana" placeholder="Buscar empleado o área..." class="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-inst-primario text-sm" />
-            </div>
-            <div class="flex items-center gap-2 border-l pl-4 border-gray-200">
-              <span class="text-xs font-bold text-gray-500 uppercase">Mostrar:</span>
-              <select v-model="elementosPorPaginaSabana" class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:border-inst-primario cursor-pointer bg-gray-50">
-                <option :value="15">15</option>
-                <option :value="30">30</option>
-                <option :value="50">50</option>
-                <option :value="100">100</option>
-              </select>
-            </div>
-          </div>
-
-          <button @click="descargarSabanaOficial" :disabled="estaDescargando" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition duration-300 ease-in-out whitespace-nowrap cursor-pointer disabled:opacity-50">
-             <i class="fa-solid" :class="estaDescargando ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i> 
-            {{ estaDescargando ? 'Procesando...' : 'Descargar Excel Oficial' }}
-          </button>
-        </div>
-
-        <div class="mb-0 bg-inst-vino-claro py-3 rounded-t-lg border border-inst-primario shadow-sm">
-          <h2 class="text-lg font-bold text-white text-center tracking-wide">{{ tituloReporte }}</h2>
-        </div>
-        
-        <div class="overflow-x-auto bg-white shadow-lg ring-1 ring-black ring-opacity-5 rounded-b-lg pb-4 border-l border-r border-b border-gray-200">
-          <table class="min-w-full border-collapse">
-            <thead class="bg-gray-100">
-              <tr>
-                <th rowspan="2" class="sticky left-0 z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border border-gray-300 shadow-[1px_0_0_0_#d1d5db]">Num</th>
-                <th rowspan="2" class="sticky left-[60px] z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[180px] shadow-[1px_0_0_0_#d1d5db]">Área de Adscripción</th>
-                <th rowspan="2" class="sticky left-[240px] z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[250px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]">Servidor Público</th>
-                <th v-for="fecha in diasSabana" :key="'head-'+fecha" colspan="2" class="py-1 text-center text-sm font-bold text-gray-800 border border-gray-300 bg-gray-200">{{ getDia(fecha) }}</th>
-                <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">FALTAS DE <br> PUNTUALIDAD</th>
-                <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">FALTAS DE <br> ASISTENCIA</th>
-                <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">TOTAL MINUTOS <br> RETARDO</th>
-              </tr>
-              <tr>
-                <template v-for="fecha in diasSabana" :key="'sub-'+fecha">
-                  <th class="py-1 px-2 text-center text-xs font-bold text-gray-600 border border-gray-300 bg-gray-100 min-w-[45px]">E</th>
-                  <th class="py-1 px-2 text-center text-xs font-bold text-gray-600 border border-gray-300 bg-gray-100 min-w-[45px]">S</th>
-                </template>
-              </tr>
-            </thead>
-            <tbody class="bg-white">
-              <tr v-for="(emp, index) in sabanaPaginada" :key="emp.numEmp" class="hover:bg-blue-50 transition duration-150">
-                <td class="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-sm text-gray-600 border border-gray-200 text-center shadow-[1px_0_0_0_#e5e7eb] tabular-nums" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.numEmp }}</td>
-                <td class="sticky left-[60px] z-10 bg-white py-2 pl-4 pr-3 text-xs text-gray-700 border border-gray-200 truncate max-w-[180px] shadow-[1px_0_0_0_#e5e7eb]" :class="{'bg-gray-50': index % 2 === 0}" :title="emp.departamento || emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área'">{{ emp.departamento || emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área' }}</td>
-                <td class="sticky left-[240px] z-10 bg-white py-2 pl-4 pr-3 text-sm font-medium text-gray-900 border border-gray-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.nombre }}</td>
-                
-                <template v-for="fecha in diasSabana" :key="'data-'+fecha">
-                  <template v-if="emp.asistencias[fecha]">
-                    <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
-                    <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
-                    <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-gray-600"></td>
-                    <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'BAJA'" class="py-2 text-center border border-gray-300 align-middle bg-gray-200"><span class="font-bold text-gray-500 text-[10px] tracking-widest">BAJA</span></td>
-                    <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
-                    
-                    <template v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FALTA'">
-                      <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
-                      <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
-                    </template>
-                    
-                    <template v-else>
-                      <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-red-600 font-bold bg-red-50': String(emp.asistencias[fecha].estatus || '').includes('RETARDO'), 'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_E', 'text-blue-700 font-bold bg-blue-50': String(emp.asistencias[fecha].estatus || '') === 'JUSTIFICADA' && (emp.asistencias[fecha].entrada === 'CS' || emp.asistencias[fecha].entrada === 'IN' || emp.asistencias[fecha].entrada === 'DE' || emp.asistencias[fecha].entrada === 'LI' || emp.asistencias[fecha].entrada === 'JU'), 'text-gray-700': !String(emp.asistencias[fecha].estatus || '').includes('RETARDO') && String(emp.asistencias[fecha].estatus || '') !== 'OMISION_E' && String(emp.asistencias[fecha].estatus || '') !== 'JUSTIFICADA'}">
-                        {{ emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
-                      </td>
-                      <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_S' || String(emp.asistencias[fecha].estatus || '') === 'RETARDO_Y_OMISION', 'text-blue-700 font-bold bg-blue-50': String(emp.asistencias[fecha].estatus || '') === 'JUSTIFICADA' && (emp.asistencias[fecha].salida === 'CS' || emp.asistencias[fecha].salida === 'IN' || emp.asistencias[fecha].salida === 'DE' || emp.asistencias[fecha].salida === 'LI' || emp.asistencias[fecha].salida === 'JU'), 'text-gray-500 bg-gray-50/30': String(emp.asistencias[fecha].estatus || '') !== 'OMISION_S' && String(emp.asistencias[fecha].estatus || '') !== 'RETARDO_Y_OMISION' && String(emp.asistencias[fecha].estatus || '') !== 'JUSTIFICADA'}">
-                        {{ emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
-                      </td>
-                    </template>
-                  </template>
-                  <td colspan="2" v-else class="py-2 text-center border border-gray-200 align-middle bg-gray-50"><span class="text-gray-300 font-bold">-</span></td>
-                </template>
-                <td class="py-2 text-center border border-gray-300 bg-orange-50 font-bold text-orange-700 text-sm tabular-nums">{{ emp.totalPuntualidad > 0 ? emp.totalPuntualidad : '-' }}</td>
-                <td class="py-2 text-center border border-gray-300 bg-red-50 font-bold text-red-700 text-sm tabular-nums">{{ emp.totalAsistencia > 0 ? emp.totalAsistencia : '-' }}</td>
-                <td class="py-2 text-center border border-gray-300 bg-yellow-50 font-bold text-yellow-700 text-sm tabular-nums">{{ emp.totalMinutos > 0 ? emp.totalMinutos : '-' }}</td>
-              </tr>
-            </tbody>
-          </table>
-          
-          <div v-if="sabanaFiltrada.length > 0" class="mt-4 px-4 flex justify-between items-center bg-white border-t pt-4">
-            <div class="text-sm text-gray-500 font-medium">
-              Mostrando <span class="font-bold text-gray-800">{{ ((paginaActualSabana - 1) * elementosPorPaginaSabana) + 1 }}</span> al
-              <span class="font-bold text-gray-800">{{ Math.min(paginaActualSabana * elementosPorPaginaSabana, sabanaFiltrada.length) }}</span> de
-              <span class="font-bold text-gray-800">{{ sabanaFiltrada.length }}</span> registros
-            </div>
-            <div class="flex gap-2 items-center">
-              <button @click="paginaActualSabana--" :disabled="paginaActualSabana === 1" class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40 hover:bg-gray-100 font-bold text-gray-600 transition disabled:cursor-not-allowed flex items-center">
-                <i class="fa-solid fa-chevron-left mr-1"></i> Ant
-              </button>
-              <span class="px-4 py-1.5 bg-inst-primario text-white font-bold rounded-md text-sm shadow-sm">
-                {{ paginaActualSabana }} / {{ paginasTotalesSabana || 1 }}
-              </span>
-              <button @click="paginaActualSabana++" :disabled="paginaActualSabana >= paginasTotalesSabana" class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40 hover:bg-gray-100 font-bold text-gray-600 transition disabled:cursor-not-allowed flex items-center">
-                Sig <i class="fa-solid fa-chevron-right ml-1"></i>
-              </button>
-            </div>
-          </div>
-          <div v-else class="p-8 text-center text-gray-500 font-bold">
-            <i class="fa-solid fa-folder-open text-3xl mb-2 block opacity-50"></i>
-            No se encontraron resultados para la búsqueda.
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <div v-if="pestanaActiva === 'sanciones'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-4 space-y-4">
-      <div class="flex justify-between items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <div class="w-full max-w-xs">
-           <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mes a procesar</label>
-            <select v-model="mesSeleccionadoSanciones" class="w-full p-2 border border-gray-300 rounded outline-none focus:border-inst-primario text-sm bg-white shadow-sm">
-              <option value="" disabled>Selecciona el mes...</option>
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-4 max-w-3xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Mes del Reporte</label>
+            <select v-model="mesSeleccionadoSabana" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm">
+              <option value="" disabled>Selecciona un mes...</option>
               <option v-for="mes in meses" :key="mes.valor" :value="mes.valor">{{ mes.texto }} {{ anioActual }}</option>
             </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Quincena</label>
+            <select v-model="quincenaSeleccionada" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm">
+              <option value="" disabled>Selecciona la quincena...</option>
+              <option value="1">Primera Quincena (Días 1 al 15)</option>
+              <option value="2">Segunda Quincena (Días 16 al fin de mes)</option>
+            </select>
+          </div>
         </div>
-        <button @click="generarReporteSanciones" :disabled="cargandoSanciones" class="px-5 py-2 bg-inst-primario text-white font-bold rounded hover:bg-inst-secundario transition text-sm shadow-sm flex items-center gap-2 disabled:opacity-50">
-          <i class="fa-solid fa-calculator"></i> Calcular Descuentos
+
+        <div class="pt-2 flex justify-center">
+          <button @click="generarPrevisualizacion" :disabled="cargandoPrevisualizacion" class="px-8 py-2.5 bg-inst-primario text-white font-bold rounded-lg hover:bg-inst-secundario transition shadow-md flex items-center gap-2 disabled:opacity-50">
+            <i class="fa-solid" :class="cargandoPrevisualizacion ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart'"></i> 
+            {{ cargandoPrevisualizacion ? 'Cargando datos...' : 'Generar Previsualización' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla Matricial de Previsualización -->
+    <div v-if="mostrarTablaPrevisualizacion" class="animate-fade-in">
+      <div class="flex justify-between mb-4 gap-4 items-center">
+        
+        <div class="flex flex-col md:flex-row gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200 w-full lg:w-auto">
+          <div class="flex items-center w-full md:w-64 relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 text-gray-400"></i>
+            <input type="text" v-model="busquedaSabana" placeholder="Buscar empleado o área..." class="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:border-inst-primario text-sm" />
+          </div>
+          <div class="flex items-center gap-2 border-l pl-4 border-gray-200">
+            <span class="text-xs font-bold text-gray-500 uppercase">Mostrar:</span>
+            <select v-model="elementosPorPaginaSabana" class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:border-inst-primario cursor-pointer bg-gray-50">
+              <option :value="15">15</option>
+              <option :value="30">30</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+          </div>
+        </div>
+
+        <button @click="descargarSabanaOficial" :disabled="estaDescargando" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-md transition duration-300 ease-in-out whitespace-nowrap cursor-pointer disabled:opacity-50">
+            <i class="fa-solid" :class="estaDescargando ? 'fa-spinner fa-spin' : 'fa-file-excel'"></i> 
+          {{ estaDescargando ? 'Procesando...' : 'Descargar Excel Oficial' }}
         </button>
       </div>
 
-      <div class="w-full max-w-md mt-4">
-        <input v-model="valorBusquedaSanciones" type="text" placeholder="Filtrar servidor público..." class="w-full p-2 border border-gray-300 rounded outline-none focus:border-inst-primario text-sm" />
+      <div class="mb-0 bg-inst-vino-claro py-3 rounded-t-lg border border-inst-primario shadow-sm">
+        <h2 class="text-lg font-bold text-white text-center tracking-wide">{{ tituloReporte }}</h2>
       </div>
+      
+      <div class="overflow-x-auto bg-white shadow-lg ring-1 ring-black ring-opacity-5 rounded-b-lg pb-4 border-l border-r border-b border-gray-200">
+        <table class="min-w-full border-collapse">
+          <thead class="bg-gray-100">
+            <tr>
+              <th rowspan="2" class="sticky left-0 z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border border-gray-300 shadow-[1px_0_0_0_#d1d5db]">Num</th>
+              <th rowspan="2" class="sticky left-[60px] z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[180px] shadow-[1px_0_0_0_#d1d5db]">Área de Adscripción</th>
+              <th rowspan="2" class="sticky left-[240px] z-20 bg-gray-100 py-2 pl-4 pr-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[250px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.15)]">Servidor Público</th>
+              <th v-for="fecha in diasSabana" :key="'head-'+fecha" colspan="2" class="py-1 text-center text-sm font-bold text-gray-800 border border-gray-300 bg-gray-200">{{ getDia(fecha) }}</th>
+              <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">FALTAS DE <br> PUNTUALIDAD</th>
+              <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">FALTAS DE <br> ASISTENCIA</th>
+              <th rowspan="2" class="bg-gray-200 py-2 px-3 text-center text-[10px] font-bold text-gray-700 uppercase tracking-wider border border-gray-300 min-w-[80px] leading-tight">TOTAL MINUTOS <br> RETARDO</th>
+            </tr>
+            <tr>
+              <template v-for="fecha in diasSabana" :key="'sub-'+fecha">
+                <th class="py-1 px-2 text-center text-xs font-bold text-gray-600 border border-gray-300 bg-gray-100 min-w-[45px]">E</th>
+                <th class="py-1 px-2 text-center text-xs font-bold text-gray-600 border border-gray-300 bg-gray-100 min-w-[45px]">S</th>
+              </template>
+            </tr>
+          </thead>
+          <tbody class="bg-white">
+            <tr v-for="(emp, index) in sabanaPaginada" :key="emp.numEmp" class="hover:bg-blue-50 transition duration-150">
+              <td class="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-sm text-gray-600 border border-gray-200 text-center shadow-[1px_0_0_0_#e5e7eb] tabular-nums" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.numEmp }}</td>
+              <td class="sticky left-[60px] z-10 bg-white py-2 pl-4 pr-3 text-xs text-gray-700 border border-gray-200 truncate max-w-[180px] shadow-[1px_0_0_0_#e5e7eb]" :class="{'bg-gray-50': index % 2 === 0}" :title="emp.departamento || emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área'">{{ emp.departamento || emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área' }}</td>
+              <td class="sticky left-[240px] z-10 bg-white py-2 pl-4 pr-3 text-sm font-medium text-gray-900 border border-gray-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.nombre }}</td>
+              
+              <template v-for="fecha in diasSabana" :key="'data-'+fecha">
+                <template v-if="emp.asistencias[fecha]">
+                  <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
+                  <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
+                  <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-gray-600"></td>
+                  <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'BAJA'" class="py-2 text-center border border-gray-300 align-middle bg-gray-200"><span class="font-bold text-gray-500 text-[10px] tracking-widest">BAJA</span></td>
+                  <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
+                  
+                  <template v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FALTA'">
+                    <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
+                    <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
+                  </template>
+                  
+                  <template v-else>
+                    <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-red-600 font-bold bg-red-50': String(emp.asistencias[fecha].estatus || '').includes('RETARDO'), 'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_E', 'text-blue-700 font-bold bg-blue-50': String(emp.asistencias[fecha].estatus || '') === 'JUSTIFICADA' && (emp.asistencias[fecha].entrada === 'CS' || emp.asistencias[fecha].entrada === 'IN' || emp.asistencias[fecha].entrada === 'DE' || emp.asistencias[fecha].entrada === 'LI' || emp.asistencias[fecha].entrada === 'JU'), 'text-gray-700': !String(emp.asistencias[fecha].estatus || '').includes('RETARDO') && String(emp.asistencias[fecha].estatus || '') !== 'OMISION_E' && String(emp.asistencias[fecha].estatus || '') !== 'JUSTIFICADA'}">
+                      {{ emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
+                    </td>
+                    <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_S' || String(emp.asistencias[fecha].estatus || '') === 'RETARDO_Y_OMISION', 'text-blue-700 font-bold bg-blue-50': String(emp.asistencias[fecha].estatus || '') === 'JUSTIFICADA' && (emp.asistencias[fecha].salida === 'CS' || emp.asistencias[fecha].salida === 'IN' || emp.asistencias[fecha].salida === 'DE' || emp.asistencias[fecha].salida === 'LI' || emp.asistencias[fecha].salida === 'JU'), 'text-gray-500 bg-gray-50/30': String(emp.asistencias[fecha].estatus || '') !== 'OMISION_S' && String(emp.asistencias[fecha].estatus || '') !== 'RETARDO_Y_OMISION' && String(emp.asistencias[fecha].estatus || '') !== 'JUSTIFICADA'}">
+                      {{ emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
+                    </td>
+                  </template>
+                </template>
+                <!-- 💡 Si el día no existe (Fines de semana sin guardia) -->
+                <td colspan="2" v-else class="py-2 text-center border border-gray-200 align-middle bg-gray-50"><span class="text-gray-300 font-bold">-</span></td>
+              </template>
+              <td class="py-2 text-center border border-gray-300 bg-orange-50 font-bold text-orange-700 text-sm tabular-nums">{{ emp.totalPuntualidad > 0 ? emp.totalPuntualidad : '-' }}</td>
+              <td class="py-2 text-center border border-gray-300 bg-red-50 font-bold text-red-700 text-sm tabular-nums">{{ emp.totalAsistencia > 0 ? emp.totalAsistencia : '-' }}</td>
+              <td class="py-2 text-center border border-gray-300 bg-yellow-50 font-bold text-yellow-700 text-sm tabular-nums">{{ emp.totalMinutos > 0 ? emp.totalMinutos : '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <div v-if="sabanaFiltrada.length > 0" class="mt-4 px-4 flex justify-between items-center bg-white border-t pt-4">
+          <div class="text-sm text-gray-500 font-medium">
+            Mostrando <span class="font-bold text-gray-800">{{ ((paginaActualSabana - 1) * elementosPorPaginaSabana) + 1 }}</span> al
+            <span class="font-bold text-gray-800">{{ Math.min(paginaActualSabana * elementosPorPaginaSabana, sabanaFiltrada.length) }}</span> de
+            <span class="font-bold text-gray-800">{{ sabanaFiltrada.length }}</span> registros
+          </div>
+          <div class="flex gap-2 items-center">
+            <button @click="paginaActualSabana--" :disabled="paginaActualSabana === 1" class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40 hover:bg-gray-100 font-bold text-gray-600 transition disabled:cursor-not-allowed flex items-center">
+              <i class="fa-solid fa-chevron-left mr-1"></i> Ant
+            </button>
+            <span class="px-4 py-1.5 bg-inst-primario text-white font-bold rounded-md text-sm shadow-sm">
+              {{ paginaActualSabana }} / {{ paginasTotalesSabana || 1 }}
+            </span>
+            <button @click="paginaActualSabana++" :disabled="paginaActualSabana >= paginasTotalesSabana" class="px-3 py-1.5 border border-gray-300 rounded-md text-sm disabled:opacity-40 hover:bg-gray-100 font-bold text-gray-600 transition disabled:cursor-not-allowed flex items-center">
+              Sig <i class="fa-solid fa-chevron-right ml-1"></i>
+            </button>
+          </div>
+        </div>
+        <div v-else class="p-8 text-center text-gray-500 font-bold">
+          <i class="fa-solid fa-folder-open text-3xl mb-2 block opacity-50"></i>
+          No se encontraron resultados para la búsqueda.
+        </div>
 
-      <EasyDataTable
-        :headers="headersSanciones"
-        :items="listaSanciones"
-        :search-value="valorBusquedaSanciones"
-        :search-field="['numeroEmpleado', 'nombreCompleto']"
-        :rows-per-page="15"
-        :loading="cargandoSanciones"
-        table-class-name="img-strattia-style"
-      >
-        <template #item-numeroEmpleado="item">
-           <div class="text-center font-mono font-bold text-gray-700 w-full">{{ item.numeroEmpleado }}</div>
-        </template>
-        <template #item-totalFaltas="item">
-           <div class="text-center w-full">
-             <span class="px-2 py-0.5 bg-red-100 text-red-800 font-bold rounded tabular-nums border border-red-200">{{ item.totalFaltas }}</span>
-           </div>
-        </template>
-        <template #item-totalRetardos="item">
-           <div class="text-center w-full">
-             <span class="px-2 py-0.5 bg-amber-100 text-yellow-800 font-bold rounded tabular-nums border border-amber-200">{{ item.totalRetardos }}</span>
-           </div>
-        </template>
-        <template #item-totalOmisiones="item">
-           <div class="text-center w-full">
-             <span class="px-2 py-0.5 bg-orange-100 text-orange-800 font-bold rounded tabular-nums border border-orange-200">{{ item.totalOmisiones }}</span>
-           </div>
-        </template>
-        <template #item-diasDescuento="item">
-           <div class="text-center w-full">
-             <span class="px-3 py-1 bg-gray-800 text-white font-bold rounded-full tabular-nums shadow-sm">{{ item.diasDescuento }} d</span>
-           </div>
-        </template>
-      </EasyDataTable>
+      </div>
     </div>
 
   </div>
@@ -482,5 +374,12 @@ const generarReporteSanciones = async () => {
   --easy-table-body-row-font-size: 13px;
   --easy-table-border: 1px solid #e2e8f0;
   --easy-table-row-border: 1px solid #e2e8f0;
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>
