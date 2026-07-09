@@ -100,19 +100,19 @@ model HistorialMovimiento {
 
 // 7. NUEVA TABLA: Justificaciones de Incidencias
 model Justificacion {
-  id                Int             @id @default(autoincrement())
-  motivo            String          // Ej: "OFICIO DE COMISIÓN", "INCAPACIDAD MÉDICA", "ONOMÁSTICO"
-  folioDocumento    String?         // Ej: "SM-001-2026" para guardar la referencia del papel
-  observaciones     String?         @db.Text
-  cobertura         String          @default("COMPLETO") // 
-  fechaRegistro     DateTime        @default(now())
+  id                Int              @id @default(autoincrement())
+  motivo            String           // Ej: "OFICIO DE COMISIÓN", "INCAPACIDAD MÉDICA", "ONOMÁSTICO"
+  folioDocumento    String?          // Ej: "SM-001-2026" para guardar la referencia del papel
+  observaciones     String?          @db.Text
+  cobertura         String           @default("COMPLETO") // 
+  fechaRegistro     DateTime         @default(now())
 
   // Relación con el servidor público para fácil acceso
   servidorId        Int
   servidor          ServidorPublico @relation(fields: [servidorId], references: [id])
 
   // Relación 1 a 1 con la asistencia (Cada incidencia justificada se liga a su registro de asistencia)
-  asistenciaId      Int             @unique
+  asistenciaId      Int              @unique
   asistencia        Asistencia      @relation(fields: [asistenciaId], references: [id])
 }
 
@@ -148,29 +148,40 @@ model Calendario {
   @@map("calendario")
 }
 
-// 10. TABLA DE HISTORIAL DE SANCIONES MENSUALES (Actualizada)
+// 10. TABLA DE HISTORIAL DE SANCIONES MENSUALES
 model SancionMensual {
-  id               Int             @id @default(autoincrement())
+  id               Int              @id @default(autoincrement())
   servidorId       Int
-  mes              Int             // Ej. 6 para Junio
-  anio             Int             // Ej. 2026
-  tipoSancion      String          // 🔥 NUEVO: "RETARDOS" o "FALTAS"
+  mes              Int              // Ej. 6 para Junio
+  anio             Int              // Ej. 2026
+  tipoSancion      String           // "RETARDOS" o "FALTAS"
   
   // Evidencia matemática específica de esta sanción
-  totalRetardos    Int             @default(0)
-  totalFaltas      Int             @default(0)
-  totalOmisiones   Int             @default(0) 
+  totalRetardos    Int              @default(0)
+  totalFaltas      Int              @default(0)
+  totalOmisiones   Int              @default(0) 
   
   // Castigos aplicados
-  sancionAplicada  String          @db.Text // Ej. "Severa llamada de atención escrita"
-  diasDescuento    Int             @default(0)
+  sancionAplicada  String           @db.Text 
+  diasDescuento    Int              @default(0)
   
   // Rastro documental
-  folioOficio      String?         // Ej. "SMM/RH/045/2026"
-  fechaEmision     DateTime        @default(now())
+  folioOficio      String?          
+  fechaEmision     DateTime         @default(now())
   
   // Relación con el empleado
   servidor         ServidorPublico @relation(fields: [servidorId], references: [id])
-  
-  // 🔥 Se eliminó la restricción @@unique anterior para permitir múltiples oficios al mes
+}
+
+// ==============================================================================
+// 11. 🔥 NUEVA TABLA: CATÁLOGO DE DÍAS INHÁBILES Y PERIODOS VACACIONALES
+// ==============================================================================
+model DiaInhabil {
+  id          Int      @id @default(autoincrement())
+  fecha       DateTime @unique @db.Date
+  tipo        String   // 'FERIADO' o 'VACACIONES'
+  descripcion String   // Ej. "Día del Trabajo", "Primer Periodo Vacacional"
+  createdAt   DateTime @default(now())
+
+  @@map("dias_inhabiles")
 }

@@ -19,7 +19,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
     const hoja = workbook.Sheets[workbook.SheetNames[0]];
     const rawData = xlsx.utils.sheet_to_json(hoja, { raw: false });
 
-    // 💡 IMPORTANTE: Incluimos el área
     const empleados = await prisma.servidorPublico.findMany({ include: { horario: true, area: true } });
     const registrosPorDia = {};
 
@@ -155,7 +154,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       resultadosProcesados.push({ 
         numEmp, 
         nombre: empleado.nombreCompleto, 
-        departamento: empleado.area ? empleado.area.nombre : 'Sin Área', // 💡 EL DISFRAZ
+        departamento: empleado.area ? empleado.area.nombre : 'Sin Área', 
         fecha, 
         entrada: entradaFinal, 
         salida: salidaFinal, 
@@ -171,6 +170,17 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       const fechaMin = new Date(Math.min(...fechasObj));
       const fechaMax = new Date(Math.max(...fechasObj));
 
+      // 🔥 EXTRACCIÓN DE DÍAS INHÁBILES
+      const diasInhabiles = await prisma.diaInhabil.findMany({
+        where: {
+          fecha: { 
+            gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), 
+            lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) 
+          }
+        }
+      });
+      const setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
+
       const empleadosLista = empleados.filter(e => String(e.regimen || '').toUpperCase().trim() === 'LISTA');
       const empleadosExento = empleados.filter(e => {
         const reg = String(e.regimen || '').toUpperCase().trim();
@@ -185,12 +195,14 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         const diaSemana = d.getDay(); 
         const fechaStr = d.toISOString().split('T')[0];
         const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
+        
+        const esDiaInhabil = setFeriados.has(fechaStr);
 
         if (diaSemana !== 0 && diaSemana !== 6) { 
           for (const emp of empleadosLista) {
             const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
             if (!registrosPorDia[llaveBusqueda]) {
-              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutesRetardo: 0, estatus: "LA" });
+              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "LA" });
               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: 'LA', minutosRetardo: 0 });
             }
           }
@@ -203,14 +215,23 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
           }
         }
 
+        // 🔥 FILTRO NINJA PARA CHECADORES
         for (const emp of empleadosChecadores) {
           const regimenC = String(emp.regimen || '').toUpperCase().trim();
           const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
           
           if (!registrosPorDia[llaveBusqueda]) {
             let generarFalta = false;
+            let esFeriadoAdministrativo = false;
+
             if (regimenC === 'NORMAL') {
-              if (diaSemana !== 0 && diaSemana !== 6) generarFalta = true;
+              if (diaSemana !== 0 && diaSemana !== 6) {
+                if (esDiaInhabil) {
+                  esFeriadoAdministrativo = true;
+                } else {
+                  generarFalta = true;
+                }
+              }
             } 
             else if (regimenC === 'ESPECIAL') {
               const fechaAncla = new Date('2026-04-05T00:00:00Z');
@@ -223,10 +244,9 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
             if (generarFalta) {
               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "FALTA" });
-              resultadosProcesados.push({
-                numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área',
-                fecha: fechaStr, entrada: 'SR', salida: 'SR', estatus: 'FALTA', minutosRetardo: 0
-              });
+              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'SR', salida: 'SR', estatus: 'FALTA', minutosRetardo: 0 });
+            } else if (esFeriadoAdministrativo) {
+              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: 'FERIADO', minutosRetardo: 0 });
             }
           }
         }
@@ -302,7 +322,6 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       }
     });
 
-    // 💡 IMPORTANTE: Incluimos el área aquí también
     const empleados = await prisma.servidorPublico.findMany({ include: { horario: true, area: true } });
 
     let conteoPrimera = 0;
@@ -398,7 +417,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       resultadosProcesados.push({ 
         numEmp, 
         nombre: empleado.nombreCompleto, 
-        departamento: empleado.area ? empleado.area.nombre : 'Sin Área', // 💡 EL DISFRAZ 
+        departamento: empleado.area ? empleado.area.nombre : 'Sin Área', 
         fecha, 
         entrada: entradaFinal, 
         salida: salidaFinal, 
@@ -414,6 +433,17 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       const fechaMin = new Date(Math.min(...fechasObj));
       const fechaMax = new Date(Math.max(...fechasObj));
 
+      // 🔥 EXTRACCIÓN DE DÍAS INHÁBILES
+      const diasInhabiles = await prisma.diaInhabil.findMany({
+        where: {
+          fecha: { 
+            gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), 
+            lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) 
+          }
+        }
+      });
+      const setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
+
       const empleadosLista = empleados.filter(e => String(e.regimen || '').toUpperCase().trim() === 'LISTA');
       const empleadosExento = empleados.filter(e => { const reg = String(e.regimen || '').toUpperCase().trim(); return reg === 'EXENTO' || reg === 'EXCENTO'; });
       const empleadosChecadores = empleados.filter(e => { const reg = String(e.regimen || '').toUpperCase().trim(); return reg !== 'LISTA' && reg !== 'EXENTO' && reg !== 'EXCENTO'; });
@@ -422,6 +452,8 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         const diaSemana = d.getDay(); 
         const fechaStr = d.toISOString().split('T')[0];
         const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
+
+        const esDiaInhabil = setFeriados.has(fechaStr);
 
         if (diaSemana !== 0 && diaSemana !== 6) { 
           for (const emp of empleadosLista) {
@@ -440,14 +472,23 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
           }
         }
 
+        // 🔥 FILTRO NINJA PARA CHECADORES
         for (const emp of empleadosChecadores) {
           const regimenC = String(emp.regimen || '').toUpperCase().trim();
           const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
           
           if (!registrosPorDia[llaveBusqueda]) {
             let generarFalta = false;
+            let esFeriadoAdministrativo = false;
+
             if (regimenC === 'NORMAL') {
-              if (diaSemana !== 0 && diaSemana !== 6) generarFalta = true;
+              if (diaSemana !== 0 && diaSemana !== 6) {
+                if (esDiaInhabil) {
+                  esFeriadoAdministrativo = true;
+                } else {
+                  generarFalta = true;
+                }
+              }
             } 
             else if (regimenC === 'ESPECIAL') {
               const fechaAncla = new Date('2026-04-05T00:00:00Z');
@@ -457,9 +498,12 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
               const empleadoEsPar = emp.id % 2 === 0;
               if (empleadoEsPar === turnoActivoPar) generarFalta = true;
             }
+
             if (generarFalta) {
               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "FALTA" });
               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'SR', salida: 'SR', estatus: 'FALTA', minutosRetardo: 0 });
+            } else if (esFeriadoAdministrativo) {
+              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: 'FERIADO', minutosRetardo: 0 });
             }
           }
         }
@@ -565,7 +609,6 @@ router.get('/datos-reporte', async (req, res) => {
         fecha: { gte: fechaInicio, lte: fechaFin }
       },
       include: {
-        // 💡 IMPORTANTE: Ahora la relación para el área pasa por 'area'
         servidor: {
           select: { numeroEmpleado: true, nombreCompleto: true, area: { select: { nombre: true } } }
         }
@@ -576,7 +619,6 @@ router.get('/datos-reporte', async (req, res) => {
       ]
     });
 
-    // 💡 EL DISFRAZ para que el front no muera
     const formateados = asistencias.map(a => ({
       ...a,
       servidor: {
@@ -595,7 +637,7 @@ router.get('/datos-reporte', async (req, res) => {
 });
 
 // ==============================================================================
-// 3. RUTA PARA DESCARGAR LA SÁBANA OFICIAL (ACTUALIZADA CON FILTRO Y FALTAS)
+// 3. RUTA PARA DESCARGAR LA SÁBANA OFICIAL (ACTUALIZADA CON GRIS PARA FERIADOS)
 // ==============================================================================
 router.get('/descargar-reporte', async (req, res) => {
   try {
@@ -612,7 +654,7 @@ router.get('/descargar-reporte', async (req, res) => {
       where: {
         fecha: { gte: fechaInicio, lte: fechaFin }
       },
-      include: { servidor: { include: { area: true } } }, // 💡 IMPORTANTE: Incluir área
+      include: { servidor: { include: { area: true } } }, 
       orderBy: [{ fecha: 'asc' }]
     });
 
@@ -667,7 +709,7 @@ router.get('/descargar-reporte', async (req, res) => {
         empleadosMap[numEmp] = {
           numEmp,
           nombre: a.servidor.nombreCompleto,
-          departamento: a.servidor.area ? a.servidor.area.nombre : 'Sin Área', // 💡 EL DISFRAZ
+          departamento: a.servidor.area ? a.servidor.area.nombre : 'Sin Área', 
           horarioId: a.servidor.horarioId, 
           regimen: a.servidor.regimen,
           asistencias: {}
@@ -697,6 +739,7 @@ router.get('/descargar-reporte', async (req, res) => {
         let salidaTexto = '---';
         let tieneRetardo = false;
         let esFalta = false; 
+        let esFeriado = false; // 🔥 NUEVA VARIABLE
 
         if (reg) {
           if (reg.incidencia === 'LA') {
@@ -705,6 +748,10 @@ router.get('/descargar-reporte', async (req, res) => {
           } else if (reg.incidencia === 'EXENTO' || reg.incidencia === 'EXCENTO') {
             entradaTexto = 'EXENTO';
             salidaTexto = 'EXENTO';
+          } else if (reg.incidencia === 'FERIADO') { // 🔥 REGLA DE FERIADO
+            entradaTexto = '';
+            salidaTexto = '';
+            esFeriado = true;
           } else if (reg.incidencia === 'FALTA') {
             entradaTexto = 'SR';
             salidaTexto = 'SR';
@@ -745,6 +792,9 @@ router.get('/descargar-reporte', async (req, res) => {
           
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD32F2F' } };
           celdaSalida.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+        } else if (esFeriado) { // 🔥 RELLENO GRIS OSCURO
+          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5A5A5A' } };
+          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5A5A5A' } };
         }
 
         colIdx += 2; 
@@ -775,7 +825,7 @@ router.get('/descargar-reporte', async (req, res) => {
 });
 
 // ==============================================================================
-// 4. RUTA PARA CONSULTAR INCIDENCIAS POR RANGO DE FECHAS (MÓDULO DE INCIDENCIAS)
+// 4. RUTA PARA CONSULTAR INCIDENCIAS POR RANGO DE FECHAS
 // ==============================================================================
 router.get('/consultar-incidencias', async (req, res) => {
   try {
@@ -796,7 +846,7 @@ router.get('/consultar-incidencias', async (req, res) => {
         }
       },
       include: {
-        servidor: { include: { area: true } } // 💡 IMPORTANTE: Incluir el área aquí
+        servidor: { include: { area: true } } 
       },
       orderBy: [
         { fecha: 'asc' }
@@ -807,7 +857,7 @@ router.get('/consultar-incidencias', async (req, res) => {
       id: reg.id,
       numEmp: reg.servidor.numeroEmpleado,
       nombre: reg.servidor.nombreCompleto,
-      departamento: reg.servidor.area ? reg.servidor.area.nombre : 'Sin Área', // 💡 EL DISFRAZ
+      departamento: reg.servidor.area ? reg.servidor.area.nombre : 'Sin Área', 
       regimen: reg.servidor.regimen,
       fecha: reg.fecha.toISOString().split('T')[0],
       entrada: reg.entrada || 'SR',
@@ -829,7 +879,6 @@ router.get('/consultar-incidencias', async (req, res) => {
 // ==============================================================================
 router.get('/departamentos', async (req, res) => {
   try {
-    // 💡 CAMBIO: Ahora consultamos la tabla de catálogo directamente
     const departamentos = await prisma.areaAdscripcion.findMany({
       where: { activo: true },
       orderBy: { nombre: 'asc' }
@@ -865,7 +914,6 @@ router.get('/consultas-generales', async (req, res) => {
       filtro.servidor = {};
       
       if (departamento && departamento !== 'TODOS') {
-        // 💡 CAMBIO: Filtramos por la relación de área
         filtro.servidor.area = { nombre: departamento };
       }
       
@@ -879,7 +927,7 @@ router.get('/consultas-generales', async (req, res) => {
 
     const registros = await prisma.asistencia.findMany({
       where: filtro,
-      include: { servidor: { include: { area: true } } }, // 💡 IMPORTANTE: Incluir área
+      include: { servidor: { include: { area: true } } }, 
       orderBy: [
         { fecha: 'desc' },
         { servidor: { nombreCompleto: 'asc' } }
@@ -890,7 +938,7 @@ router.get('/consultas-generales', async (req, res) => {
       id: reg.id,
       numEmp: reg.servidor.numeroEmpleado,
       nombre: reg.servidor.nombreCompleto,
-      departamento: reg.servidor.area ? reg.servidor.area.nombre : 'Sin Área', // 💡 EL DISFRAZ
+      departamento: reg.servidor.area ? reg.servidor.area.nombre : 'Sin Área', 
       regimen: reg.servidor.regimen,
       fecha: reg.fecha.toISOString().split('T')[0],
       entrada: reg.entrada || 'SR',

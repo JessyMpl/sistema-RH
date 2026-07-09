@@ -197,7 +197,6 @@ const confirmarYGuardar = async () => {
   }
 };
 
-// Limpiar la mesa de trabajo si cambian entre una pestaña u otra para evitar cruces
 watch(metodoCarga, () => {
   archivoSeleccionado.value = null;
   fechaInicio.value = '';
@@ -299,7 +298,6 @@ const datosPivotados = computed(() => {
   }).sort((a, b) => a.nombre.localeCompare(b.nombre));
 });
 
-// FILTROS Y PAGINACIÓN PARA LA SÁBANA
 const busquedaSabana = ref('');
 const elementosPorPaginaSabana = ref(15);
 const paginaActualSabana = ref(1);
@@ -329,7 +327,6 @@ watch(busquedaSabana, () => {
 });
 
 const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
-
 </script>
 
 <template>
@@ -454,6 +451,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                   <span v-else-if="item.estatus === 'FALTA'" class="bg-red-800 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta</span>
                   <span v-else-if="item.estatus === 'LA'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Lista</span>
                   <span v-else-if="item.estatus === 'EXENTO'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Exento</span>
+                  <span v-else-if="item.estatus === 'FERIADO'" class="bg-gray-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Día Inhábil</span>
                   <span v-else-if="item.estatus === 'OMISION_E'" class="bg-orange-200 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Omisión Entrada</span>
                   <span v-else-if="item.estatus === 'OMISION_S'" class="bg-orange-200 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Omisión Salida</span>
                   <span v-else class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs">{{ item.estatus }}</span>
@@ -518,6 +516,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                       <template v-if="emp.asistencias[fecha]">
                         <td colspan="2" v-if="emp.asistencias[fecha].estatus === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
                         <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
+                        <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-gray-600"></td>
                         <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
                         <template v-else-if="emp.asistencias[fecha].estatus === 'FALTA'">
                           <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
