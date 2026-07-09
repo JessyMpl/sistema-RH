@@ -255,7 +255,6 @@ const generarReporteSanciones = async () => {
 
 <template>
   <div class="space-y-6">
-    <!-- Pestañas -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-2 flex gap-2">
       <button @click="pestanaActiva = 'sabana'" 
         :class="['px-6 py-2 rounded-md font-bold text-sm transition', pestanaActiva === 'sabana' ? 'bg-inst-primario text-white' : 'text-gray-600 hover:bg-gray-100']">
@@ -268,10 +267,8 @@ const generarReporteSanciones = async () => {
       </button>
     </div>
 
-    <!-- PESTAÑA 1: SÁBANA ACTUALIZADA -->
     <div v-if="pestanaActiva === 'sabana'" class="space-y-4">
       
-      <!-- Panel de Controles -->
       <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div class="text-center mb-6">
           <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-3">
@@ -309,7 +306,6 @@ const generarReporteSanciones = async () => {
         </div>
       </div>
 
-      <!-- Tabla Matricial de Previsualización (ESTILO ORIGINAL) -->
       <div v-if="mostrarTablaPrevisualizacion" class="animate-fade-in">
         <div class="flex justify-between mb-4 gap-4 items-center">
           
@@ -361,32 +357,31 @@ const generarReporteSanciones = async () => {
             <tbody class="bg-white">
               <tr v-for="(emp, index) in sabanaPaginada" :key="emp.numEmp" class="hover:bg-blue-50 transition duration-150">
                 <td class="sticky left-0 z-10 bg-white py-2 pl-4 pr-3 text-sm text-gray-600 border border-gray-200 text-center shadow-[1px_0_0_0_#e5e7eb] tabular-nums" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.numEmp }}</td>
-                <td class="sticky left-[60px] z-10 bg-white py-2 pl-4 pr-3 text-xs text-gray-700 border border-gray-200 truncate max-w-[180px] shadow-[1px_0_0_0_#e5e7eb]" :class="{'bg-gray-50': index % 2 === 0}" :title="emp.departamento || 'Sin Área'">{{ emp.departamento || 'Sin Área' }}</td>
+                <td class="sticky left-[60px] z-10 bg-white py-2 pl-4 pr-3 text-xs text-gray-700 border border-gray-200 truncate max-w-[180px] shadow-[1px_0_0_0_#e5e7eb]" :class="{'bg-gray-50': index % 2 === 0}" :title="emp.departamento || emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área'">{{ emp.departamento || emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área' }}</td>
                 <td class="sticky left-[240px] z-10 bg-white py-2 pl-4 pr-3 text-sm font-medium text-gray-900 border border-gray-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.nombre }}</td>
                 
                 <template v-for="fecha in diasSabana" :key="'data-'+fecha">
                   <template v-if="emp.asistencias[fecha]">
-                    <!-- 💡 Casos especiales con celdas combinadas (LA, EXENTO, FALTAS) -->
-                    <td colspan="2" v-if="emp.asistencias[fecha].estatus === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
-                    <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
-                    <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
+                    <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
+                    <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
+                    <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-gray-600"></td>
+                    <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'BAJA'" class="py-2 text-center border border-gray-300 align-middle bg-gray-200"><span class="font-bold text-gray-500 text-[10px] tracking-widest">BAJA</span></td>
+                    <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
                     
-                    <template v-else-if="emp.asistencias[fecha].estatus === 'FALTA'">
+                    <template v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FALTA'">
                       <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
                       <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
                     </template>
                     
-                    <!-- 💡 Casos normales (Check in / Check out) -->
                     <template v-else>
-                      <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-red-600 font-bold bg-red-50': emp.asistencias[fecha].estatus.includes('RETARDO'), 'text-orange-600 font-bold bg-orange-50': emp.asistencias[fecha].estatus === 'OMISION_E', 'text-blue-700 font-bold bg-blue-50': emp.asistencias[fecha].estatus === 'JUSTIFICADA' && (emp.asistencias[fecha].entrada === 'CS' || emp.asistencias[fecha].entrada === 'IN' || emp.asistencias[fecha].entrada === 'DE' || emp.asistencias[fecha].entrada === 'LI' || emp.asistencias[fecha].entrada === 'JU'), 'text-gray-700': !emp.asistencias[fecha].estatus.includes('RETARDO') && emp.asistencias[fecha].estatus !== 'OMISION_E' && emp.asistencias[fecha].estatus !== 'JUSTIFICADA'}">
-                        {{ emp.asistencias[fecha].entrada || (emp.asistencias[fecha].estatus.includes('ESPECIAL') ? '---' : 'SR') }}
+                      <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-red-600 font-bold bg-red-50': String(emp.asistencias[fecha].estatus || '').includes('RETARDO'), 'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_E', 'text-blue-700 font-bold bg-blue-50': String(emp.asistencias[fecha].estatus || '') === 'JUSTIFICADA' && (emp.asistencias[fecha].entrada === 'CS' || emp.asistencias[fecha].entrada === 'IN' || emp.asistencias[fecha].entrada === 'DE' || emp.asistencias[fecha].entrada === 'LI' || emp.asistencias[fecha].entrada === 'JU'), 'text-gray-700': !String(emp.asistencias[fecha].estatus || '').includes('RETARDO') && String(emp.asistencias[fecha].estatus || '') !== 'OMISION_E' && String(emp.asistencias[fecha].estatus || '') !== 'JUSTIFICADA'}">
+                        {{ emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
                       </td>
-                      <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-orange-600 font-bold bg-orange-50': emp.asistencias[fecha].estatus === 'OMISION_S' || emp.asistencias[fecha].estatus === 'RETARDO_Y_OMISION', 'text-blue-700 font-bold bg-blue-50': emp.asistencias[fecha].estatus === 'JUSTIFICADA' && (emp.asistencias[fecha].salida === 'CS' || emp.asistencias[fecha].salida === 'IN' || emp.asistencias[fecha].salida === 'DE' || emp.asistencias[fecha].salida === 'LI' || emp.asistencias[fecha].salida === 'JU'), 'text-gray-500 bg-gray-50/30': emp.asistencias[fecha].estatus !== 'OMISION_S' && emp.asistencias[fecha].estatus !== 'RETARDO_Y_OMISION' && emp.asistencias[fecha].estatus !== 'JUSTIFICADA'}">
-                        {{ emp.asistencias[fecha].salida || (emp.asistencias[fecha].estatus.includes('ESPECIAL') ? '---' : 'SR') }}
+                      <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_S' || String(emp.asistencias[fecha].estatus || '') === 'RETARDO_Y_OMISION', 'text-blue-700 font-bold bg-blue-50': String(emp.asistencias[fecha].estatus || '') === 'JUSTIFICADA' && (emp.asistencias[fecha].salida === 'CS' || emp.asistencias[fecha].salida === 'IN' || emp.asistencias[fecha].salida === 'DE' || emp.asistencias[fecha].salida === 'LI' || emp.asistencias[fecha].salida === 'JU'), 'text-gray-500 bg-gray-50/30': String(emp.asistencias[fecha].estatus || '') !== 'OMISION_S' && String(emp.asistencias[fecha].estatus || '') !== 'RETARDO_Y_OMISION' && String(emp.asistencias[fecha].estatus || '') !== 'JUSTIFICADA'}">
+                        {{ emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
                       </td>
                     </template>
                   </template>
-                  <!-- 💡 Si el día no existe en la BD (Ej: fin de semana sin guardia) -->
                   <td colspan="2" v-else class="py-2 text-center border border-gray-200 align-middle bg-gray-50"><span class="text-gray-300 font-bold">-</span></td>
                 </template>
                 <td class="py-2 text-center border border-gray-300 bg-orange-50 font-bold text-orange-700 text-sm tabular-nums">{{ emp.totalPuntualidad > 0 ? emp.totalPuntualidad : '-' }}</td>
@@ -423,7 +418,6 @@ const generarReporteSanciones = async () => {
       </div>
     </div>
 
-    <!-- PESTAÑA 2: REPORTE DE SANCIONES (Sin cambios) -->
     <div v-if="pestanaActiva === 'sanciones'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-4 space-y-4">
       <div class="flex justify-between items-end bg-gray-50 p-4 rounded-lg border border-gray-200">
         <div class="w-full max-w-xs">

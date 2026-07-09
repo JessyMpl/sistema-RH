@@ -1783,3 +1783,73 @@
 2026-07-09 16:41:04: 
 2026-07-09 16:41:04: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 2026-07-09 16:41:04: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-09 16:47:47: (node:1102868) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-09 16:47:47: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-09 16:47:47: 
+2026-07-09 16:47:47: To prepare for this change:
+2026-07-09 16:47:47: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-09 16:47:47: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-09 16:47:47: 
+2026-07-09 16:47:47: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-09 16:47:47: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-09 16:54:50: (node:1104165) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-09 16:54:50: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-09 16:54:50: 
+2026-07-09 16:54:50: To prepare for this change:
+2026-07-09 16:54:50: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-09 16:54:50: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-09 16:54:50: 
+2026-07-09 16:54:50: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-09 16:54:50: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-09 17:05:25: (node:1106328) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-09 17:05:25: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-09 17:05:25: 
+2026-07-09 17:05:25: To prepare for this change:
+2026-07-09 17:05:25: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-09 17:05:25: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-09 17:05:25: 
+2026-07-09 17:05:25: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-09 17:05:25: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-09 17:16:54: (node:1117176) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-09 17:16:54: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-09 17:16:54: 
+2026-07-09 17:16:54: To prepare for this change:
+2026-07-09 17:16:54: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-09 17:16:54: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-09 17:16:54: 
+2026-07-09 17:16:54: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-09 17:16:54: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-09 17:17:49: Error crítico durante la transacción de justificación: PrismaClientKnownRequestError: 
+2026-07-09 17:17:49: Invalid `prisma.justificacion.create()` invocation in
+2026-07-09 17:17:49: /var/www/html/sites/biometrico/backend/routes/justificacionRoutes.js:84:28
+2026-07-09 17:17:49: 
+2026-07-09 17:17:49:   81 }
+2026-07-09 17:17:49:   82 
+2026-07-09 17:17:49:   83 await prisma.$transaction([
+2026-07-09 17:17:49: → 84   prisma.justificacion.create(
+2026-07-09 17:17:49: Unique constraint failed on the fields: (`"asistenciaId"`)
+2026-07-09 17:17:49:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:237:13)
+2026-07-09 17:17:49:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-07-09 17:17:49:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-07-09 17:17:49:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-09 17:17:49:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24) {
+2026-07-09 17:17:49:   code: 'P2002',
+2026-07-09 17:17:49:   meta: {
+2026-07-09 17:17:49:     modelName: 'Justificacion',
+2026-07-09 17:17:49:     driverAdapterError: DriverAdapterError: UniqueConstraintViolation
+2026-07-09 17:17:49:         at PgTransaction.onError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+adapter-pg@7.8.0/node_modules/@prisma/adapter-pg/dist/index.js:678:11)
+2026-07-09 17:17:49:         at PgTransaction.performIO (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+adapter-pg@7.8.0/node_modules/@prisma/adapter-pg/dist/index.js:673:12)
+2026-07-09 17:17:49:         at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-07-09 17:17:49:         at async PgTransaction.queryRaw (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+adapter-pg@7.8.0/node_modules/@prisma/adapter-pg/dist/index.js:604:30)
+2026-07-09 17:17:49:         at async e.interpretNode (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:186:26)
+2026-07-09 17:17:49:         at async e.interpretNode (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:213:41)
+2026-07-09 17:17:49:         at async e.interpretNode (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:272:41)
+2026-07-09 17:17:49:         at async e.run (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client-engine-runtime/src/interpreter/query-interpreter.ts:94:23)
+2026-07-09 17:17:49:         at async e.execute (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/engines/client/LocalExecutor.ts:81:12)
+2026-07-09 17:17:49:         at async jt.requestBatch (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/engines/client/ClientEngine.ts:598:28)
+2026-07-09 17:17:49:         at async <anonymous> (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:88:25) {
+2026-07-09 17:17:49:       cause: [Object]
+2026-07-09 17:17:49:     }
+2026-07-09 17:17:49:   },
+2026-07-09 17:17:49:   clientVersion: '7.8.0'
+2026-07-09 17:17:49: }

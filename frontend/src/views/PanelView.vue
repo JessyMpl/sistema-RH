@@ -431,19 +431,23 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                 class="font-mono text-sm img-strattia-style"
               >
                 <template #item-entrada="item">
-                  <span :class="{'text-red-600 font-bold': item.estatus.includes('RETARDO') || item.estatus === 'FALTA', 'text-gray-700': !item.estatus.includes('RETARDO')}">
+                  <span v-if="String(item.estatus || '').trim().toUpperCase() === 'BAJA'" class="text-gray-400 font-bold tracking-widest text-xs">BAJA</span>
+                  <span v-else :class="{'text-red-600 font-bold': String(item.estatus || '').includes('RETARDO') || String(item.estatus || '') === 'FALTA', 'text-gray-700': !String(item.estatus || '').includes('RETARDO')}">
                     {{ item.entrada || 'SR' }}
                   </span>
                 </template>
                 
                 <template #item-salida="item">
-                  <span :class="{'text-red-600 font-bold': item.estatus === 'FALTA', 'text-gray-700': item.estatus !== 'FALTA'}">
+                  <span v-if="String(item.estatus || '').trim().toUpperCase() === 'BAJA'" class="text-gray-400 font-bold tracking-widest text-xs">BAJA</span>
+                  <span v-else :class="{'text-red-600 font-bold': String(item.estatus || '') === 'FALTA', 'text-gray-700': String(item.estatus || '') !== 'FALTA'}">
                     {{ item.salida || 'SR' }}
                   </span>
                 </template>
 
                 <template #item-estatus="item">
-                  <span v-if="item.estatus === 'OK'" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Normal</span>
+                  <span v-if="String(item.estatus || '').trim().toUpperCase() === 'BAJA'" class="bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Baja</span>
+                  
+                  <span v-else-if="item.estatus === 'OK'" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Normal</span>
                   <span v-else-if="item.estatus.includes('RETARDO')" class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">Retardo ({{ item.minutosRetardo }} min)</span>
                   <span v-else-if="item.estatus === 'OK_ESPECIAL'" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold">Especial</span>
                   <span v-else-if="item.estatus === 'NO ENCONTRADO'" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta en BD</span>
@@ -513,20 +517,21 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                     <td class="sticky left-[240px] z-10 bg-white py-2 pl-4 pr-3 text-sm font-medium text-gray-900 border border-gray-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.nombre }}</td>
                     <template v-for="fecha in diasSabana" :key="'data-'+fecha">
                       <template v-if="emp.asistencias[fecha]">
-                        <td colspan="2" v-if="emp.asistencias[fecha].estatus === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
-                        <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
-                        <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-gray-600"></td>
-                        <td colspan="2" v-else-if="emp.asistencias[fecha].estatus === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
-                        <template v-else-if="emp.asistencias[fecha].estatus === 'FALTA'">
+                        <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
+                        <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
+                        <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-gray-600"></td>
+                        <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'BAJA'" class="py-2 text-center border border-gray-300 align-middle bg-gray-200"><span class="font-bold text-gray-500 text-[10px] tracking-widest">BAJA</span></td>
+                        <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
+                        <template v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FALTA'">
                           <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
                           <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-white bg-red-600 tabular-nums">SR</td>
                         </template>
                         <template v-else>
-                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-red-600 font-bold bg-red-50': emp.asistencias[fecha].estatus.includes('RETARDO'), 'text-orange-600 font-bold bg-orange-50': emp.asistencias[fecha].estatus === 'OMISION_E', 'text-gray-700': !emp.asistencias[fecha].estatus.includes('RETARDO') && emp.asistencias[fecha].estatus !== 'OMISION_E'}">
-                            {{ emp.asistencias[fecha].entrada || (emp.asistencias[fecha].estatus.includes('ESPECIAL') ? '---' : 'SR') }}
+                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-red-600 font-bold bg-red-50': String(emp.asistencias[fecha].estatus || '').includes('RETARDO'), 'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_E', 'text-gray-700': !String(emp.asistencias[fecha].estatus || '').includes('RETARDO') && String(emp.asistencias[fecha].estatus || '') !== 'OMISION_E'}">
+                            {{ emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
                           </td>
-                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-orange-600 font-bold bg-orange-50': emp.asistencias[fecha].estatus === 'OMISION_S' || emp.asistencias[fecha].estatus === 'RETARDO_Y_OMISION', 'text-gray-500 bg-gray-50/30': emp.asistencias[fecha].estatus !== 'OMISION_S' && emp.asistencias[fecha].estatus !== 'RETARDO_Y_OMISION'}">
-                            {{ emp.asistencias[fecha].salida || (emp.asistencias[fecha].estatus.includes('ESPECIAL') ? '---' : 'SR') }}
+                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_S' || String(emp.asistencias[fecha].estatus || '') === 'RETARDO_Y_OMISION', 'text-gray-500 bg-gray-50/30': String(emp.asistencias[fecha].estatus || '') !== 'OMISION_S' && String(emp.asistencias[fecha].estatus || '') !== 'RETARDO_Y_OMISION'}">
+                            {{ emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
                           </td>
                         </template>
                       </template>
@@ -600,3 +605,14 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
     </main>
   </div>
 </template>
+
+<style scoped>
+.img-strattia-style {
+  --easy-table-header-background-color: #f8fafc;
+  --easy-table-header-font-color: #475569;
+  --easy-table-header-font-size: 13px;
+  --easy-table-body-row-font-size: 13px;
+  --easy-table-border: 1px solid #e2e8f0;
+  --easy-table-row-border: 1px solid #e2e8f0;
+}
+</style>

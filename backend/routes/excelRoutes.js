@@ -170,7 +170,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       const fechaMin = new Date(Math.min(...fechasObj));
       const fechaMax = new Date(Math.max(...fechasObj));
 
-      // 🔥 REGLA 1: PURGA DE EMPLEADOS (Excluir a los que se fueron antes de esta quincena)
       const empleadosActivos = empleados.filter(emp => {
         if (emp.fechaBaja) {
           return new Date(emp.fechaBaja) >= fechaMin; 
@@ -178,7 +177,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         return true;
       });
 
-      // 🔥 EXTRACCIÓN DE DÍAS INHÁBILES
       const diasInhabiles = await prisma.diaInhabil.findMany({
         where: {
           fecha: { 
@@ -227,19 +225,17 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
           }
         }
 
-        // 🔥 FILTRO NINJA PARA CHECADORES
         for (const emp of empleadosChecadores) {
           const regimenC = String(emp.regimen || '').toUpperCase().trim();
           const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
           
           if (!registrosPorDia[llaveBusqueda]) {
-            // Evaluamos si el empleado ya causó baja en este punto del tiempo
             const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
 
             if (esBajaHoy) {
                datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "BAJA" });
                resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'BAJA', salida: 'BAJA', estatus: 'BAJA', minutosRetardo: 0 });
-               continue; // Se va a su casa y dejamos de calcularle faltas o feriados
+               continue; 
             }
 
             let generarFalta = false;
@@ -255,9 +251,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
               }
             } 
             else if (regimenC === 'ESPECIAL') {
-              // 🔥 ALGORITMO DINÁMICO PARA TURNOS 1X1 (Inferencia de descanso)
               const fechaActualDate = new Date(`${fechaStr}T12:00:00Z`);
-              
               const fechaAyerDate = new Date(fechaActualDate);
               fechaAyerDate.setDate(fechaActualDate.getDate() - 1);
               const fechaAyer = fechaAyerDate.toISOString().split('T')[0];
@@ -470,7 +464,6 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       const fechaMin = new Date(Math.min(...fechasObj));
       const fechaMax = new Date(Math.max(...fechasObj));
 
-      // 🔥 REGLA 1: PURGA DE EMPLEADOS (Excluir a los que se fueron antes de esta quincena)
       const empleadosActivos = empleados.filter(emp => {
         if (emp.fechaBaja) {
           return new Date(emp.fechaBaja) >= fechaMin; 
@@ -478,7 +471,6 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         return true;
       });
 
-      // 🔥 EXTRACCIÓN DE DÍAS INHÁBILES
       const diasInhabiles = await prisma.diaInhabil.findMany({
         where: {
           fecha: { 
@@ -521,18 +513,16 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
           }
         }
 
-        // 🔥 FILTRO NINJA PARA CHECADORES
         for (const emp of empleadosChecadores) {
           const regimenC = String(emp.regimen || '').toUpperCase().trim();
           const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
           
           if (!registrosPorDia[llaveBusqueda]) {
-            // Evaluamos si el empleado ya causó baja en este punto del tiempo
             const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
 
             if (esBajaHoy) {
                datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "BAJA" });
-               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: 'BAJA', minutosRetardo: 0 });
+               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'BAJA', salida: 'BAJA', estatus: 'BAJA', minutosRetardo: 0 });
                continue; 
             }
 
@@ -549,9 +539,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
               }
             } 
             else if (regimenC === 'ESPECIAL') {
-              // 🔥 ALGORITMO DINÁMICO PARA TURNOS 1X1 (Inferencia de descanso)
               const fechaActualDate = new Date(`${fechaStr}T12:00:00Z`);
-              
               const fechaAyerDate = new Date(fechaActualDate);
               fechaAyerDate.setDate(fechaActualDate.getDate() - 1);
               const fechaAyer = fechaAyerDate.toISOString().split('T')[0];
@@ -684,7 +672,7 @@ router.get('/datos-reporte', async (req, res) => {
       },
       include: {
         servidor: {
-          select: { numeroEmpleado: true, nombreCompleto: true, area: { select: { nombre: true } } }
+          select: { numeroEmpleado: true, nombreCompleto: true, regimen: true, area: { select: { nombre: true } } }
         }
       },
       orderBy: [
@@ -693,14 +681,45 @@ router.get('/datos-reporte', async (req, res) => {
       ]
     });
 
-    const formateados = asistencias.map(a => ({
+    let formateados = asistencias.map(a => ({
       ...a,
       servidor: {
         numeroEmpleado: a.servidor.numeroEmpleado,
         nombreCompleto: a.servidor.nombreCompleto,
-        departamento: a.servidor.area ? a.servidor.area.nombre : 'Sin Área'
+        departamento: a.servidor.area ? a.servidor.area.nombre : 'Sin Área',
+        regimen: a.servidor.regimen
       }
     }));
+
+    // 🔥 INYECCIÓN DE FERIADOS PARA REPORTE FINAL
+    const diasInhabiles = await prisma.diaInhabil.findMany({
+      where: { fecha: { gte: fechaInicio, lte: fechaFin } }
+    });
+    const setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
+
+    if (setFeriados.size > 0 && formateados.length > 0) {
+      const empleadosUnicos = [...new Map(formateados.map(item => [item.servidor.numeroEmpleado, item.servidor])).values()];
+      
+      for (const fechaFeriado of setFeriados) {
+         for (const emp of empleadosUnicos) {
+            const existe = formateados.find(a => a.servidor.numeroEmpleado === emp.numeroEmpleado && a.fecha.toISOString().split('T')[0] === fechaFeriado);
+            if (!existe) {
+               // A los ESPECIALES no se les inyecta Feriado automático (es su día de descanso normal)
+               if (String(emp.regimen || '').toUpperCase().trim() !== 'ESPECIAL') {
+                   formateados.push({
+                      id: `feriado-${emp.numeroEmpleado}-${fechaFeriado}`,
+                      fecha: new Date(`${fechaFeriado}T12:00:00Z`),
+                      incidencia: 'FERIADO',
+                      entrada: '---',
+                      salida: '---',
+                      minutosRetardo: 0,
+                      servidor: emp
+                   });
+               }
+            }
+         }
+      }
+    }
 
     res.json(formateados);
 
@@ -826,7 +845,7 @@ router.get('/descargar-reporte', async (req, res) => {
             entradaTexto = '';
             salidaTexto = '';
             esFeriado = true;
-          } else if (reg.incidencia === 'BAJA') { // 🔥 NUEVA REGLA DE BAJA
+          } else if (reg.incidencia === 'BAJA') {
             entradaTexto = 'BAJA';
             salidaTexto = 'BAJA';
           } else if (reg.incidencia === 'FALTA') {
