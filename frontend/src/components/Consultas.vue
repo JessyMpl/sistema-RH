@@ -11,8 +11,11 @@ const listaDepartamentos = ref([]);
 const listaResultados = ref([]);
 const cargando = ref(false);
 
-// 🔥 NUEVA VARIABLE: Controla el switch de filtro
+// Controla el switch de filtro
 const soloIncidencias = ref(false);
+
+// 🔥 NUEVA VARIABLE: Controla el buscador rápido de la tabla
+const valorBusqueda = ref('');
 
 const headers = [
   { text: "NUM. EMP", value: "numEmp", sortable: true },
@@ -25,7 +28,6 @@ const headers = [
   { text: "ESTATUS", value: "estatus", sortable: true }
 ];
 
-// 🔥 NUEVO COMPUTED: Filtra en tiempo real si el checkbox está activo
 const resultadosVisibles = computed(() => {
   if (!soloIncidencias.value) return listaResultados.value;
   
@@ -34,7 +36,6 @@ const resultadosVisibles = computed(() => {
     const esFaltaUOmision = ['FALTA', 'NO ENCONTRADO', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION'].includes(estatus) || (item.entrada === 'SR' && item.salida === 'SR');
     const esRetardo = ['RETARDO', 'RETARDO_ESPECIAL'].includes(estatus);
     
-    // Si es falta, omisión o retardo, lo mostramos en la vista de "Solo Incidencias"
     return esFaltaUOmision || esRetardo;
   });
 });
@@ -145,11 +146,11 @@ onMounted(() => {
           </button>
         </div>
         
-        <!-- 🔥 NUEVO CHECKBOX DE INCIDENCIAS -->
+        <!-- CHECKBOX DE INCIDENCIAS -->
         <div class="col-span-1 md:col-span-5 flex items-center mt-2 bg-gray-50 p-3 rounded-md border border-gray-200">
           <input type="checkbox" id="filtroIncidencias" v-model="soloIncidencias" class="w-4 h-4 text-inst-primario border-gray-300 rounded focus:ring-inst-primario cursor-pointer accent-inst-primario">
           <label for="filtroIncidencias" class="ml-2 text-sm font-bold text-gray-700 cursor-pointer">
-            Mostrar únicamente incidencias 
+            Mostrar únicamente incidencias (Ocultar registros correctos y justificados)
           </label>
         </div>
       </div>
@@ -159,10 +160,21 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2">
+    <!-- 🔥 TABLA Y BUSCADOR RÁPIDO -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-4">
+      
+      <!-- CAMPO DE BÚSQUEDA RÁPIDA (Solo visible si hay datos) -->
+      <div v-if="resultadosVisibles.length > 0" class="mb-4 flex items-center">
+        <div class="relative w-full md:w-1/3">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          <input type="text" v-model="valorBusqueda" placeholder="Buscar en resultados (Nombre o Núm. Emp)..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:border-inst-primario text-sm shadow-sm" />
+        </div>
+      </div>
+
       <EasyDataTable
         :headers="headers"
         :items="resultadosVisibles"
+        :search-value="valorBusqueda" 
         :rows-per-page="25"
         buttons-pagination
         theme-color="#902c3e"
@@ -191,27 +203,22 @@ onMounted(() => {
           </div>
         </template>
 
-        <!-- 🔥 NUEVO SEMÁFORO DE COLORES -->
+        <!-- SEMÁFORO DE COLORES -->
         <template #item-estatus="item">
           <div class="flex justify-center items-center">
             
-            <!-- AZUL: Justificada -->
             <span v-if="item.estatus === 'JUSTIFICADA'" 
                   class="w-6 h-6 rounded-full bg-blue-500 border border-blue-600 shadow-sm inline-block" title="Incidencia Justificada"></span>
             
-            <!-- VERDE: Registros OK, Lista, Exentos o Feriados -->
             <span v-else-if="['OK', 'OK_ESPECIAL', 'LA', 'EXENTO', 'EXCENTO', 'FERIADO'].includes(item.estatus) || ['LISTA', 'EXENTO', 'EXCENTO'].includes(String(item.regimen || '').toUpperCase().trim())" 
                   class="w-6 h-6 rounded-full bg-green-500 border border-green-600 shadow-sm inline-block" title="Asistencia Correcta"></span>
             
-            <!-- ROJO: Falta o cualquier tipo de omisión -->
             <span v-else-if="['FALTA', 'NO ENCONTRADO', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION'].includes(item.estatus) || (item.entrada === 'SR' && item.salida === 'SR')" 
                   class="w-6 h-6 rounded-full bg-red-600 border border-red-700 shadow-sm inline-block" title="Falta u Omisión"></span>
             
-            <!-- AMARILLO: Retardos -->
             <span v-else-if="['RETARDO', 'RETARDO_ESPECIAL'].includes(item.estatus)" 
                   class="w-6 h-6 rounded-full bg-yellow-400 border border-yellow-500 shadow-sm inline-block" title="Retardo"></span>
             
-            <!-- GRIS: Fallback (por si acaso entra otro estatus raro) -->
             <span v-else 
                   class="w-6 h-6 rounded-full bg-gray-400 border border-gray-500 shadow-sm inline-block" :title="item.estatus"></span>
                   

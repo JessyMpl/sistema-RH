@@ -170,6 +170,14 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       const fechaMin = new Date(Math.min(...fechasObj));
       const fechaMax = new Date(Math.max(...fechasObj));
 
+      // 🔥 REGLA 1: PURGA DE EMPLEADOS (Excluir a los que se fueron antes de esta quincena)
+      const empleadosActivos = empleados.filter(emp => {
+        if (emp.fechaBaja) {
+          return new Date(emp.fechaBaja) >= fechaMin; 
+        }
+        return true;
+      });
+
       // 🔥 EXTRACCIÓN DE DÍAS INHÁBILES
       const diasInhabiles = await prisma.diaInhabil.findMany({
         where: {
@@ -181,12 +189,12 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       });
       const setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
 
-      const empleadosLista = empleados.filter(e => String(e.regimen || '').toUpperCase().trim() === 'LISTA');
-      const empleadosExento = empleados.filter(e => {
+      const empleadosLista = empleadosActivos.filter(e => String(e.regimen || '').toUpperCase().trim() === 'LISTA');
+      const empleadosExento = empleadosActivos.filter(e => {
         const reg = String(e.regimen || '').toUpperCase().trim();
         return reg === 'EXENTO' || reg === 'EXCENTO';
       });
-      const empleadosChecadores = empleados.filter(e => {
+      const empleadosChecadores = empleadosActivos.filter(e => {
         const reg = String(e.regimen || '').toUpperCase().trim();
         return reg !== 'LISTA' && reg !== 'EXENTO' && reg !== 'EXCENTO';
       });
@@ -202,15 +210,19 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
           for (const emp of empleadosLista) {
             const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
             if (!registrosPorDia[llaveBusqueda]) {
-              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "LA" });
-              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: 'LA', minutosRetardo: 0 });
+              const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
+              const estatusReal = esBajaHoy ? 'BAJA' : 'LA';
+              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
+              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
             }
           }
           for (const emp of empleadosExento) {
             const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
             if (!registrosPorDia[llaveBusqueda]) {
-              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "EXENTO" });
-              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: 'EXENTO', minutosRetardo: 0 });
+              const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
+              const estatusReal = esBajaHoy ? 'BAJA' : 'EXENTO';
+              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
+              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
             }
           }
         }
@@ -221,6 +233,15 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
           const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
           
           if (!registrosPorDia[llaveBusqueda]) {
+            // Evaluamos si el empleado ya causó baja en este punto del tiempo
+            const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
+
+            if (esBajaHoy) {
+               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "BAJA" });
+               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'BAJA', salida: 'BAJA', estatus: 'BAJA', minutosRetardo: 0 });
+               continue; // Se va a su casa y dejamos de calcularle faltas o feriados
+            }
+
             let generarFalta = false;
             let esFeriadoAdministrativo = false;
 
@@ -233,9 +254,9 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
                 }
               }
             } 
-           else if (regimenC === 'ESPECIAL') {
+            else if (regimenC === 'ESPECIAL') {
               // 🔥 ALGORITMO DINÁMICO PARA TURNOS 1X1 (Inferencia de descanso)
-              const fechaActualDate = new Date(`${fechaStr}T12:00:00Z`); // Usamos 12:00Z para evitar saltos de zona horaria
+              const fechaActualDate = new Date(`${fechaStr}T12:00:00Z`);
               
               const fechaAyerDate = new Date(fechaActualDate);
               fechaAyerDate.setDate(fechaActualDate.getDate() - 1);
@@ -248,15 +269,12 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
               const llaveAyer = `${String(emp.numeroEmpleado).trim()}_${fechaAyer}`;
               const llaveManana = `${String(emp.numeroEmpleado).trim()}_${fechaManana}`;
               
-              // Verificamos si en la sábana cruda existen checadas rodeando este día vacío
               const tuvoChecadaAyer = !!registrosPorDia[llaveAyer];
               const tendraChecadaManana = !!registrosPorDia[llaveManana];
 
               if (tuvoChecadaAyer || tendraChecadaManana) {
-                // Si trabajó ayer o trabajará mañana, hoy es su día de descanso (pre-guardia o post-guardia).
                 generarFalta = false;
               } else {
-                // Si el día está vacío, no vino ayer y tampoco viene mañana, entonces sí es FALTA.
                 generarFalta = true;
               }
             }
@@ -452,6 +470,14 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       const fechaMin = new Date(Math.min(...fechasObj));
       const fechaMax = new Date(Math.max(...fechasObj));
 
+      // 🔥 REGLA 1: PURGA DE EMPLEADOS (Excluir a los que se fueron antes de esta quincena)
+      const empleadosActivos = empleados.filter(emp => {
+        if (emp.fechaBaja) {
+          return new Date(emp.fechaBaja) >= fechaMin; 
+        }
+        return true;
+      });
+
       // 🔥 EXTRACCIÓN DE DÍAS INHÁBILES
       const diasInhabiles = await prisma.diaInhabil.findMany({
         where: {
@@ -463,9 +489,9 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       });
       const setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
 
-      const empleadosLista = empleados.filter(e => String(e.regimen || '').toUpperCase().trim() === 'LISTA');
-      const empleadosExento = empleados.filter(e => { const reg = String(e.regimen || '').toUpperCase().trim(); return reg === 'EXENTO' || reg === 'EXCENTO'; });
-      const empleadosChecadores = empleados.filter(e => { const reg = String(e.regimen || '').toUpperCase().trim(); return reg !== 'LISTA' && reg !== 'EXENTO' && reg !== 'EXCENTO'; });
+      const empleadosLista = empleadosActivos.filter(e => String(e.regimen || '').toUpperCase().trim() === 'LISTA');
+      const empleadosExento = empleadosActivos.filter(e => { const reg = String(e.regimen || '').toUpperCase().trim(); return reg === 'EXENTO' || reg === 'EXCENTO'; });
+      const empleadosChecadores = empleadosActivos.filter(e => { const reg = String(e.regimen || '').toUpperCase().trim(); return reg !== 'LISTA' && reg !== 'EXENTO' && reg !== 'EXCENTO'; });
 
       for (let d = new Date(fechaMin); d <= fechaMax; d.setDate(d.getDate() + 1)) {
         const diaSemana = d.getDay(); 
@@ -478,15 +504,19 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
           for (const emp of empleadosLista) {
             const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
             if (!registrosPorDia[llaveBusqueda]) {
-              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "LA" });
-              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: 'LA', minutosRetardo: 0 });
+              const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
+              const estatusReal = esBajaHoy ? 'BAJA' : 'LA';
+              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
+              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
             }
           }
           for (const emp of empleadosExento) {
             const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
             if (!registrosPorDia[llaveBusqueda]) {
-              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "EXENTO" });
-              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: 'EXENTO', minutosRetardo: 0 });
+              const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
+              const estatusReal = esBajaHoy ? 'BAJA' : 'EXENTO';
+              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
+              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
             }
           }
         }
@@ -497,6 +527,15 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
           const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
           
           if (!registrosPorDia[llaveBusqueda]) {
+            // Evaluamos si el empleado ya causó baja en este punto del tiempo
+            const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
+
+            if (esBajaHoy) {
+               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "BAJA" });
+               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: 'BAJA', minutosRetardo: 0 });
+               continue; 
+            }
+
             let generarFalta = false;
             let esFeriadoAdministrativo = false;
 
@@ -510,12 +549,28 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
               }
             } 
             else if (regimenC === 'ESPECIAL') {
-              const fechaAncla = new Date('2026-04-05T00:00:00Z');
-              const fechaActual = new Date(`${fechaStr}T00:00:00Z`);
-              const diferenciaDias = Math.floor((fechaActual - fechaAncla) / (1000 * 60 * 60 * 24));
-              const turnoActivoPar = diferenciaDias % 2 === 0;
-              const empleadoEsPar = emp.id % 2 === 0;
-              if (empleadoEsPar === turnoActivoPar) generarFalta = true;
+              // 🔥 ALGORITMO DINÁMICO PARA TURNOS 1X1 (Inferencia de descanso)
+              const fechaActualDate = new Date(`${fechaStr}T12:00:00Z`);
+              
+              const fechaAyerDate = new Date(fechaActualDate);
+              fechaAyerDate.setDate(fechaActualDate.getDate() - 1);
+              const fechaAyer = fechaAyerDate.toISOString().split('T')[0];
+              
+              const fechaMananaDate = new Date(fechaActualDate);
+              fechaMananaDate.setDate(fechaActualDate.getDate() + 1);
+              const fechaManana = fechaMananaDate.toISOString().split('T')[0];
+              
+              const llaveAyer = `${String(emp.numeroEmpleado).trim()}_${fechaAyer}`;
+              const llaveManana = `${String(emp.numeroEmpleado).trim()}_${fechaManana}`;
+              
+              const tuvoChecadaAyer = !!registrosPorDia[llaveAyer];
+              const tendraChecadaManana = !!registrosPorDia[llaveManana];
+
+              if (tuvoChecadaAyer || tendraChecadaManana) {
+                generarFalta = false;
+              } else {
+                generarFalta = true;
+              }
             }
 
             if (generarFalta) {
@@ -656,7 +711,7 @@ router.get('/datos-reporte', async (req, res) => {
 });
 
 // ==============================================================================
-// 3. RUTA PARA DESCARGAR LA SÁBANA OFICIAL (ACTUALIZADA CON GRIS PARA FERIADOS)
+// 3. RUTA PARA DESCARGAR LA SÁBANA OFICIAL (ACTUALIZADA CON GRIS PARA FERIADOS Y BAJAS)
 // ==============================================================================
 router.get('/descargar-reporte', async (req, res) => {
   try {
@@ -758,7 +813,7 @@ router.get('/descargar-reporte', async (req, res) => {
         let salidaTexto = '---';
         let tieneRetardo = false;
         let esFalta = false; 
-        let esFeriado = false; // 🔥 NUEVA VARIABLE
+        let esFeriado = false; 
 
         if (reg) {
           if (reg.incidencia === 'LA') {
@@ -767,10 +822,13 @@ router.get('/descargar-reporte', async (req, res) => {
           } else if (reg.incidencia === 'EXENTO' || reg.incidencia === 'EXCENTO') {
             entradaTexto = 'EXENTO';
             salidaTexto = 'EXENTO';
-          } else if (reg.incidencia === 'FERIADO') { // 🔥 REGLA DE FERIADO
+          } else if (reg.incidencia === 'FERIADO') { 
             entradaTexto = '';
             salidaTexto = '';
             esFeriado = true;
+          } else if (reg.incidencia === 'BAJA') { // 🔥 NUEVA REGLA DE BAJA
+            entradaTexto = 'BAJA';
+            salidaTexto = 'BAJA';
           } else if (reg.incidencia === 'FALTA') {
             entradaTexto = 'SR';
             salidaTexto = 'SR';
@@ -811,7 +869,7 @@ router.get('/descargar-reporte', async (req, res) => {
           
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD32F2F' } };
           celdaSalida.font = { color: { argb: 'FFFFFFFF' }, bold: true };
-        } else if (esFeriado) { // 🔥 RELLENO GRIS OSCURO
+        } else if (esFeriado) { 
           celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5A5A5A' } };
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5A5A5A' } };
         }
