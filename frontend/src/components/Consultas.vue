@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import Swal from 'sweetalert2';
 import { apiUrl } from '@/utils/api';
 
@@ -11,6 +11,9 @@ const listaDepartamentos = ref([]);
 const listaResultados = ref([]);
 const cargando = ref(false);
 
+// 🔥 NUEVA VARIABLE: Controla el switch de filtro
+const soloIncidencias = ref(false);
+
 const headers = [
   { text: "NUM. EMP", value: "numEmp", sortable: true },
   { text: "SERVIDOR PÚBLICO", value: "nombre", sortable: true },
@@ -21,6 +24,20 @@ const headers = [
   { text: "SALIDA", value: "salida" },
   { text: "ESTATUS", value: "estatus", sortable: true }
 ];
+
+// 🔥 NUEVO COMPUTED: Filtra en tiempo real si el checkbox está activo
+const resultadosVisibles = computed(() => {
+  if (!soloIncidencias.value) return listaResultados.value;
+  
+  return listaResultados.value.filter(item => {
+    const estatus = item.estatus || '';
+    const esFaltaUOmision = ['FALTA', 'NO ENCONTRADO', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION'].includes(estatus) || (item.entrada === 'SR' && item.salida === 'SR');
+    const esRetardo = ['RETARDO', 'RETARDO_ESPECIAL'].includes(estatus);
+    
+    // Si es falta, omisión o retardo, lo mostramos en la vista de "Solo Incidencias"
+    return esFaltaUOmision || esRetardo;
+  });
+});
 
 const cargarDepartamentos = async () => {
   try {
@@ -54,7 +71,6 @@ const consultarDatos = async () => {
     const data = await res.json();
 
     if (res.ok) {
-      // Limpiamos los textos para evitar errores por espacios o minúsculas
       const registrosNormales = data.filter(item => {
          const reg = String(item.regimen || '').toUpperCase().trim();
          return !['LISTA', 'EXENTO', 'EXCENTO'].includes(reg);
@@ -64,7 +80,6 @@ const consultarDatos = async () => {
          return ['LISTA', 'EXENTO', 'EXCENTO'].includes(reg);
       });
 
-      // Lógica de la alerta si buscó a alguien que no checa
       if (nombreBuscar.value && registrosNormales.length === 0 && registrosProtegidos.length > 0) {
         Swal.fire({
           icon: 'info',
@@ -72,10 +87,9 @@ const consultarDatos = async () => {
           text: 'El servidor público que buscas checa por lista de asistencia o está exento del registro.',
           confirmButtonColor: '#902c3e'
         });
-        listaResultados.value = []; // Se limpia la tabla para no mostrar rojos
+        listaResultados.value = []; 
       } 
       else {
-        // Mostramos solo a los normales
         listaResultados.value = registrosNormales; 
         if (registrosNormales.length === 0) {
           Swal.fire('Sin resultados', 'No se encontraron registros de checadas para los filtros aplicados.', 'info');
@@ -130,17 +144,25 @@ onMounted(() => {
             {{ cargando ? 'Buscando...' : 'Buscar' }}
           </button>
         </div>
+        
+        <!-- 🔥 NUEVO CHECKBOX DE INCIDENCIAS -->
+        <div class="col-span-1 md:col-span-5 flex items-center mt-2 bg-gray-50 p-3 rounded-md border border-gray-200">
+          <input type="checkbox" id="filtroIncidencias" v-model="soloIncidencias" class="w-4 h-4 text-inst-primario border-gray-300 rounded focus:ring-inst-primario cursor-pointer accent-inst-primario">
+          <label for="filtroIncidencias" class="ml-2 text-sm font-bold text-gray-700 cursor-pointer">
+            Mostrar únicamente incidencias 
+          </label>
+        </div>
       </div>
 
-      <div v-if="listaResultados.length > 0" class="mt-4 pt-2 border-t border-gray-100 text-sm text-gray-500 font-medium">
-        Registros encontrados: <span class="font-bold text-blue-600">{{ listaResultados.length }}</span>
+      <div v-if="resultadosVisibles.length > 0" class="mt-4 pt-2 border-t border-gray-100 text-sm text-gray-500 font-medium">
+        Registros encontrados: <span class="font-bold text-blue-600">{{ resultadosVisibles.length }}</span>
       </div>
     </div>
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-2">
       <EasyDataTable
         :headers="headers"
-        :items="listaResultados"
+        :items="resultadosVisibles"
         :rows-per-page="25"
         buttons-pagination
         theme-color="#902c3e"
@@ -169,24 +191,27 @@ onMounted(() => {
           </div>
         </template>
 
+        <!-- 🔥 NUEVO SEMÁFORO DE COLORES -->
         <template #item-estatus="item">
           <div class="flex justify-center items-center">
             
+            <!-- AZUL: Justificada -->
             <span v-if="item.estatus === 'JUSTIFICADA'" 
                   class="w-6 h-6 rounded-full bg-blue-500 border border-blue-600 shadow-sm inline-block" title="Incidencia Justificada"></span>
             
-            <span v-else-if="['OK', 'OK_ESPECIAL', 'LA', 'EXENTO', 'EXCENTO'].includes(item.estatus) || ['LISTA', 'EXENTO', 'EXCENTO'].includes(String(item.regimen || '').toUpperCase().trim())" 
+            <!-- VERDE: Registros OK, Lista, Exentos o Feriados -->
+            <span v-else-if="['OK', 'OK_ESPECIAL', 'LA', 'EXENTO', 'EXCENTO', 'FERIADO'].includes(item.estatus) || ['LISTA', 'EXENTO', 'EXCENTO'].includes(String(item.regimen || '').toUpperCase().trim())" 
                   class="w-6 h-6 rounded-full bg-green-500 border border-green-600 shadow-sm inline-block" title="Asistencia Correcta"></span>
             
-            <span v-else-if="item.estatus === 'NO ENCONTRADO' || (item.entrada === 'SR' && item.salida === 'SR')" 
-                  class="w-6 h-6 rounded-full bg-red-600 border border-red-700 shadow-sm inline-block" title="Falta de Asistencia"></span>
+            <!-- ROJO: Falta o cualquier tipo de omisión -->
+            <span v-else-if="['FALTA', 'NO ENCONTRADO', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION'].includes(item.estatus) || (item.entrada === 'SR' && item.salida === 'SR')" 
+                  class="w-6 h-6 rounded-full bg-red-600 border border-red-700 shadow-sm inline-block" title="Falta u Omisión"></span>
             
-            <span v-else-if="['OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION'].includes(item.estatus)" 
-                  class="w-6 h-6 rounded-full bg-orange-500 border border-orange-600 shadow-sm inline-block" title="Omisión de Registro"></span>
-            
-            <span v-else-if="item.estatus && item.estatus.includes('RETARDO')" 
+            <!-- AMARILLO: Retardos -->
+            <span v-else-if="['RETARDO', 'RETARDO_ESPECIAL'].includes(item.estatus)" 
                   class="w-6 h-6 rounded-full bg-yellow-400 border border-yellow-500 shadow-sm inline-block" title="Retardo"></span>
             
+            <!-- GRIS: Fallback (por si acaso entra otro estatus raro) -->
             <span v-else 
                   class="w-6 h-6 rounded-full bg-gray-400 border border-gray-500 shadow-sm inline-block" :title="item.estatus"></span>
                   

@@ -60,7 +60,7 @@ const cerrarSesion = () => {
 
         <button @click="emit('cambiar-vista', 'sanciones')"
         :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'sanciones' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
-        <i class="fa-solid fa-person-circle-exclamation w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
+        <i class="fa-solid fa-circle-exclamation w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
         <span class="text-left leading-tight">Sanciones</span>
       </button>
 

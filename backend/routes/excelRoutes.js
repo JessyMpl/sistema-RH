@@ -233,13 +233,32 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
                 }
               }
             } 
-            else if (regimenC === 'ESPECIAL') {
-              const fechaAncla = new Date('2026-04-05T00:00:00Z');
-              const fechaActual = new Date(`${fechaStr}T00:00:00Z`);
-              const diferenciaDias = Math.floor((fechaActual - fechaAncla) / (1000 * 60 * 60 * 24));
-              const turnoActivoPar = diferenciaDias % 2 === 0;
-              const empleadoEsPar = emp.id % 2 === 0;
-              if (empleadoEsPar === turnoActivoPar) generarFalta = true;
+           else if (regimenC === 'ESPECIAL') {
+              // 🔥 ALGORITMO DINÁMICO PARA TURNOS 1X1 (Inferencia de descanso)
+              const fechaActualDate = new Date(`${fechaStr}T12:00:00Z`); // Usamos 12:00Z para evitar saltos de zona horaria
+              
+              const fechaAyerDate = new Date(fechaActualDate);
+              fechaAyerDate.setDate(fechaActualDate.getDate() - 1);
+              const fechaAyer = fechaAyerDate.toISOString().split('T')[0];
+              
+              const fechaMananaDate = new Date(fechaActualDate);
+              fechaMananaDate.setDate(fechaActualDate.getDate() + 1);
+              const fechaManana = fechaMananaDate.toISOString().split('T')[0];
+              
+              const llaveAyer = `${String(emp.numeroEmpleado).trim()}_${fechaAyer}`;
+              const llaveManana = `${String(emp.numeroEmpleado).trim()}_${fechaManana}`;
+              
+              // Verificamos si en la sábana cruda existen checadas rodeando este día vacío
+              const tuvoChecadaAyer = !!registrosPorDia[llaveAyer];
+              const tendraChecadaManana = !!registrosPorDia[llaveManana];
+
+              if (tuvoChecadaAyer || tendraChecadaManana) {
+                // Si trabajó ayer o trabajará mañana, hoy es su día de descanso (pre-guardia o post-guardia).
+                generarFalta = false;
+              } else {
+                // Si el día está vacío, no vino ayer y tampoco viene mañana, entonces sí es FALTA.
+                generarFalta = true;
+              }
             }
 
             if (generarFalta) {
