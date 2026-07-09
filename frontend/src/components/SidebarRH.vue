@@ -52,12 +52,6 @@ const cerrarSesion = () => {
         <span class="text-left leading-tight"> Gestión Personal</span>
       </button>
 
-         <button @click="emit('cambiar-vista', 'incidencias')"
-        :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'incidencias' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
-        <i class="fa-solid fa-circle-exclamation w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
-        <span class="text-left leading-tight">Incidencias</span>
-      </button>
-
        <button @click="emit('cambiar-vista', 'justificaciones')"
         :class="['w-full flex items-center px-4 py-3 rounded-lg transition', vistaActiva === 'justificaciones' ? 'bg-inst-secundario' : 'hover:bg-inst-secundario']">
         <i class="fa-solid fa-file-pen w-6 flex-shrink-0 text-center mr-3 text-lg"></i>

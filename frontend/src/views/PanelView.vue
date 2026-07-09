@@ -4,7 +4,6 @@ import Swal from 'sweetalert2';
 import { apiUrl } from '@/utils/api';
 import SidebarRH from '@/components/SidebarRH.vue';
 import GestionEmpleados from '@/components/GestionEmpleados.vue';
-import Incidencias from '@/components/incidencias.vue';
 import Consultas from '@/components/Consultas.vue';
 import Justificaciones from '@/components/GestionJustificaciones.vue';
 import ReporteFinal from '@/components/ReporteFinal.vue';
@@ -576,12 +575,6 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Gestión de Personal</h1>
         <GestionEmpleados />
       </div>
-
-      <div v-else-if="vistaActiva === 'incidencias'">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Incidencias</h1>
-        <Incidencias />
-      </div>
-
       <div v-else-if="vistaActiva === 'consultas'">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Módulo de Consultas de Personal</h1>
         <Consultas />
