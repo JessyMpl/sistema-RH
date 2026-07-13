@@ -32,11 +32,10 @@ async function obtenerSancionesCalculadas(mes, anio) {
         totalFaltas: 0,
         totalRetardos: 0,
         totalOmisiones: 0,
-        totalMinutosRetardo: 0 // 🔥 CORRECCIÓN: Inicializamos los minutos
+        totalMinutosRetardo: 0 
       };
     }
 
-    // 🔥 CORRECCIÓN: Sumamos los minutos de retardo si existen
     if (registro.minutosRetardo && registro.minutosRetardo > 0) {
       conteosMap[s.id].totalMinutosRetardo += Number(registro.minutosRetardo);
     }
@@ -80,6 +79,7 @@ async function obtenerSancionesCalculadas(mes, anio) {
         totalFaltas: 0,
         totalOmisiones: 0,
         totalMinutosRetardo: emp.totalMinutosRetardo, 
+        sancionTexto: textoRetardos, // 🔥 AQUÍ ESTÁ LA CORRECCIÓN CLAVE
         diasDescuento: diasCastigoRetardos
       });
     }

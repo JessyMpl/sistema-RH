@@ -21316,3 +21316,25 @@
 2026-07-09 17:05:17: Servidor corriendo sin problemas en el puerto 5176
 2026-07-09 17:16:37: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
 2026-07-09 17:16:38: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:19:37: ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-07-13 13:19:38: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:22:24: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+2026-07-13 13:22:25: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:23:47: ◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+2026-07-13 13:23:48: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:23:56: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
+2026-07-13 13:23:56: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:25:58: ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-07-13 13:25:59: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:29:39: ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-07-13 13:29:40: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:42:04: ◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+2026-07-13 13:42:04: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:42:15: ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-07-13 13:42:16: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:45:11: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
+2026-07-13 13:45:11: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:52:05: ◇ injected env (3) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-07-13 13:52:05: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 13:55:22: ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-07-13 13:55:23: Servidor corriendo sin problemas en el puerto 5176
