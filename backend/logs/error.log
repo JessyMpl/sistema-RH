@@ -25,3 +25,139 @@
 2026-07-13 13:55:29: 
 2026-07-13 13:55:29: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 2026-07-13 13:55:29: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-13 14:07:43: (node:68993) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-13 14:07:43: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-13 14:07:43: 
+2026-07-13 14:07:43: To prepare for this change:
+2026-07-13 14:07:43: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-13 14:07:43: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-13 14:07:43: 
+2026-07-13 14:07:43: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-13 14:07:43: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-13 14:08:31: Error al fabricar el PDF: Error: Could not find Chrome (ver. 148.0.7778.97). This can occur if either
+2026-07-13 14:08:31:  1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+2026-07-13 14:08:31:  2. your cache path is incorrectly configured (which is: /home/dticdev/.cache/puppeteer).
+2026-07-13 14:08:31: For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+2026-07-13 14:08:31:     at ChromeLauncher.resolveExecutablePath (/var/www/html/sites/biometrico/backend/node_modules/puppeteer-core/src/node/BrowserLauncher.ts:552:17)
+2026-07-13 14:08:31:     at ChromeLauncher.computeLaunchArguments (/var/www/html/sites/biometrico/backend/node_modules/puppeteer-core/src/node/ChromeLauncher.ts:131:16)
+2026-07-13 14:08:31:     at async ChromeLauncher.launch (/var/www/html/sites/biometrico/backend/node_modules/puppeteer-core/src/node/BrowserLauncher.ts:119:24)
+2026-07-13 14:08:31:     at async /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:353:15
+2026-07-13 14:08:54: Error al fabricar el PDF: Error: Could not find Chrome (ver. 148.0.7778.97). This can occur if either
+2026-07-13 14:08:54:  1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+2026-07-13 14:08:54:  2. your cache path is incorrectly configured (which is: /home/dticdev/.cache/puppeteer).
+2026-07-13 14:08:54: For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+2026-07-13 14:08:54:     at ChromeLauncher.resolveExecutablePath (/var/www/html/sites/biometrico/backend/node_modules/puppeteer-core/src/node/BrowserLauncher.ts:552:17)
+2026-07-13 14:08:54:     at ChromeLauncher.computeLaunchArguments (/var/www/html/sites/biometrico/backend/node_modules/puppeteer-core/src/node/ChromeLauncher.ts:131:16)
+2026-07-13 14:08:54:     at async ChromeLauncher.launch (/var/www/html/sites/biometrico/backend/node_modules/puppeteer-core/src/node/BrowserLauncher.ts:119:24)
+2026-07-13 14:08:54:     at async /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:353:15
+2026-07-13 14:10:45: (node:71437) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-13 14:10:45: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-13 14:10:45: 
+2026-07-13 14:10:45: To prepare for this change:
+2026-07-13 14:10:45: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-13 14:10:45: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-13 14:10:45: 
+2026-07-13 14:10:45: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-13 14:10:45: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-13 14:11:09: Error al fabricar el PDF: Error: Could not find Chrome (ver. 148.0.7778.97). This can occur if either
+2026-07-13 14:11:09:  1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+2026-07-13 14:11:09:  2. your cache path is incorrectly configured (which is: /home/dticdev/.cache/puppeteer).
+2026-07-13 14:11:09: For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+2026-07-13 14:11:09:     at ChromeLauncher.resolveExecutablePath (/var/www/html/sites/biometrico/backend/node_modules/puppeteer-core/src/node/BrowserLauncher.ts:552:17)
+2026-07-13 14:11:09:     at ChromeLauncher.computeLaunchArguments (/var/www/html/sites/biometrico/backend/node_modules/puppeteer-core/src/node/ChromeLauncher.ts:131:16)
+2026-07-13 14:11:09:     at async ChromeLauncher.launch (/var/www/html/sites/biometrico/backend/node_modules/puppeteer-core/src/node/BrowserLauncher.ts:119:24)
+2026-07-13 14:11:09:     at async /var/www/html/sites/biometrico/backend/routes/sancionesRoutes.js:353:15
+2026-07-13 14:20:34: (node:74590) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-13 14:20:34: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-13 14:20:34: 
+2026-07-13 14:20:34: To prepare for this change:
+2026-07-13 14:20:34: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-13 14:20:34: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-13 14:20:34: 
+2026-07-13 14:20:34: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-13 14:20:34: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-13 15:07:42: (node:90768) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-13 15:07:42: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-13 15:07:42: 
+2026-07-13 15:07:42: To prepare for this change:
+2026-07-13 15:07:42: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-13 15:07:42: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-13 15:07:42: 
+2026-07-13 15:07:42: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-13 15:07:42: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-13 15:12:10: (node:92862) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-13 15:12:10: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-13 15:12:10: 
+2026-07-13 15:12:10: To prepare for this change:
+2026-07-13 15:12:10: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-13 15:12:10: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-13 15:12:10: 
+2026-07-13 15:12:10: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-13 15:12:10: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-13 15:12:22: Error al fabricar el PDF: Error: Failed to launch the browser process:  Code: 127
+2026-07-13 15:12:22: 
+2026-07-13 15:12:22: stderr:
+2026-07-13 15:12:22: /var/www/html/sites/biometrico/backend/.cache/puppeteer/chrome/linux-150.0.7871.24/chrome-linux64/chrome: error while loading shared libraries: libatk-1.0.so.0: cannot open shared object file: No such file or directory
+2026-07-13 15:12:22: 
+2026-07-13 15:12:22: TROUBLESHOOTING: https://pptr.dev/troubleshooting
+2026-07-13 15:12:22: 
+2026-07-13 15:12:22:     at ChildProcess.onClose (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@puppeteer+browsers@3.0.6/node_modules/@puppeteer/browsers/src/launch.ts:537:11)
+2026-07-13 15:12:22:     at ChildProcess.emit (node:events:536:35)
+2026-07-13 15:12:22:     at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+2026-07-13 15:13:59: (node:93880) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-13 15:13:59: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-13 15:13:59: 
+2026-07-13 15:13:59: To prepare for this change:
+2026-07-13 15:13:59: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-13 15:13:59: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-13 15:13:59: 
+2026-07-13 15:13:59: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-13 15:13:59: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-13 15:14:10: Error al fabricar el PDF: Error: Failed to launch the browser process:  Code: 127
+2026-07-13 15:14:10: 
+2026-07-13 15:14:10: stderr:
+2026-07-13 15:14:10: /var/www/html/sites/biometrico/backend/.cache/puppeteer/chrome/linux-150.0.7871.24/chrome-linux64/chrome: error while loading shared libraries: libatk-1.0.so.0: cannot open shared object file: No such file or directory
+2026-07-13 15:14:10: 
+2026-07-13 15:14:10: TROUBLESHOOTING: https://pptr.dev/troubleshooting
+2026-07-13 15:14:10: 
+2026-07-13 15:14:10:     at ChildProcess.onClose (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@puppeteer+browsers@3.0.6/node_modules/@puppeteer/browsers/src/launch.ts:537:11)
+2026-07-13 15:14:10:     at ChildProcess.emit (node:events:536:35)
+2026-07-13 15:14:10:     at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+2026-07-13 15:17:04: (node:95294) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-13 15:17:04: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-13 15:17:04: 
+2026-07-13 15:17:04: To prepare for this change:
+2026-07-13 15:17:04: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-13 15:17:04: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-13 15:17:04: 
+2026-07-13 15:17:04: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-13 15:17:04: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-07-13 15:17:16: Error al fabricar el PDF: Error: Failed to launch the browser process:  Code: 127
+2026-07-13 15:17:16: 
+2026-07-13 15:17:16: stderr:
+2026-07-13 15:17:16: /var/www/html/sites/biometrico/backend/.cache/puppeteer/chrome/linux-150.0.7871.24/chrome-linux64/chrome: error while loading shared libraries: libatk-1.0.so.0: cannot open shared object file: No such file or directory
+2026-07-13 15:17:16: 
+2026-07-13 15:17:16: TROUBLESHOOTING: https://pptr.dev/troubleshooting
+2026-07-13 15:17:16: 
+2026-07-13 15:17:16:     at ChildProcess.onClose (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@puppeteer+browsers@3.0.6/node_modules/@puppeteer/browsers/src/launch.ts:537:11)
+2026-07-13 15:17:16:     at ChildProcess.emit (node:events:536:35)
+2026-07-13 15:17:16:     at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+2026-07-13 15:18:30: Error al fabricar el PDF: Error: Failed to launch the browser process:  Code: 127
+2026-07-13 15:18:30: 
+2026-07-13 15:18:30: stderr:
+2026-07-13 15:18:30: /var/www/html/sites/biometrico/backend/.cache/puppeteer/chrome/linux-150.0.7871.24/chrome-linux64/chrome: error while loading shared libraries: libatk-1.0.so.0: cannot open shared object file: No such file or directory
+2026-07-13 15:18:30: 
+2026-07-13 15:18:30: TROUBLESHOOTING: https://pptr.dev/troubleshooting
+2026-07-13 15:18:30: 
+2026-07-13 15:18:30:     at ChildProcess.onClose (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@puppeteer+browsers@3.0.6/node_modules/@puppeteer/browsers/src/launch.ts:537:11)
+2026-07-13 15:18:30:     at ChildProcess.emit (node:events:536:35)
+2026-07-13 15:18:30:     at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+2026-07-13 15:22:52: (node:97688) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-07-13 15:22:52: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-07-13 15:22:52: 
+2026-07-13 15:22:52: To prepare for this change:
+2026-07-13 15:22:52: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-07-13 15:22:52: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-07-13 15:22:52: 
+2026-07-13 15:22:52: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-07-13 15:22:52: (Use `node --trace-warnings ...` to show where the warning was created)

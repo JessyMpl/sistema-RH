@@ -1,3 +1,4 @@
 allowBuilds:
   '@prisma/engines': true
   prisma: true
+  puppeteer: set this to true or false
