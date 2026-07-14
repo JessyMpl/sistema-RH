@@ -159,7 +159,7 @@ router.post('/generar-pdf', async (req, res) => {
   try {
     const dataFormato = req.body; 
     
-   // 1. Buscamos y leemos la plantilla HTML
+    // 1. Buscamos y leemos la plantilla HTML
     const templatePath = path.join(__dirname, '../templates/oficio_sancion.hbs');
     const templateHtml = fs.readFileSync(templatePath, 'utf8');
     
@@ -169,17 +169,15 @@ router.post('/generar-pdf', async (req, res) => {
       const imgBuffer = fs.readFileSync(imgPath);
       dataFormato.imagen_escudo = `data:image/jpeg;base64,${imgBuffer.toString('base64')}`;
     }
-    // -----------------------------------------------
     
-    // 2. Compilamos la plantilla con Handlebars...
-    // 2. Compilamos la plantilla con Handlebars inyectándole los datos
+    // 2. Compilamos la plantilla con Handlebars
     const template = handlebars.compile(templateHtml);
     const htmlFinal = template(dataFormato);
 
     // 3. Abrimos el navegador invisible (Puppeteer)
     browser = await puppeteer.launch({ 
       headless: "new",
-      args: ['--no-sandbox', '--disable-setuid-sandbox'] // Súper importante en Linux
+      args: ['--no-sandbox', '--disable-setuid-sandbox'] 
     });
     
     const page = await browser.newPage();
@@ -190,7 +188,19 @@ router.post('/generar-pdf', async (req, res) => {
       format: 'Letter',
       printBackground: true,
       margin: { top: '30px', bottom: '30px', left: '30px', right: '30px' }
-    });
+    }); // <-- ESTE ES EL CIERRE QUE PROBABLEMENTE FALTABA
+
+    // --- NUEVO: GUARDAR COPIA FÍSICA EN EL SERVIDOR ---
+    const nombreArchivo = req.body.nombre_archivo;
+    const pdfsDir = path.join(__dirname, '../documentos_sanciones');
+    
+    if (!fs.existsSync(pdfsDir)) {
+      fs.mkdirSync(pdfsDir, { recursive: true });
+    }
+
+    const filePath = path.join(pdfsDir, nombreArchivo);
+    fs.writeFileSync(filePath, pdfBuffer);
+    // --------------------------------------------------
 
     // 5. Lo enviamos de regreso al frontend para descargar
     res.setHeader('Content-Type', 'application/pdf');
@@ -204,6 +214,20 @@ router.post('/generar-pdf', async (req, res) => {
     if (browser !== null) {
       await browser.close();
     }
+  }
+});
+
+// ==============================================================================
+// DESCARGAR PDF HISTÓRICO
+// ==============================================================================
+router.get('/descargar-historico/:nombreArchivo', (req, res) => {
+  const fileName = req.params.nombreArchivo;
+  const filePath = path.join(__dirname, '../documentos_sanciones', fileName);
+  
+  if (fs.existsSync(filePath)) {
+      res.download(filePath); // Express facilita la descarga directa
+  } else {
+      res.status(404).json({ error: 'El documento PDF original no se encuentra en el servidor.' });
   }
 });
 

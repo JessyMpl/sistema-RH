@@ -38,7 +38,8 @@ const headersHistorial = [
   { text: "TIPO", value: "tipoSancion", sortable: true },
   { text: "SANCIÓN APLICADA", value: "sancionAplicada" },
   { text: "DÍAS", value: "diasDescuento", align: "center" },
-  { text: "FOLIO OFICIO", value: "folioOficio" }
+  { text: "FOLIO OFICIO", value: "folioOficio" },
+  { text: "DOC", value: "acciones", align: "center" } // <--- COLUMNA PARA ACCIONES (GENERAR PDF) EN EL HISTORIAL
 ];
 
 const calcularMes = async () => {
@@ -118,7 +119,10 @@ const procesarSancion = async (empleado) => {
       let nombres = partesNombre.join(' '); 
       
       const nombreFormateado = `${nombres} ${paterno} ${materno}`.trim();
+      // Generamos el nombre único del archivo
+      const nombreArchivoPdf = `sancion_${empleado.servidorId}_${empleado.tipoSancion}_${mesSeleccionado.value}_${anioSeleccionado.value}.pdf`;
       const hoy = new Date();
+
  const payloadPdf = {
         dia_hoy: String(hoy.getDate()).padStart(2, '0'),
         mes_hoy: String(hoy.getMonth() + 1).padStart(2, '0'),
@@ -146,7 +150,8 @@ const procesarSancion = async (empleado) => {
         check_206_02: '', check_206_02_b: empleado.tipoSancion === 'FALTAS' ? 'X' : '', check_206_02_c: '',
         nombre_autoriza: formValues.nombreAutoriza,
         cargo_autoriza: formValues.cargoAutoriza,
-        nombre_completo: empleado.nombreCompleto
+        nombre_completo: empleado.nombreCompleto,
+        nombre_archivo: nombreArchivoPdf // <--- NUEVA VARIABLE QUE ENVIAMOS AL BACKEND PARA EL NOMBRE DEL ARCHIVO PDF A GUARDAR
       };
       // Pedimos el PDF al servidor (Puppeteer lo fabrica)
       const resPdf = await fetch(apiUrl('/api/sanciones/generar-pdf'), {
@@ -175,8 +180,13 @@ const procesarSancion = async (empleado) => {
         sancionAplicada: empleado.sancionTexto, diasDescuento: empleado.diasDescuento, folioOficio: formValues.folio || 'SIN FOLIO'
       };
 
-      const resDB = await fetch(apiUrl('/api/sanciones/guardar'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadDB) });
-      if (!resDB.ok) throw new Error('Error al guardar en el historial');
+     const resDB = await fetch(apiUrl('/api/sanciones/guardar'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadDB) });
+      
+      if (!resDB.ok) {
+        // Extraemos el mensaje real que manda tu backend en Node (como el de sanción duplicada)
+        const errorData = await resDB.json();
+        throw new Error(errorData.error || 'Error desconocido al guardar en el historial');
+      }
       
       Swal.fire('¡Documento Generado!', 'El PDF se ha descargado y la sanción quedó registrada.', 'success');
       listaInfractores.value = listaInfractores.value.filter(item => !(item.servidorId === empleado.servidorId && item.tipoSancion === empleado.tipoSancion));
@@ -194,6 +204,12 @@ const cargarHistorial = async () => {
     const res = await fetch(apiUrl('/api/sanciones/historial'));
     if (res.ok) listaHistorial.value = await res.json();
   } catch (error) { console.error(error); } finally { cargandoHistorial.value = false; }
+};
+
+const descargarPDFHistorico = (item) => {
+  // Reconstruimos el mismo nombre exacto con el que se guardó
+  const nombreArchivo = `sancion_${item.servidorId}_${item.tipoSancion}_${item.mes}_${item.anio}.pdf`;
+  window.open(apiUrl(`/api/sanciones/descargar-historico/${nombreArchivo}`), '_blank');
 };
 
 onMounted(() => { cargarHistorial(); });
@@ -263,6 +279,11 @@ const getNombreMes = (num) => meses.find(m => m.valor === num)?.texto || 'Mes';
         <template #item-sancionAplicada="item"><span class="text-[11px] text-gray-700 bg-gray-100 px-2 py-1 rounded">{{ item.sancionAplicada }}</span></template>
         <template #item-diasDescuento="item"><span class="font-bold text-red-600">{{ item.diasDescuento }} días</span></template>
         <template #item-folioOficio="item"><span class="font-mono text-xs text-blue-700 font-bold bg-blue-50 px-2 py-1 rounded border border-blue-100">{{ item.folioOficio || 'Sin Folio' }}</span></template>
+        <template #item-acciones="item">
+          <button @click="descargarPDFHistorico(item)" class="bg-inst-cafe-oscuro hover:bg-gray-700 text-white px-2 py-1 rounded text-[10px] font-bold transition shadow-sm" title="Descargar PDF Original">
+            <i class="fa-solid fa-file-pdf"></i>
+          </button>
+        </template>
       </EasyDataTable>
     </div>
   </div>

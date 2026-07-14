@@ -21374,3 +21374,24 @@
 2026-07-13 17:38:14: Servidor corriendo sin problemas en el puerto 5176
 2026-07-14 09:36:12: ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
 2026-07-14 09:36:13: Servidor corriendo sin problemas en el puerto 5176
+2026-07-14 12:09:10: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+2026-07-14 12:09:17: ◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+2026-07-14 12:09:22: ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-07-14 12:09:28: ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-07-14 12:09:34: ◇ injected env (3) from .env // tip: ⌘ enable debugging { debug: true }
+2026-07-14 12:09:39: ◇ injected env (3) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-07-14 12:09:45: ◇ injected env (3) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-07-14 12:09:50: ◇ injected env (3) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+2026-07-14 12:09:56: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+2026-07-14 12:10:02: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
+2026-07-14 12:10:07: ◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+2026-07-14 12:10:13: ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-07-14 12:10:18: ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-07-14 12:10:24: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+2026-07-14 12:10:29: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
+2026-07-14 12:10:35: ◇ injected env (3) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+2026-07-14 12:10:41: ◇ injected env (3) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+2026-07-14 12:10:46: ◇ injected env (3) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+2026-07-14 12:10:47: Servidor corriendo sin problemas en el puerto 5176
+2026-07-14 12:11:07: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
+2026-07-14 12:11:07: Servidor corriendo sin problemas en el puerto 5176
