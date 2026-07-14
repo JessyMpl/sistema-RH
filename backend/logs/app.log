@@ -21403,3 +21403,7 @@
 2026-07-14 17:07:20: Servidor corriendo sin problemas en el puerto 5176
 2026-07-14 17:07:37: ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
 2026-07-14 17:07:38: Servidor corriendo sin problemas en el puerto 5176
+2026-07-14 17:36:55: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
+2026-07-14 17:36:56: Servidor corriendo sin problemas en el puerto 5176
+2026-07-14 17:54:42: ◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+2026-07-14 17:54:42: Servidor corriendo sin problemas en el puerto 5176

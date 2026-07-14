@@ -33,3 +33,8 @@ model RegistroBiometrico {
   procesado      Boolean  @default(false) // Bandera para saber si ya lo calculaste en tu tabla Asistencia
   creadoEn       DateTime @default(now())
 }
+
+
+pnpm add "libreria"
+para instalar librerias desde el server en terminal de mac estando en:
+cd /var/www/html/sites/biometrico/backend

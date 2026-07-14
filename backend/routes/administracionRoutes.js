@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../config/db');
+const bcrypt = require('bcryptjs'); // libreria para encriptar contraseñas
 
 // 1. LEER (Obtener todas las áreas activas)
 router.get('/areas', async (req, res) => {
@@ -129,6 +130,83 @@ router.delete('/dias-inhabiles/:id', async (req, res) => {
     res.json({ mensaje: 'Día inhábil eliminado correctamente.' });
   } catch (error) {
     res.status(500).json({ error: 'Error al eliminar el registro.' });
+  }
+});
+
+
+// ==============================================================================
+// RUTAS PARA GESTIÓN DE USUARIOS DEL SISTEMA
+// ==============================================================================
+
+// 1. LEER (Obtenemos todos menos la contraseña por seguridad)
+router.get('/usuarios', async (req, res) => {
+  try {
+    const usuarios = await prisma.usuario.findMany({
+      select: { id: true, nombre: true, email: true, rol: true },
+      orderBy: { nombre: 'asc' }
+    });
+    res.json(usuarios);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cargar los usuarios.' });
+  }
+});
+
+// 2. CREAR (Encriptando la contraseña)
+router.post('/usuarios', async (req, res) => {
+  try {
+    const { nombre, email, password, rol } = req.body;
+    
+    const existe = await prisma.usuario.findUnique({ where: { email: email.trim().toLowerCase() } });
+    if (existe) return res.status(400).json({ error: 'Este correo electrónico ya está registrado.' });
+
+    // Magia de encriptación
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const nuevoUsuario = await prisma.usuario.create({
+      data: { 
+        nombre: nombre.trim().toUpperCase(), 
+        email: email.trim().toLowerCase(), 
+        password: hashedPassword, 
+        rol: rol 
+      },
+      select: { id: true, nombre: true, email: true, rol: true } // Devolvemos sin password
+    });
+    res.json({ mensaje: 'Usuario registrado exitosamente', usuario: nuevoUsuario });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al registrar el usuario.' });
+  }
+});
+
+// 3. ACTUALIZAR CONTRASEÑA (Reset)
+router.put('/usuarios/:id/password', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nuevaPassword } = req.body;
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(nuevaPassword, salt);
+
+    await prisma.usuario.update({
+      where: { id: parseInt(id) },
+      data: { password: hashedPassword }
+    });
+    res.json({ mensaje: 'Contraseña actualizada correctamente.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cambiar la contraseña.' });
+  }
+});
+
+// 4. ELIMINAR (Borrado físico)
+router.delete('/usuarios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.usuario.delete({
+      where: { id: parseInt(id) }
+    });
+    res.json({ mensaje: 'Usuario eliminado del sistema.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al eliminar el usuario.' });
   }
 });
 

@@ -233,10 +233,157 @@ const eliminarDia = async (dia) => {
   }
 };
 
+// 3. LÓGICA PARA USUARIOS 
+// ==========================================
+// 3. LÓGICA PARA USUARIOS DEL SISTEMA
+// ==========================================
+const valorBusquedaUsuario = ref('');
+const cargandoUsuarios = ref(false);
+const listaUsuarios = ref([]);
+
+const headersUsuarios = [
+  { text: "NOMBRE", value: "nombre", sortable: true },
+  { text: "CORREO ELECTRÓNICO", value: "email", sortable: true },
+  { text: "PERFIL", value: "rol", sortable: true, width: 120 },
+  { text: "SEGURIDAD", value: "acciones", align: "center", width: 150 }
+];
+
+const cargarUsuarios = async () => {
+  cargandoUsuarios.value = true;
+  try {
+    const res = await fetch(apiUrl('/api/administracion/usuarios'));
+    if (!res.ok) throw new Error('Error al obtener datos');
+    listaUsuarios.value = await res.json();
+  } catch (error) {
+    console.error(error);
+  } finally {
+    cargandoUsuarios.value = false;
+  }
+};
+
+const abrirModalNuevoUsuario = async () => {
+  const { value: formValues } = await Swal.fire({
+    title: 'Registrar Nuevo Usuario',
+    html: `
+      <div class="text-left space-y-4 mt-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre Completo:</label>
+          <input type="text" id="swal-user-nombre" class="w-full p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Correo (Usuario de acceso):</label>
+          <input type="email" id="swal-user-email" class="w-full p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Contraseña Inicial:</label>
+          <input type="password" id="swal-user-pass" class="w-full p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Rol / Permisos:</label>
+          <select id="swal-user-rol" class="w-full p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario">
+            <option value="RH">Recursos Humanos (Operador)</option>
+            <option value="ADMIN">Administrador (Control Total)</option>
+          </select>
+        </div>
+      </div>
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Registrar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#6B1C3A',
+    preConfirm: () => {
+      const nombre = document.getElementById('swal-user-nombre').value;
+      const email = document.getElementById('swal-user-email').value;
+      const password = document.getElementById('swal-user-pass').value;
+      const rol = document.getElementById('swal-user-rol').value;
+
+      if (!nombre || !email || !password) {
+        Swal.showValidationMessage('Nombre, correo y contraseña son obligatorios.');
+        return false;
+      }
+      return { nombre, email, password, rol };
+    }
+  });
+
+  if (formValues) {
+    try {
+      const res = await fetch(apiUrl('/api/administracion/usuarios'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formValues)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      Swal.fire('¡Registrado!', 'El usuario ya puede acceder al sistema.', 'success');
+      cargarUsuarios();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+};
+
+const cambiarPassword = async (usuario) => {
+  const { value: nuevaPassword } = await Swal.fire({
+    title: 'Resetear Contraseña',
+    text: `Para: ${usuario.nombre}`,
+    input: 'password',
+    inputPlaceholder: 'Escribe la nueva contraseña',
+    showCancelButton: true,
+    confirmButtonText: 'Actualizar',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#6B1C3A',
+    inputValidator: (value) => {
+      if (!value || value.length < 6) return 'La contraseña debe tener al menos 6 caracteres';
+    }
+  });
+
+  if (nuevaPassword) {
+    try {
+      const res = await fetch(apiUrl(`/api/administracion/usuarios/${usuario.id}/password`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nuevaPassword })
+      });
+      if (!res.ok) throw new Error('Error al actualizar');
+      
+      Swal.fire('¡Actualizada!', 'La contraseña fue cambiada exitosamente.', 'success');
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo cambiar la contraseña.', 'error');
+    }
+  }
+};
+
+const eliminarUsuario = async (usuario) => {
+  const result = await Swal.fire({
+    title: '¿Revocar acceso?',
+    text: `Eliminarás permanentemente al usuario ${usuario.email}.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#902c3e',
+    confirmButtonText: 'Sí, eliminar',
+    cancelButtonText: 'Cancelar'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const res = await fetch(apiUrl(`/api/administracion/usuarios/${usuario.id}`), { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar');
+      
+      Swal.fire('¡Eliminado!', 'El acceso fue revocado.', 'success');
+      cargarUsuarios();
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo eliminar el usuario.', 'error');
+    }
+  }
+};
+
 // Arrancar al inicio
 onMounted(() => {
   cargarAreas();
   cargarDias();
+  cargarUsuarios();
 });
 </script>
 
@@ -342,10 +489,49 @@ onMounted(() => {
     </div>
 
     <!-- CONTENIDO: USUARIOS (Próximamente) -->
-    <div v-if="tabActiva === 'usuarios'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center text-gray-500 py-12">
-      <i class="fa-solid fa-shield-halved text-4xl mb-3 text-gray-300"></i>
-      <p class="font-bold text-lg">Módulo de Usuarios del Sistema</p>
-      <p class="text-sm">En construcción...</p>
+   <!-- CONTENIDO: USUARIOS -->
+    <div v-if="tabActiva === 'usuarios'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="w-full max-w-md relative">
+          <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+          <input v-model="valorBusquedaUsuario" type="text" placeholder="Buscar por nombre o correo..." class="w-full pl-10 p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario" />
+        </div>
+        
+        <button @click="abrirModalNuevoUsuario" class="px-4 py-2 bg-inst-primario hover:bg-inst-secundario text-white font-bold rounded shadow-sm transition text-sm flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-user-plus"></i> Nuevo Usuario
+        </button>
+      </div>
+
+      <EasyDataTable 
+        :headers="headersUsuarios" 
+        :items="listaUsuarios" 
+        :search-value="valorBusquedaUsuario" 
+        :search-field="['nombre', 'email']" 
+        :rows-per-page="10" 
+        :loading="cargandoUsuarios"
+        table-class-name="img-strattia-style"
+      >
+        <template #item-nombre="item">
+          <span class="font-bold text-gray-700">{{ item.nombre }}</span>
+        </template>
+        
+        <template #item-rol="item">
+          <span :class="item.rol === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase border">
+            {{ item.rol }}
+          </span>
+        </template>
+        
+        <template #item-acciones="item">
+          <div class="flex justify-center gap-2">
+            <button @click="cambiarPassword(item)" class="bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200 px-2 py-1 rounded text-xs font-bold transition" title="Cambiar Contraseña">
+              <i class="fa-solid fa-key"></i>
+            </button>
+            <button @click="eliminarUsuario(item)" class="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-2 py-1 rounded text-xs font-bold transition" title="Eliminar Usuario">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        </template>
+      </EasyDataTable>
     </div>
 
   </div>
