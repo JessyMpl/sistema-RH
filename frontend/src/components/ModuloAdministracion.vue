@@ -119,9 +119,124 @@ const eliminarArea = async (area) => {
   }
 };
 
+// ==========================================
+// 2. LÓGICA PARA DÍAS INHÁBILES
+// ==========================================
+const valorBusquedaDia = ref('');
+const cargandoDias = ref(false);
+const listaDias = ref([]);
+
+const headersDias = [
+  { text: "FECHA", value: "fechaFormat", sortable: true, width: 120 },
+  { text: "TIPO", value: "tipo", sortable: true, width: 130 },
+  { text: "DESCRIPCIÓN", value: "descripcion", sortable: true },
+  { text: "ACCIONES", value: "acciones", align: "center", width: 100 }
+];
+
+const cargarDias = async () => {
+  cargandoDias.value = true;
+  try {
+    const res = await fetch(apiUrl('/api/administracion/dias-inhabiles'));
+    if (!res.ok) throw new Error('Error al obtener datos');
+    const data = await res.json();
+    
+    listaDias.value = data.map(d => ({
+      ...d,
+      // Formateamos la fecha a YYYY-MM-DD limpio para la vista
+      fechaFormat: new Date(d.fecha).toISOString().split('T')[0]
+    }));
+  } catch (error) {
+    console.error(error);
+  } finally {
+    cargandoDias.value = false;
+  }
+};
+
+const abrirModalNuevoDia = async () => {
+  const { value: formValues } = await Swal.fire({
+    title: 'Registrar Día Inhábil',
+    html: `
+      <div class="text-left space-y-4 mt-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fecha exacta:</label>
+          <input type="date" id="swal-fecha" class="w-full p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Clasificación:</label>
+          <select id="swal-tipo" class="w-full p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario">
+            <option value="FERIADO">Día Feriado Oficial</option>
+            <option value="VACACIONES">Periodo Vacacional</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Motivo / Descripción:</label>
+          <input type="text" id="swal-desc" placeholder="Ej. Aniversario de la Independencia" class="w-full p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario">
+        </div>
+      </div>
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Guardar Fecha',
+    cancelButtonText: 'Cancelar',
+    confirmButtonColor: '#6B1C3A',
+    preConfirm: () => {
+      const fecha = document.getElementById('swal-fecha').value;
+      const tipo = document.getElementById('swal-tipo').value;
+      const descripcion = document.getElementById('swal-desc').value;
+      if (!fecha || !descripcion) {
+        Swal.showValidationMessage('La fecha y el motivo son obligatorios.');
+        return false;
+      }
+      return { fecha, tipo, descripcion };
+    }
+  });
+
+  if (formValues) {
+    try {
+      const res = await fetch(apiUrl('/api/administracion/dias-inhabiles'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formValues)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      Swal.fire('¡Guardado!', 'La fecha se registró en el calendario.', 'success');
+      cargarDias();
+    } catch (error) {
+      Swal.fire('Error', error.message, 'error');
+    }
+  }
+};
+
+const eliminarDia = async (dia) => {
+  const result = await Swal.fire({
+    title: '¿Eliminar Fecha?',
+    text: `Borrarás el ${dia.tipo} del ${dia.fechaFormat}.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#902c3e',
+    confirmButtonText: 'Sí, borrar',
+    cancelButtonText: 'Cancelar'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const res = await fetch(apiUrl(`/api/administracion/dias-inhabiles/${dia.id}`), { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar');
+      
+      Swal.fire('¡Eliminado!', 'El día fue removido del calendario.', 'success');
+      cargarDias();
+    } catch (error) {
+      Swal.fire('Error', 'No se pudo eliminar el registro.', 'error');
+    }
+  }
+};
+
 // Arrancar al inicio
 onMounted(() => {
   cargarAreas();
+  cargarDias();
 });
 </script>
 
@@ -185,11 +300,45 @@ onMounted(() => {
       </EasyDataTable>
     </div>
 
-    <!-- CONTENIDO: DÍAS INHÁBILES (Próximamente) -->
-    <div v-if="tabActiva === 'dias'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 text-center text-gray-500 py-12">
-      <i class="fa-regular fa-calendar text-4xl mb-3 text-gray-300"></i>
-      <p class="font-bold text-lg">Módulo de Días Inhábiles</p>
-      <p class="text-sm">En construcción...</p>
+   
+    <!-- CONTENIDO: DÍAS INHÁBILES -->
+    <div v-if="tabActiva === 'dias'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="w-full max-w-md relative">
+          <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+          <input v-model="valorBusquedaDia" type="text" placeholder="Buscar por año o descripción..." class="w-full pl-10 p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario" />
+        </div>
+        
+        <button @click="abrirModalNuevoDia" class="px-4 py-2 bg-inst-primario hover:bg-inst-secundario text-white font-bold rounded shadow-sm transition text-sm flex items-center gap-2 whitespace-nowrap">
+          <i class="fa-solid fa-calendar-plus"></i> Registrar Fecha
+        </button>
+      </div>
+
+      <EasyDataTable 
+        :headers="headersDias" 
+        :items="listaDias" 
+        :search-value="valorBusquedaDia" 
+        :search-field="['fechaFormat', 'descripcion', 'tipo']" 
+        :rows-per-page="15" 
+        :loading="cargandoDias"
+        table-class-name="img-strattia-style"
+      >
+        <template #item-fechaFormat="item">
+          <span class="font-mono font-bold text-gray-700">{{ item.fechaFormat }}</span>
+        </template>
+
+        <template #item-tipo="item">
+          <span :class="item.tipo === 'FERIADO' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+            {{ item.tipo }}
+          </span>
+        </template>
+        
+        <template #item-acciones="item">
+          <button @click="eliminarDia(item)" class="bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 px-2 py-1 rounded text-xs font-bold transition">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </template>
+      </EasyDataTable>
     </div>
 
     <!-- CONTENIDO: USUARIOS (Próximamente) -->

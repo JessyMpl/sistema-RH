@@ -76,4 +76,60 @@ router.delete('/areas/:id', async (req, res) => {
   }
 });
 
+// ==============================================================================
+// RUTAS PARA DÍAS INHÁBILES Y VACACIONES
+// ==============================================================================
+
+// 1. LEER
+router.get('/dias-inhabiles', async (req, res) => {
+  try {
+    const dias = await prisma.diaInhabil.findMany({
+      orderBy: { fecha: 'desc' }
+    });
+    res.json(dias);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cargar los días inhábiles.' });
+  }
+});
+
+// 2. CREAR
+router.post('/dias-inhabiles', async (req, res) => {
+  try {
+    const { fecha, tipo, descripcion } = req.body;
+    
+    // Convertimos el string YYYY-MM-DD a un objeto Date (T12:00:00Z evita problemas de zona horaria)
+    const fechaObj = new Date(`${fecha}T12:00:00Z`);
+
+    const existe = await prisma.diaInhabil.findUnique({
+      where: { fecha: fechaObj }
+    });
+
+    if (existe) return res.status(400).json({ error: 'Ya existe un registro festivo o vacacional para esta fecha exacta.' });
+
+    const nuevoDia = await prisma.diaInhabil.create({
+      data: { 
+        fecha: fechaObj, 
+        tipo, 
+        descripcion: descripcion.trim().toUpperCase() 
+      }
+    });
+    res.json({ mensaje: 'Día inhábil registrado', dia: nuevoDia });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al registrar el día inhábil.' });
+  }
+});
+
+// 3. ELIMINAR (Borrado físico)
+router.delete('/dias-inhabiles/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.diaInhabil.delete({
+      where: { id: parseInt(id) }
+    });
+    res.json({ mensaje: 'Día inhábil eliminado correctamente.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al eliminar el registro.' });
+  }
+});
+
 module.exports = router;
