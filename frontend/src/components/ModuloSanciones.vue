@@ -111,20 +111,22 @@ const procesarSancion = async (empleado) => {
     try {
       Swal.fire({ title: 'Generando PDF Oficial...', html: 'Preparando el documento con formato institucional.', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       
+// Extraemos asumiendo el formato PATERNO MATERNO NOMBRES
       let partesNombre = empleado.nombreCompleto.trim().split(/\s+/);
-      let materno = partesNombre.pop() || '';
-      let paterno = partesNombre.pop() || '';
-      let nombres = partesNombre.join(' ');
-      if (!nombres) { nombres = paterno; paterno = ''; materno = ''; } 
-
+      let paterno = partesNombre.shift() || ''; 
+      let materno = partesNombre.shift() || ''; 
+      let nombres = partesNombre.join(' '); 
+      
+      const nombreFormateado = `${nombres} ${paterno} ${materno}`.trim();
       const hoy = new Date();
-      const payloadPdf = {
+  const payloadPdf = {
         dia_hoy: String(hoy.getDate()).padStart(2, '0'),
         mes_hoy: String(hoy.getMonth() + 1).padStart(2, '0'),
         anio_hoy: hoy.getFullYear(),
         nombres: nombres,
         apellido_paterno: paterno,
         apellido_materno: materno,
+        nombre_completo_ordenado: nombreFormateado,  // --- NUEVA VARIABLE PARA EL NOMBRE EN UNA SOLA CELDA 
         clave_servidor: empleado.numeroEmpleado,
         num_plaza: '----', 
         cct: '----',

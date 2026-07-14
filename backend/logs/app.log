@@ -21356,3 +21356,21 @@
 2026-07-13 15:16:54: Servidor corriendo sin problemas en el puerto 5176
 2026-07-13 15:22:42: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
 2026-07-13 15:22:42: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 15:42:29: ◇ injected env (3) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+2026-07-13 15:42:30: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 15:45:45: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
+2026-07-13 15:45:45: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 15:52:32: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
+2026-07-13 15:52:33: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 16:02:52: ◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+2026-07-13 16:02:52: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 16:03:43: ◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+2026-07-13 16:03:43: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 17:27:34: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+2026-07-13 17:27:35: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 17:36:20: ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-07-13 17:36:21: Servidor corriendo sin problemas en el puerto 5176
+2026-07-13 17:38:13: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+2026-07-13 17:38:14: Servidor corriendo sin problemas en el puerto 5176
+2026-07-14 09:36:12: ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-07-14 09:36:13: Servidor corriendo sin problemas en el puerto 5176

@@ -159,10 +159,19 @@ router.post('/generar-pdf', async (req, res) => {
   try {
     const dataFormato = req.body; 
     
-    // 1. Buscamos y leemos la plantilla HTML
+   // 1. Buscamos y leemos la plantilla HTML
     const templatePath = path.join(__dirname, '../templates/oficio_sancion.hbs');
     const templateHtml = fs.readFileSync(templatePath, 'utf8');
     
+    // --- NUEVO: LEER IMAGEN Y CONVERTIR A BASE64 ---
+    const imgPath = path.join(__dirname, '../templates/escudoarmasedomex.jpg');
+    if (fs.existsSync(imgPath)) {
+      const imgBuffer = fs.readFileSync(imgPath);
+      dataFormato.imagen_escudo = `data:image/jpeg;base64,${imgBuffer.toString('base64')}`;
+    }
+    // -----------------------------------------------
+    
+    // 2. Compilamos la plantilla con Handlebars...
     // 2. Compilamos la plantilla con Handlebars inyectándole los datos
     const template = handlebars.compile(templateHtml);
     const htmlFinal = template(dataFormato);
