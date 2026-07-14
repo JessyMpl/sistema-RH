@@ -77,9 +77,9 @@ const cerrarSesion = () => {
         <span class="text-left leading-tight">Reportes</span>
       </button>
       
-      <button @click="emit('cambiar-vista', 'perfil')"
+      <button @click="emit('cambiar-vista', 'administracion')"
         :class="['w-full flex items-center px-4 py-3 rounded-lg transition-all duration-200', 
-                 vistaActiva === 'perfil' ? 'bg-inst-secundario text-white font-bold shadow-md' : 'text-white/80 hover:bg-white/10 hover:text-white']">
+                 vistaActiva === 'administracion' ? 'bg-inst-secundario text-white font-bold shadow-md' : 'text-white/80 hover:bg-white/10 hover:text-white']">
         <i class="fa-solid fa-gear w-6 flex-shrink-0 text-center mr-3 text-lg"></i>
         <span class="text-left leading-tight">Configuración</span>
       </button>

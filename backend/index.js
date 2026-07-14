@@ -25,6 +25,9 @@ app.use('/api/justificaciones', justificacionRoutes);
 
 const sancionesRoutes = require('./routes/sancionesRoutes');
 app.use('/api/sanciones', sancionesRoutes);
+
+const administracionRoutes = require('./routes/administracionRoutes');
+app.use('/api/administracion', administracionRoutes);
 // -------------------------------------------------
 
 //  Aproveché para agrupar tus authRoutes aquí arriba con las demás
