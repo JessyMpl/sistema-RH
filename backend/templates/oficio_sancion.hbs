@@ -11,7 +11,7 @@
         max-width: 900px;
         margin: 20px auto;
         color: #000;
-        font-size: 13px;
+        font-size: 12px;
         line-height: 1.4;
         background-color: #fff;
         padding: 20px;
@@ -30,8 +30,8 @@
     /* Cabecera */
     .header-container { display: flex; align-items: center; margin-bottom: 15px; }
     .logo-placeholder { width: 90px; height: 100px; margin-right: 20px; object-fit: contain; }
-    .header-text { font-size: 13px; line-height: 1.2; }
-    .header-text .title { font-size: 11px; font-weight: bold; margin-bottom: 2px; }
+    .header-text { font-size: 12px; line-height: 1.2; }
+    .header-text .title { font-size: 10px; font-weight: bold; margin-bottom: 2px; }
 
     /* Título principal */
     .main-title {
@@ -50,8 +50,8 @@
     .date-boxes div:last-child { border-right: none; }
 
     /* Grids de layout */
-    .grid-row-1 { display: grid; grid-template-columns: 75% 25%; gap: 5px; margin-bottom: 5px; }
-    .grid-row-2 { display: grid; grid-template-columns: 15% 15% 70%; gap: 5px; margin-bottom: 5px; }
+    .grid-row-1 { display: grid; grid-template-columns: 75% 24%; gap: 5px; margin-bottom: 5px; }
+    .grid-row-2 { display: grid; grid-template-columns: 17.5% 15% 66%; gap: 5px; margin-bottom: 5px; }
     
     .name-fields { display: flex; justify-content: center; padding: 0 30px; margin-top: 15px; }
     .name-fields > div { text-align: center; }
@@ -64,7 +64,7 @@
         border: 1px solid #000;
         text-align: center;
         line-height: 14px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
         vertical-align: middle;
         margin: 0 4px;
@@ -78,7 +78,7 @@
     .sancion-line { border-bottom: 1px solid #000; display: inline-block; text-align: center; }
 
     /* Firmas */
-    .signatures { width: 100%; border-collapse: collapse; margin-bottom: 5px; text-align: center; }
+    .signatures { width: 100%; border-collapse: collapse; margin-bottom: 5px; text-align: center; font-size: 11px; }
     .signatures th, .signatures td { border: 1.5px solid #000; padding: 0; }
     .sig-top { height: 70px; vertical-align: top; padding-top: 5px !important; }
     .sig-bottom { vertical-align: bottom; padding-bottom: 5px !important; }
@@ -88,7 +88,7 @@
     .inner-date td:last-child { border-right: none; }
     
     /* Pie de página */
-    .footer-box { border: 1px solid #000; padding: 2px 5px; font-size: 10px; line-height: 1.2; margin-top: 5px; }
+    .footer-box { border: 1px solid #000; padding: 2px 5px; font-size: 8px; line-height: 1.2; margin-top: 5px; }
 </style>
 </head>
 <body>
@@ -127,14 +127,14 @@
             <div class="font-bold text-center" style="background-color: #e6e6e6; border-bottom: 1px solid #000; padding: 2px;">Nombre del servidor público<br></div>
             <div class="name-fields">
                 <div>
-                    <span class="highlight" style="font-size: 14px;">{{nombre_completo_ordenado}}</span>
-                    <span class="label" style="border-top: 1px dotted #ccc; padding-top: 2px; margin-top: 5px;">Nombre &nbsp;&nbsp;&nbsp;&nbsp; Apellido Paterno &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Apellido Materno</span>
+                    <span class="highlight" style="font-size: 12px; padding: 5px;">{{nombre_completo_ordenado}}</span>
+                    <span class="label" style="border-top: 1px dotted #ccc; padding-top: 2px; margin-top: 5px;">Nombre &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Apellido Paterno &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Apellido Materno</span>
                 </div>
             </div>
         </div>
         <div class="border-box text-center">
-            <div class="font-bold" style="background-color: #e6e6e6; border-bottom: 1px solid #000; padding: 2px;">Clave de servidor<br>público</div>
-            <div style="margin-top: 12px; font-size: 15px;">
+            <div class="font-bold" style="background-color: #e6e6e6; border-bottom: 1px solid #000; padding: 2px; font-size: 11px;">Clave de servidor<br>público</div>
+            <div style="margin-top: 12px; font-size: 11px;">
                 <span class="highlight">{{clave_servidor}}</span>
             </div>
         </div>
@@ -150,9 +150,9 @@
             <div class="font-bold" style="background-color: #e6e6e6; border-bottom: 1px solid #000;">CCT<br></div>
             <div class="highlight" style="height: 18px; padding-top: 2px;">{{cct}}</div>
         </div>
-        <div class="border-box">
+        <div class="border-box"> 
             <span class="font-bold">Horario asignado:</span>
-            <span class="highlight" style="margin-left: 20px;">{{horario}}</span>
+            <span class="highlight" style="margin-left: 18px;">{{horario}}</span>
             <div style="border-bottom: 1px solid #000; margin-top: 5px; margin-right: 5px; height: 5px;"></div>
         </div>
     </div>
@@ -273,7 +273,7 @@
         C.c.p. Coordinador Administrativo o equivalente
     </div>
     
-    <div style="text-align: right; font-size: 11px; margin-top: 3px; font-weight: bold;">
+    <div style="text-align: right; font-size: 10px; margin-top: 8px; font-weight: bold;">
         20301/NP-59/04/A
     </div>
 
