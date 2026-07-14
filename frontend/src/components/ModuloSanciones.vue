@@ -119,21 +119,25 @@ const procesarSancion = async (empleado) => {
       
       const nombreFormateado = `${nombres} ${paterno} ${materno}`.trim();
       const hoy = new Date();
-  const payloadPdf = {
+ const payloadPdf = {
         dia_hoy: String(hoy.getDate()).padStart(2, '0'),
         mes_hoy: String(hoy.getMonth() + 1).padStart(2, '0'),
         anio_hoy: hoy.getFullYear(),
         nombres: nombres,
         apellido_paterno: paterno,
         apellido_materno: materno,
-        nombre_completo_ordenado: nombreFormateado,  // --- NUEVA VARIABLE PARA EL NOMBRE EN UNA SOLA CELDA 
+        nombre_completo_ordenado: nombreFormateado,
         clave_servidor: empleado.numeroEmpleado,
         num_plaza: '----', 
         cct: '----',
         horario: 'de 9:00 a 18:00 hrs.',
         numero_incidencias: empleado.tipoSancion === 'RETARDOS' ? empleado.totalRetardos : empleado.totalFaltas,
-        check_puntualidad: empleado.tipoSancion === 'RETARDOS' ? 'X' : '',
-        check_asistencia: empleado.tipoSancion === 'FALTAS' ? 'X' : '',
+        
+        // --- AQUÍ ESTÁ EL CAMBIO ---
+        check_puntualidad: empleado.tipoSancion === 'RETARDOS' ? empleado.totalRetardos : '',
+        check_asistencia: empleado.tipoSancion === 'FALTAS' ? empleado.totalFaltas : '',
+        // ---------------------------
+        
         mes_incidencia: getNombreMes(mesSeleccionado.value).toLowerCase(),
         sancion_texto: empleado.sancionTexto,
         dias_incidencia_texto: empleado.diasIncidenciaTexto,
@@ -144,7 +148,6 @@ const procesarSancion = async (empleado) => {
         cargo_autoriza: formValues.cargoAutoriza,
         nombre_completo: empleado.nombreCompleto
       };
-
       // Pedimos el PDF al servidor (Puppeteer lo fabrica)
       const resPdf = await fetch(apiUrl('/api/sanciones/generar-pdf'), {
         method: 'POST',
