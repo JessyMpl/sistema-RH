@@ -332,7 +332,7 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
   <div class="min-h-screen bg-gray-100 flex">
     <SidebarRH :vistaActiva="vistaActiva" @cambiar-vista="(nuevaVista) => vistaActiva = nuevaVista" />
 
-    <main class="flex-1 p-8 overflow-y-auto"> 
+    <main class="flex-1 p-8 pt-20 overflow-y-auto">  <!-- Contenido principal ajuste de espacio superior  entre el contendor y el logo en pt-20 -->
       
       <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-inst-primario">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Sistematizar Datos de Asistencia</h1>

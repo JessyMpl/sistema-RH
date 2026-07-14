@@ -23,8 +23,8 @@ const cerrarSesion = () => {
   <aside class="w-64 bg-inst-primario text-white flex flex-col min-h-screen">
     <div class="p-6 text-center border-b border-white/20">
       <img src="/src/assets/colibri_cafe.svg" alt="Logo" class="w-22 h-22 mx-auto mb-4 rounded-full">
-      <h2 class="text-2xl font-bold text-white">Sistema Control de Asistencia</h2>
-      <p class="text-xs text-white mt-1 ">Panel de Administración</p>
+      <h2 class="text-1.7xl font-bold text-white">Control de Asistencia</h2>
+      <p class="text-xs text-white mt-1 ">Sistema Recursos Humanos</p>
     </div>
 
    <nav class="flex-1 p-4 space-y-2">
