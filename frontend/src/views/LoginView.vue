@@ -9,8 +9,8 @@ import photoWomenOffice from '@/assets/photo_women_office.jpg';
 
 const email = ref('');
 const password = ref('');
-// Se eliminó la variable employeeCode que ya no se usa
 const showPassword = ref(false); 
+const loginError = ref(false); // Variable para controlar el estado visual de error
 const router = useRouter();
 
 const togglePasswordVisibility = () => {
@@ -18,6 +18,9 @@ const togglePasswordVisibility = () => {
 };
 
 const intentarLogin = async () => {
+  // Reiniciamos el error visual en cada nuevo intento
+  loginError.value = false;
+
   try {
     const respuesta = await fetch(apiUrl('/api/auth/login'), {
       method: 'POST',
@@ -25,7 +28,6 @@ const intentarLogin = async () => {
       body: JSON.stringify({ 
         email: email.value, 
         password: password.value
-        // Se eliminó el envío de employeeCode
       })
     });
 
@@ -45,6 +47,8 @@ const intentarLogin = async () => {
       });
       
     } else {
+      // Activamos el estado de error para pintar los inputs de rojo
+      loginError.value = true;
       Swal.fire({
         icon: 'error',
         title: 'Error de acceso',
@@ -54,6 +58,8 @@ const intentarLogin = async () => {
     }
   } catch (error) {
     console.error(error);
+    // Activamos el estado de error también en fallos de red
+    loginError.value = true;
     Swal.fire({
       icon: 'error',
       title: 'Problema de red',
@@ -66,20 +72,21 @@ const intentarLogin = async () => {
 
 <template>
   <main class="min-h-screen flex flex-col">
+    <!-- Encabezado con logo centrado -->
     <header class="bg-inst-primario text-white py-4 shadow-md">
-      <!-- Se cambió justify-end por justify-center -->
-      <div class="container mx-auto px-6 flex justify-end items-center">
+      <div class="container mx-auto px-6 flex justify-center items-center">
         <img :src="refinedLogos" alt="Logotipos de Gobierno" class="h-11 w-auto">
       </div>
     </header>
 
     <div class="flex-grow flex flex-col md:flex-row">
+      <!-- Lado Izquierdo: Fotografía y Bienvenida -->
       <div class="w-full md:w-2/3 bg-cover bg-center flex flex-col justify-end p-10 md:p-16 text-white relative" 
            :style="{ backgroundImage: `url(${photoWomenOffice})` }">
         <div class="absolute inset-0 bg-black opacity-30"></div>
         <div class="relative z-10 flex flex-col items-start gap-3">
           <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">BIENVENIDO AL SISTEMA DE ASISTENCIA RH</h1>
-          <p class="text-xl md:text-2xl font-light">Secretaría de las Mujeres</p>
+          <p class="text-xl md:text-2xl font-light">Secretaría de las Mujeres. Estado de México.</p>
           
           <div class="flex items-center gap-3 mt-6 p-4 bg-white/10 rounded-lg">
             <p class="text-sm font-light italic">"Maximizando el impacto de nuestra misión."</p>
@@ -87,6 +94,7 @@ const intentarLogin = async () => {
         </div>
       </div>
 
+      <!-- Lado Derecho: Formulario de Login -->
       <div class="w-full md:w-1/3 bg-white flex flex-col items-center p-8 md:p-12 pt-24 md:pt-32 relative">
         <div class="w-full max-w-sm flex-grow">
           <div class="text-left mb-10">
@@ -95,39 +103,43 @@ const intentarLogin = async () => {
 
           <form @submit.prevent="intentarLogin" class="space-y-6">
             
+            <!-- Input: Usuario -->
             <div class="space-y-1">
               <label class="block text-sm font-semibold text-gray-800">Usuario:</label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                <div :class="['absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors', loginError ? 'text-red-500' : 'text-gray-400']">
                   <i class="fa-solid fa-envelope"></i>
                 </div>
                 <input 
                   v-model="email" 
                   type="email" 
-                  class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  :class="['w-full pl-11 pr-4 py-3 border rounded-md outline-none transition-colors', 
+                           loginError ? 'border-red-500 focus:ring-2 focus:ring-red-200 focus:border-red-500 bg-red-50 text-red-900' : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white']"
                   placeholder="su.correo@semujeres.mx"
                   required
                 >
               </div>
             </div>
 
+            <!-- Input: Contraseña -->
             <div class="space-y-1 relative">
               <label class="block text-sm font-semibold text-gray-800">Contraseña:</label>
               <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                <div :class="['absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors', loginError ? 'text-red-500' : 'text-gray-400']">
                   <i class="fa-solid fa-lock"></i>
                 </div>
                 <input 
                   v-model="password" 
                   :type="showPassword ? 'text' : 'password'" 
-                  class="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  :class="['w-full pl-11 pr-12 py-3 border rounded-md outline-none transition-colors', 
+                           loginError ? 'border-red-500 focus:ring-2 focus:ring-red-200 focus:border-red-500 bg-red-50 text-red-900' : 'border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white']"
                   placeholder="••••••••"
                   required
                 >
                 <button 
                   type="button" 
                   @click="togglePasswordVisibility"
-                  class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                  :class="['absolute inset-y-0 right-0 pr-4 flex items-center focus:outline-none transition-colors', loginError ? 'text-red-400 hover:text-red-600' : 'text-gray-400 hover:text-gray-600']"
                 >
                   <i :class="showPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
                 </button>
@@ -146,7 +158,7 @@ const intentarLogin = async () => {
           </form>
         </div>
 
-        <!-- Se ajustó el espaciado (space-y-2) para separar un poco los textos -->
+        <!-- Pie de página -->
         <footer class="w-full max-w-sm text-center text-sm text-gray-500 mt-10 space-y-2">
           <p class="font-semibold text-gray-600">Soporte Técnico: 722 934 27 00 ext.: 82761</p>
           <p>&copy; 2026 Secretaría de las Mujeres.</p>
