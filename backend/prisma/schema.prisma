@@ -40,7 +40,7 @@ model ServidorPublico {
   nombreCompleto String
   numeroEmpleado String       @unique 
   
-  // 🔥 El cambio: Ahora es una relación, no texto libre
+  // El cambio: Ahora es una relación, no texto libre
   areaId         Int?
   area           AreaAdscripcion? @relation(fields: [areaId], references: [id])
   

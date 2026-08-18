@@ -166,6 +166,7 @@ const abrirModalNuevoDia = async () => {
           <select id="swal-tipo" class="w-full p-2 border border-gray-300 rounded text-sm outline-none focus:border-inst-primario">
             <option value="FERIADO">Día Feriado Oficial</option>
             <option value="VACACIONES">Periodo Vacacional</option>
+            <option value="SIN_CONTRATO">Día sin Contrato (Aplica a TODOS)</option>
           </select>
         </div>
         <div>
@@ -212,7 +213,7 @@ const abrirModalNuevoDia = async () => {
 const eliminarDia = async (dia) => {
   const result = await Swal.fire({
     title: '¿Eliminar Fecha?',
-    text: `Borrarás el ${dia.tipo} del ${dia.fechaFormat}.`,
+    text: `Borrarás el ${dia.tipo.replace('_', ' ')} del ${dia.fechaFormat}.`,
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#902c3e',
@@ -233,7 +234,6 @@ const eliminarDia = async (dia) => {
   }
 };
 
-// 3. LÓGICA PARA USUARIOS 
 // ==========================================
 // 3. LÓGICA PARA USUARIOS DEL SISTEMA
 // ==========================================
@@ -475,8 +475,8 @@ onMounted(() => {
         </template>
 
         <template #item-tipo="item">
-          <span :class="item.tipo === 'FERIADO' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase">
-            {{ item.tipo }}
+          <span :class="item.tipo === 'FERIADO' ? 'bg-blue-100 text-blue-800' : item.tipo === 'VACACIONES' ? 'bg-green-100 text-green-800' : 'bg-gray-600 text-white'" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm">
+            {{ item.tipo.replace('_', ' ') }}
           </span>
         </template>
         
@@ -488,8 +488,7 @@ onMounted(() => {
       </EasyDataTable>
     </div>
 
-    <!-- CONTENIDO: USUARIOS (Próximamente) -->
-   <!-- CONTENIDO: USUARIOS -->
+    <!-- CONTENIDO: USUARIOS -->
     <div v-if="tabActiva === 'usuarios'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 space-y-4">
       <div class="flex flex-col md:flex-row justify-between items-center gap-4">
         <div class="w-full max-w-md relative">

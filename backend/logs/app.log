@@ -4203,3 +4203,5 @@
 2026-08-18 16:44:53: Servidor corriendo sin problemas en el puerto 5176
 2026-08-18 17:00:43: ◇ injected env (3) from .env // tip: ⌘ override existing { override: true }
 2026-08-18 17:00:43: Servidor corriendo sin problemas en el puerto 5176
+2026-08-18 17:15:26: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+2026-08-18 17:15:34: Servidor corriendo sin problemas en el puerto 5176
