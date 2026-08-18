@@ -64,6 +64,9 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
     const esSegundaQuincena = conteoSegunda > conteoPrimera;
 
+    // 🔥 TRUCO: Guardamos la memoria histórica intacta antes de borrar días
+    const registrosHistoricos = { ...registrosPorDia }; 
+
     for (const llave in registrosPorDia) {
       const dia = parseInt(registrosPorDia[llave].fecha.split('-')[2], 10);
       
@@ -122,8 +125,16 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       } 
       else if (regimenDB === 'ESPECIAL') {
         estatus = "OK_ESPECIAL";
-        if (registrosPorDia[llaveAyer]) { entradaFinal = null; salidaFinal = ultimaChecada || primeraChecada; } 
-        else { entradaFinal = primeraChecada; salidaFinal = null; calcularRetardo = true; }
+        // 🔥 Usamos registrosHistoricos para que recuerde los días cortados de la quincena
+        if (registrosHistoricos[llaveAyer]) { 
+            entradaFinal = null; 
+            salidaFinal = ultimaChecada || primeraChecada; 
+        } 
+        else { 
+            entradaFinal = primeraChecada; 
+            salidaFinal = null; 
+            calcularRetardo = true; 
+        }
       } 
       else if (regimenDB === 'LISTA') { estatus = "LA"; entradaFinal = null; salidaFinal = null; }
       else if (regimenDB === 'EXENTO' || regimenDB === 'EXCENTO') { estatus = "EXENTO"; entradaFinal = null; salidaFinal = null; }
@@ -366,6 +377,9 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 
     const esSegundaQuincena = conteoSegunda > conteoPrimera;
 
+    // 🔥 TRUCO: Guardamos la memoria histórica intacta antes de borrar días
+    const registrosHistoricos = { ...registrosPorDia };
+
     for (const llave in registrosPorDia) {
       const dia = parseInt(registrosPorDia[llave].fecha.split('-')[2], 10);
       if (esSegundaQuincena && dia <= 15) delete registrosPorDia[llave];
@@ -417,8 +431,16 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       } 
       else if (regimenDB === 'ESPECIAL') {
         estatus = "OK_ESPECIAL";
-        if (registrosPorDia[llaveAyer]) { entradaFinal = null; salidaFinal = ultimaChecada || primeraChecada; } 
-        else { entradaFinal = primeraChecada; salidaFinal = null; calcularRetardo = true; }
+        // 🔥 Usamos registrosHistoricos para que recuerde los días cortados de la quincena
+        if (registrosHistoricos[llaveAyer]) { 
+            entradaFinal = null; 
+            salidaFinal = ultimaChecada || primeraChecada; 
+        } 
+        else { 
+            entradaFinal = primeraChecada; 
+            salidaFinal = null; 
+            calcularRetardo = true; 
+        }
       } 
       else if (regimenDB === 'LISTA') { estatus = "LA"; entradaFinal = null; salidaFinal = null; }
       else if (regimenDB === 'EXENTO' || regimenDB === 'EXCENTO') { estatus = "EXENTO"; entradaFinal = null; salidaFinal = null; }
@@ -882,12 +904,14 @@ router.get('/descargar-reporte', async (req, res) => {
 
         if (tieneRetardo) {
           celdaEntrada.font = { color: { argb: 'FFCC0000' }, bold: true };
-        } else if (esFalta) {
-          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD32F2F' } };
-          celdaEntrada.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+   } else if (esFalta) {
+          // Fondo gris claro con el texto 'SR' en gris oscuro
+          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+          celdaEntrada.font = { color: { argb: 'FF4F4F4F' }, bold: true };
           
-          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD32F2F' } };
-          celdaSalida.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+          celdaSalida.font = { color: { argb: 'FF4F4F4F' }, bold: true };
+        
         } else if (esFeriado) { 
           celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5A5A5A' } };
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5A5A5A' } };
