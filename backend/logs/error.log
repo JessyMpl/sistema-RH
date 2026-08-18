@@ -79,3 +79,111 @@
 2026-08-18 13:53:41: 
 2026-08-18 13:53:41: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 2026-08-18 13:53:41: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 14:07:22: (node:281984) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 14:07:22: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 14:07:22: 
+2026-08-18 14:07:22: To prepare for this change:
+2026-08-18 14:07:22: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 14:07:22: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 14:07:22: 
+2026-08-18 14:07:22: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 14:07:22: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 14:08:36: (node:282043) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 14:08:36: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 14:08:36: 
+2026-08-18 14:08:36: To prepare for this change:
+2026-08-18 14:08:36: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 14:08:36: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 14:08:36: 
+2026-08-18 14:08:36: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 14:08:36: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 14:12:54: (node:282290) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 14:12:54: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 14:12:54: 
+2026-08-18 14:12:54: To prepare for this change:
+2026-08-18 14:12:54: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 14:12:54: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 14:12:54: 
+2026-08-18 14:12:54: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 14:12:54: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 14:14:09: (node:282349) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 14:14:09: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 14:14:09: 
+2026-08-18 14:14:09: To prepare for this change:
+2026-08-18 14:14:09: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 14:14:09: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 14:14:09: 
+2026-08-18 14:14:09: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 14:14:09: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 14:17:03: (node:282530) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 14:17:03: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 14:17:03: 
+2026-08-18 14:17:03: To prepare for this change:
+2026-08-18 14:17:03: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 14:17:03: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 14:17:03: 
+2026-08-18 14:17:03: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 14:17:03: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 14:29:14: (node:283047) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 14:29:14: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 14:29:14: 
+2026-08-18 14:29:14: To prepare for this change:
+2026-08-18 14:29:14: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 14:29:14: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 14:29:14: 
+2026-08-18 14:29:14: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 14:29:14: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 14:31:10: (node:283232) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 14:31:10: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 14:31:10: 
+2026-08-18 14:31:10: To prepare for this change:
+2026-08-18 14:31:10: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 14:31:10: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 14:31:10: 
+2026-08-18 14:31:10: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 14:31:10: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 14:34:40: (node:283619) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 14:34:40: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 14:34:40: 
+2026-08-18 14:34:40: To prepare for this change:
+2026-08-18 14:34:40: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 14:34:40: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 14:34:40: 
+2026-08-18 14:34:40: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 14:34:40: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 16:39:17: (node:1241) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 16:39:17: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 16:39:17: 
+2026-08-18 16:39:17: To prepare for this change:
+2026-08-18 16:39:17: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 16:39:17: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 16:39:17: 
+2026-08-18 16:39:17: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 16:39:17: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 16:40:26: (node:4266) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 16:40:26: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 16:40:26: 
+2026-08-18 16:40:26: To prepare for this change:
+2026-08-18 16:40:26: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 16:40:26: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 16:40:26: 
+2026-08-18 16:40:26: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 16:40:26: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 16:45:09: (node:5709) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 16:45:09: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 16:45:09: 
+2026-08-18 16:45:09: To prepare for this change:
+2026-08-18 16:45:09: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 16:45:09: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 16:45:09: 
+2026-08-18 16:45:09: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 16:45:09: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-08-18 17:01:21: (node:13904) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-08-18 17:01:21: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-08-18 17:01:21: 
+2026-08-18 17:01:21: To prepare for this change:
+2026-08-18 17:01:21: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-08-18 17:01:21: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-08-18 17:01:21: 
+2026-08-18 17:01:21: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-08-18 17:01:21: (Use `node --trace-warnings ...` to show where the warning was created)

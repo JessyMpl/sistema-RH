@@ -63,19 +63,33 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
     }
 
     const esSegundaQuincena = conteoSegunda > conteoPrimera;
-
-    // 🔥 TRUCO: Guardamos la memoria histórica intacta antes de borrar días
     const registrosHistoricos = { ...registrosPorDia }; 
 
     for (const llave in registrosPorDia) {
       const dia = parseInt(registrosPorDia[llave].fecha.split('-')[2], 10);
-      
-      if (esSegundaQuincena && dia <= 15) {
-        delete registrosPorDia[llave];
-      } 
-      else if (!esSegundaQuincena && dia > 15) {
-        delete registrosPorDia[llave];
-      }
+      if (esSegundaQuincena && dia <= 15) delete registrosPorDia[llave];
+      else if (!esSegundaQuincena && dia > 15) delete registrosPorDia[llave];
+    }
+
+    // 🔥 NUEVO: Extraer Feriados ANTES de evaluar las horas
+    const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
+    let setFeriados = new Set();
+    let fechaMin, fechaMax;
+    
+    if (fechasUnicas.length > 0) {
+      const fechasObj = fechasUnicas.map(f => new Date(`${f}T12:00:00Z`));
+      fechaMin = new Date(Math.min(...fechasObj));
+      fechaMax = new Date(Math.max(...fechasObj));
+
+      const diasInhabiles = await prisma.diaInhabil.findMany({
+        where: {
+          fecha: { 
+            gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), 
+            lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) 
+          }
+        }
+      });
+      setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
     }
 
     const resultadosProcesados = []; 
@@ -90,9 +104,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       let ultimaChecada = horasUnicas.length > 1 ? horasUnicas[horasUnicas.length - 1] : null;
 
       if (!empleado) {
-        resultadosProcesados.push({ 
-          numEmp, nombre: "No registrado en BD", fecha, entrada: primeraChecada, salida: ultimaChecada, estatus: "NO ENCONTRADO", minutosRetardo: 0
-        });
+        resultadosProcesados.push({ numEmp, nombre: "No registrado en BD", fecha, entrada: primeraChecada, salida: ultimaChecada, estatus: "NO ENCONTRADO", minutosRetardo: 0 });
         continue; 
       }
 
@@ -109,8 +121,15 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
       let calcularRetardo = false;
       const regimenDB = String(empleado.regimen || '').toUpperCase().trim();
+      const esDiaFeriado = setFeriados.has(fecha);
 
-      if (regimenDB === 'NORMAL') {
+      // 🔥 REGLA DE ORO: Si es feriado y NO es especial, se anula la checada
+      if (esDiaFeriado && regimenDB !== 'ESPECIAL') {
+        estatus = "FERIADO";
+        entradaFinal = null;
+        salidaFinal = null;
+      } 
+      else if (regimenDB === 'NORMAL') {
         const horaPrimera = parseInt(primeraChecada.split(':')[0], 10);
         if (horasUnicas.length === 1) {
           if (horaPrimera >= 14) { entradaFinal = null; salidaFinal = primeraChecada; estatus = "OMISION_E"; } 
@@ -125,16 +144,8 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       } 
       else if (regimenDB === 'ESPECIAL') {
         estatus = "OK_ESPECIAL";
-        // 🔥 Usamos registrosHistoricos para que recuerde los días cortados de la quincena
-        if (registrosHistoricos[llaveAyer]) { 
-            entradaFinal = null; 
-            salidaFinal = ultimaChecada || primeraChecada; 
-        } 
-        else { 
-            entradaFinal = primeraChecada; 
-            salidaFinal = null; 
-            calcularRetardo = true; 
-        }
+        if (registrosHistoricos[llaveAyer]) { entradaFinal = null; salidaFinal = ultimaChecada || primeraChecada; } 
+        else { entradaFinal = primeraChecada; salidaFinal = null; calcularRetardo = true; }
       } 
       else if (regimenDB === 'LISTA') { estatus = "LA"; entradaFinal = null; salidaFinal = null; }
       else if (regimenDB === 'EXENTO' || regimenDB === 'EXCENTO') { estatus = "EXENTO"; entradaFinal = null; salidaFinal = null; }
@@ -159,7 +170,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       }
 
       const fechaParaPrisma = new Date(`${fecha}T00:00:00Z`);
-
       datosAProcesar.push({ servidorId: empleado.id, fechaParaPrisma, entradaFinal, salidaFinal, minutosRetardo, estatus });
 
       resultadosProcesados.push({ 
@@ -167,52 +177,27 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         nombre: empleado.nombreCompleto, 
         departamento: empleado.area ? empleado.area.nombre : 'Sin Área', 
         fecha, 
-        entrada: entradaFinal, 
-        salida: salidaFinal, 
+        entrada: esDiaFeriado && regimenDB !== 'ESPECIAL' ? '---' : entradaFinal, 
+        salida: esDiaFeriado && regimenDB !== 'ESPECIAL' ? '---' : salidaFinal, 
         estatus, 
         minutosRetardo
       });
     }
-
-    const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
     
     if (fechasUnicas.length > 0) {
-      const fechasObj = fechasUnicas.map(f => new Date(`${f}T12:00:00Z`));
-      const fechaMin = new Date(Math.min(...fechasObj));
-      const fechaMax = new Date(Math.max(...fechasObj));
-
       const empleadosActivos = empleados.filter(emp => {
-        if (emp.fechaBaja) {
-          return new Date(emp.fechaBaja) >= fechaMin; 
-        }
+        if (emp.fechaBaja) return new Date(emp.fechaBaja) >= fechaMin; 
         return true;
       });
 
-      const diasInhabiles = await prisma.diaInhabil.findMany({
-        where: {
-          fecha: { 
-            gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), 
-            lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) 
-          }
-        }
-      });
-      const setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
-
       const empleadosLista = empleadosActivos.filter(e => String(e.regimen || '').toUpperCase().trim() === 'LISTA');
-      const empleadosExento = empleadosActivos.filter(e => {
-        const reg = String(e.regimen || '').toUpperCase().trim();
-        return reg === 'EXENTO' || reg === 'EXCENTO';
-      });
-      const empleadosChecadores = empleadosActivos.filter(e => {
-        const reg = String(e.regimen || '').toUpperCase().trim();
-        return reg !== 'LISTA' && reg !== 'EXENTO' && reg !== 'EXCENTO';
-      });
+      const empleadosExento = empleadosActivos.filter(e => { const reg = String(e.regimen || '').toUpperCase().trim(); return reg === 'EXENTO' || reg === 'EXCENTO'; });
+      const empleadosChecadores = empleadosActivos.filter(e => { const reg = String(e.regimen || '').toUpperCase().trim(); return reg !== 'LISTA' && reg !== 'EXENTO' && reg !== 'EXCENTO'; });
 
       for (let d = new Date(fechaMin); d <= fechaMax; d.setDate(d.getDate() + 1)) {
         const diaSemana = d.getDay(); 
         const fechaStr = d.toISOString().split('T')[0];
         const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
-        
         const esDiaInhabil = setFeriados.has(fechaStr);
 
         if (diaSemana !== 0 && diaSemana !== 6) { 
@@ -220,7 +205,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
             if (!registrosPorDia[llaveBusqueda]) {
               const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
-              const estatusReal = esBajaHoy ? 'BAJA' : 'LA';
+              const estatusReal = esBajaHoy ? 'BAJA' : (esDiaInhabil ? 'FERIADO' : 'LA'); // Aplica a lista
               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
             }
@@ -229,7 +214,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
             if (!registrosPorDia[llaveBusqueda]) {
               const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
-              const estatusReal = esBajaHoy ? 'BAJA' : 'EXENTO';
+              const estatusReal = esBajaHoy ? 'BAJA' : (esDiaInhabil ? 'FERIADO' : 'EXENTO'); // Aplica a exentos
               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
             }
@@ -254,11 +239,8 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
             if (regimenC === 'NORMAL') {
               if (diaSemana !== 0 && diaSemana !== 6) {
-                if (esDiaInhabil) {
-                  esFeriadoAdministrativo = true;
-                } else {
-                  generarFalta = true;
-                }
+                if (esDiaInhabil) esFeriadoAdministrativo = true;
+                else generarFalta = true;
               }
             } 
             else if (regimenC === 'ESPECIAL') {
@@ -277,11 +259,8 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
               const tuvoChecadaAyer = !!registrosPorDia[llaveAyer];
               const tendraChecadaManana = !!registrosPorDia[llaveManana];
 
-              if (tuvoChecadaAyer || tendraChecadaManana) {
-                generarFalta = false;
-              } else {
-                generarFalta = true;
-              }
+              if (tuvoChecadaAyer || tendraChecadaManana) generarFalta = false;
+              else generarFalta = true;
             }
 
             if (generarFalta) {
@@ -304,13 +283,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       existenDatosPrevios = conteoExistentes > 0;
     }
 
-    res.json({
-      mensaje: 'Datos analizados listos para revisión!',
-      diasProcesados: fechasUnicas.length,
-      datosVisuales: resultadosProcesados,
-      datosParaGuardar: datosAProcesar,
-      existenDatosPrevios 
-    });
+    res.json({ mensaje: 'Datos analizados listos para revisión!', diasProcesados: fechasUnicas.length, datosVisuales: resultadosProcesados, datosParaGuardar: datosAProcesar, existenDatosPrevios });
 
   } catch (error) {
     console.error("Error previsualizando biométrico:", error);
@@ -325,9 +298,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
   try {
     const { inicio, fin } = req.body;
 
-    if (!inicio || !fin) {
-      return res.status(400).json({ error: 'Faltan las fechas de inicio y fin para el periodo.' });
-    }
+    if (!inicio || !fin) return res.status(400).json({ error: 'Faltan las fechas de inicio y fin para el periodo.' });
 
     const minDateStrSpace = `${inicio} 00:00:00`;
     const maxDateStrSpace = `${fin} 23:59:59`;
@@ -335,18 +306,11 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
     const maxDateStrT = `${fin}T23:59:59`;
 
     const rawData = await prisma.attendanceRecord.findMany({
-      where: {
-        OR: [
-          { timestamp: { gte: minDateStrSpace, lte: maxDateStrSpace } },
-          { timestamp: { gte: minDateStrT, lte: maxDateStrT } }
-        ]
-      },
+      where: { OR: [{ timestamp: { gte: minDateStrSpace, lte: maxDateStrSpace } }, { timestamp: { gte: minDateStrT, lte: maxDateStrT } }] },
       orderBy: { timestamp: 'asc' }
     });
 
-    if (rawData.length === 0) {
-      return res.status(404).json({ error: 'No se encontraron checadas en el biométrico para este periodo.' });
-    }
+    if (rawData.length === 0) return res.status(404).json({ error: 'No se encontraron checadas en el biométrico para este periodo.' });
 
     const registrosPorDia = {};
     rawData.forEach(record => {
@@ -376,14 +340,33 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
     }
 
     const esSegundaQuincena = conteoSegunda > conteoPrimera;
-
-    // 🔥 TRUCO: Guardamos la memoria histórica intacta antes de borrar días
     const registrosHistoricos = { ...registrosPorDia };
 
     for (const llave in registrosPorDia) {
       const dia = parseInt(registrosPorDia[llave].fecha.split('-')[2], 10);
       if (esSegundaQuincena && dia <= 15) delete registrosPorDia[llave];
       else if (!esSegundaQuincena && dia > 15) delete registrosPorDia[llave];
+    }
+
+    // 🔥 NUEVO: Extraer Feriados ANTES de evaluar las horas
+    const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
+    let setFeriados = new Set();
+    let fechaMin, fechaMax;
+
+    if (fechasUnicas.length > 0) {
+      const fechasObj = fechasUnicas.map(f => new Date(`${f}T12:00:00Z`));
+      fechaMin = new Date(Math.min(...fechasObj));
+      fechaMax = new Date(Math.max(...fechasObj));
+
+      const diasInhabiles = await prisma.diaInhabil.findMany({
+        where: {
+          fecha: { 
+            gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), 
+            lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) 
+          }
+        }
+      });
+      setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
     }
 
     const resultadosProcesados = []; 
@@ -415,8 +398,14 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 
       let calcularRetardo = false;
       const regimenDB = String(empleado.regimen || '').toUpperCase().trim();
+      const esDiaFeriado = setFeriados.has(fecha);
 
-      if (regimenDB === 'NORMAL') {
+      if (esDiaFeriado && regimenDB !== 'ESPECIAL') {
+        estatus = "FERIADO";
+        entradaFinal = null;
+        salidaFinal = null;
+      } 
+      else if (regimenDB === 'NORMAL') {
         const horaPrimera = parseInt(primeraChecada.split(':')[0], 10);
         if (horasUnicas.length === 1) {
           if (horaPrimera >= 14) { entradaFinal = null; salidaFinal = primeraChecada; estatus = "OMISION_E"; } 
@@ -431,16 +420,8 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       } 
       else if (regimenDB === 'ESPECIAL') {
         estatus = "OK_ESPECIAL";
-        // 🔥 Usamos registrosHistoricos para que recuerde los días cortados de la quincena
-        if (registrosHistoricos[llaveAyer]) { 
-            entradaFinal = null; 
-            salidaFinal = ultimaChecada || primeraChecada; 
-        } 
-        else { 
-            entradaFinal = primeraChecada; 
-            salidaFinal = null; 
-            calcularRetardo = true; 
-        }
+        if (registrosHistoricos[llaveAyer]) { entradaFinal = null; salidaFinal = ultimaChecada || primeraChecada; } 
+        else { entradaFinal = primeraChecada; salidaFinal = null; calcularRetardo = true; }
       } 
       else if (regimenDB === 'LISTA') { estatus = "LA"; entradaFinal = null; salidaFinal = null; }
       else if (regimenDB === 'EXENTO' || regimenDB === 'EXCENTO') { estatus = "EXENTO"; entradaFinal = null; salidaFinal = null; }
@@ -472,36 +453,18 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         nombre: empleado.nombreCompleto, 
         departamento: empleado.area ? empleado.area.nombre : 'Sin Área', 
         fecha, 
-        entrada: entradaFinal, 
-        salida: salidaFinal, 
+        entrada: esDiaFeriado && regimenDB !== 'ESPECIAL' ? '---' : entradaFinal, 
+        salida: esDiaFeriado && regimenDB !== 'ESPECIAL' ? '---' : salidaFinal, 
         estatus, 
         minutosRetardo: minutesRetardo 
       });
     }
 
-    const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
-    
     if (fechasUnicas.length > 0) {
-      const fechasObj = fechasUnicas.map(f => new Date(`${f}T12:00:00Z`));
-      const fechaMin = new Date(Math.min(...fechasObj));
-      const fechaMax = new Date(Math.max(...fechasObj));
-
       const empleadosActivos = empleados.filter(emp => {
-        if (emp.fechaBaja) {
-          return new Date(emp.fechaBaja) >= fechaMin; 
-        }
+        if (emp.fechaBaja) return new Date(emp.fechaBaja) >= fechaMin; 
         return true;
       });
-
-      const diasInhabiles = await prisma.diaInhabil.findMany({
-        where: {
-          fecha: { 
-            gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), 
-            lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) 
-          }
-        }
-      });
-      const setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
 
       const empleadosLista = empleadosActivos.filter(e => String(e.regimen || '').toUpperCase().trim() === 'LISTA');
       const empleadosExento = empleadosActivos.filter(e => { const reg = String(e.regimen || '').toUpperCase().trim(); return reg === 'EXENTO' || reg === 'EXCENTO'; });
@@ -511,7 +474,6 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         const diaSemana = d.getDay(); 
         const fechaStr = d.toISOString().split('T')[0];
         const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
-
         const esDiaInhabil = setFeriados.has(fechaStr);
 
         if (diaSemana !== 0 && diaSemana !== 6) { 
@@ -519,7 +481,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
             const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
             if (!registrosPorDia[llaveBusqueda]) {
               const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
-              const estatusReal = esBajaHoy ? 'BAJA' : 'LA';
+              const estatusReal = esBajaHoy ? 'BAJA' : (esDiaInhabil ? 'FERIADO' : 'LA');
               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
             }
@@ -528,7 +490,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
             const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
             if (!registrosPorDia[llaveBusqueda]) {
               const esBajaHoy = emp.fechaBaja && fechaParaPrisma > new Date(emp.fechaBaja);
-              const estatusReal = esBajaHoy ? 'BAJA' : 'EXENTO';
+              const estatusReal = esBajaHoy ? 'BAJA' : (esDiaInhabil ? 'FERIADO' : 'EXENTO');
               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
             }
@@ -553,11 +515,8 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 
             if (regimenC === 'NORMAL') {
               if (diaSemana !== 0 && diaSemana !== 6) {
-                if (esDiaInhabil) {
-                  esFeriadoAdministrativo = true;
-                } else {
-                  generarFalta = true;
-                }
+                if (esDiaInhabil) esFeriadoAdministrativo = true;
+                else generarFalta = true;
               }
             } 
             else if (regimenC === 'ESPECIAL') {
@@ -576,11 +535,8 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
               const tuvoChecadaAyer = !!registrosPorDia[llaveAyer];
               const tendraChecadaManana = !!registrosPorDia[llaveManana];
 
-              if (tuvoChecadaAyer || tendraChecadaManana) {
-                generarFalta = false;
-              } else {
-                generarFalta = true;
-              }
+              if (tuvoChecadaAyer || tendraChecadaManana) generarFalta = false;
+              else generarFalta = true;
             }
 
             if (generarFalta) {
@@ -603,13 +559,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       existenDatosPrevios = conteoExistentes > 0;
     }
 
-    res.json({
-      mensaje: 'Datos procesados desde la Base de Datos!',
-      diasProcesados: fechasUnicas.length,
-      datosVisuales: resultadosProcesados,
-      datosParaGuardar: datosAProcesar,
-      existenDatosPrevios
-    });
+    res.json({ mensaje: 'Datos procesados desde la Base de Datos!', diasProcesados: fechasUnicas.length, datosVisuales: resultadosProcesados, datosParaGuardar: datosAProcesar, existenDatosPrevios });
 
   } catch (error) {
     console.error("Error previsualizando desde BD:", error);
@@ -777,6 +727,12 @@ router.get('/descargar-reporte', async (req, res) => {
       return res.status(404).json({ error: 'No hay datos para exportar en este rango de fechas.' });
     }
 
+    // 🔥 1. EXTRAEMOS LOS DÍAS INHÁBILES DIRECTO DEL CALENDARIO
+    const diasInhabiles = await prisma.diaInhabil.findMany({
+      where: { fecha: { gte: fechaInicio, lte: fechaFin } }
+    });
+    const setFeriados = new Set(diasInhabiles.map(d => d.fecha.toISOString().split('T')[0]));
+
     const fechasUnicas = [...new Set(asistencias.map(a => a.fecha.toISOString().split('T')[0]))].sort();
     const primeraFecha = new Date(`${fechasUnicas[0]}T12:00:00Z`);
     const dia = primeraFecha.getDate();
@@ -856,7 +812,16 @@ router.get('/descargar-reporte', async (req, res) => {
         let esFalta = false; 
         let esFeriado = false; 
 
-        if (reg) {
+        const esDiaFeriado = setFeriados.has(fecha);
+        const regimenActual = String(emp.regimen || '').toUpperCase().trim();
+
+        // 🔥 2. REGLA SUPREMA: Si el calendario dice que es feriado y NO es especial, forzamos el gris.
+        if (esDiaFeriado && regimenActual !== 'ESPECIAL') {
+          esFeriado = true;
+          entradaTexto = '';
+          salidaTexto = '';
+        } 
+        else if (reg) {
           if (reg.incidencia === 'LA') {
             entradaTexto = 'LA';
             salidaTexto = 'LA';
@@ -902,19 +867,12 @@ router.get('/descargar-reporte', async (req, res) => {
         celdaEntrada.alignment = { horizontal: 'center' };
         celdaSalida.alignment = { horizontal: 'center' };
 
+        // 🔥 ESTILOS LIMPIOS: Faltas en texto normal (SR) y Feriados en Gris BCBCBC
         if (tieneRetardo) {
           celdaEntrada.font = { color: { argb: 'FFCC0000' }, bold: true };
-   } else if (esFalta) {
-          // Fondo gris claro con el texto 'SR' en gris oscuro
-          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
-          celdaEntrada.font = { color: { argb: 'FF4F4F4F' }, bold: true };
-          
-          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
-          celdaSalida.font = { color: { argb: 'FF4F4F4F' }, bold: true };
-        
         } else if (esFeriado) { 
-          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5A5A5A' } };
-          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF5A5A5A' } };
+          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBCBCBC' } };
+          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBCBCBC' } };
         }
 
         colIdx += 2; 
