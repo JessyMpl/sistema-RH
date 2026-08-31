@@ -4215,3 +4215,7 @@
 2026-08-31 09:52:01: Servidor corriendo sin problemas en el puerto 5176
 2026-08-31 10:31:59: ◇ injected env (3) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
 2026-08-31 10:31:59: Servidor corriendo sin problemas en el puerto 5176
+2026-08-31 10:51:56: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+2026-08-31 10:51:58: Servidor corriendo sin problemas en el puerto 5176
+2026-08-31 11:02:37: ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-08-31 11:02:38: Servidor corriendo sin problemas en el puerto 5176
