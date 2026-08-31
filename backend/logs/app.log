@@ -4261,3 +4261,7 @@
 2026-08-31 16:39:00: Servidor corriendo sin problemas en el puerto 5176
 2026-08-31 16:53:56: ◇ injected env (3) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
 2026-08-31 16:53:57: Servidor corriendo sin problemas en el puerto 5176
+2026-08-31 17:07:22: ◇ injected env (3) from .env // tip: ⌘ enable debugging { debug: true }
+2026-08-31 17:07:23: Servidor corriendo sin problemas en el puerto 5176
+2026-08-31 17:10:49: ◇ injected env (3) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-08-31 17:10:50: Servidor corriendo sin problemas en el puerto 5176

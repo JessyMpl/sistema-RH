@@ -996,6 +996,13 @@ router.get('/descargar-reporte', async (req, res) => {
           celdaEntrada.font = { color: { argb: 'FF33539E' }, bold: true, size: 7 };
           celdaSalida.font = { color: { argb: 'FF33539E' }, bold: true, size: 7 };
         }
+     // AGREGAR ESTO PARA LAS CELDAS CON "---":
+        if (entradaTexto === '---') {
+          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCF9E8' } };
+        }
+        if (salidaTexto === '---') {
+          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCF9E8' } };
+        }
 
         colIdx += 2; 
       });

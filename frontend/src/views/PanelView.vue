@@ -531,16 +531,32 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                           <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs  text-gray-600  bg-gray-50 tabular-nums">SR</td>
                           <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs  text-gray-600  bg-gray-50 tabular-nums">SR</td>
                         </template>
-                        <template v-else>
-                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-red-600 font-bold bg-red-50': String(emp.asistencias[fecha].estatus || '').includes('RETARDO'), 'text-gray-600': String(emp.asistencias[fecha].estatus || '') === 'OMISION_E', 'text-gray-700': !String(emp.asistencias[fecha].estatus || '').includes('RETARDO') && String(emp.asistencias[fecha].estatus || '') !== 'OMISION_E'}">
+                       <template v-else>
+                          <!-- Entrada -->
+                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" 
+                              :class="{
+                                'text-red-600 font-bold bg-red-50': String(emp.asistencias[fecha].estatus || '').includes('RETARDO'), 
+                                'text-gray-600': String(emp.asistencias[fecha].estatus || '') === 'OMISION_E', 
+                                'text-gray-700': !String(emp.asistencias[fecha].estatus || '').includes('RETARDO') && String(emp.asistencias[fecha].estatus || '') !== 'OMISION_E' && (emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR')) !== '---',
+                                'bg-[#FCF9E8] text-gray-500': (emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR')) === '---'
+                              }">
                             {{ emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
                           </td>
-                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-gray-600  ': String(emp.asistencias[fecha].estatus || '') === 'OMISION_S' || String(emp.asistencias[fecha].estatus || '') === 'RETARDO_Y_OMISION', 'text-gray-500 bg-gray-50/30': String(emp.asistencias[fecha].estatus || '') !== 'OMISION_S' && String(emp.asistencias[fecha].estatus || '') !== 'RETARDO_Y_OMISION'}">
+                          <!-- Salida -->
+                          <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" 
+                              :class="{
+                                'text-gray-600': String(emp.asistencias[fecha].estatus || '') === 'OMISION_S' || String(emp.asistencias[fecha].estatus || '') === 'RETARDO_Y_OMISION', 
+                                'text-gray-500 bg-gray-50/30': String(emp.asistencias[fecha].estatus || '') !== 'OMISION_S' && String(emp.asistencias[fecha].estatus || '') !== 'RETARDO_Y_OMISION' && (emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR')) !== '---', 
+                                'bg-[#FCF9E8] text-gray-500': (emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR')) === '---'
+                              }">
                             {{ emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
                           </td>
                         </template>
                       </template>
-                      <td colspan="2" v-else class="py-2 text-center border border-gray-200 align-middle bg-gray-50"><span class="text-gray-300 font-bold">-</span></td>
+                      <!-- Cuando no hay ningún registro en la base de datos para ese día -->
+                      <td colspan="2" v-else class="py-2 text-center border border-gray-200 align-middle bg-[#FCF9E8]">
+                        <span class="text-gray-500">---</span>
+                      </td>
                     </template>
                     <td class="py-2 text-center border border-gray-300 bg-orange-50 font-bold text-orange-700 text-sm tabular-nums">{{ emp.totalPuntualidad > 0 ? emp.totalPuntualidad : '-' }}</td>
                     <td class="py-2 text-center border border-gray-300 bg-red-50 font-bold text-red-700 text-sm tabular-nums">{{ emp.totalAsistencia > 0 ? emp.totalAsistencia : '-' }}</td>
