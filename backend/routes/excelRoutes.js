@@ -922,6 +922,8 @@ router.get('/descargar-reporte', async (req, res) => {
         let tieneRetardo = false;
         let esFalta = false; 
         let esFeriado = false; 
+        let esLA = false; // Nueva variable
+        let esEX = false; // Nueva variable
 
         const tipoInhabil = mapDiasInhabiles.get(fecha);
         const esSinContrato = tipoInhabil === 'SIN_CONTRATO';
@@ -933,14 +935,16 @@ router.get('/descargar-reporte', async (req, res) => {
           entradaTexto = '';
           salidaTexto = '';
         } 
-        else if (reg) {
+        if (reg) {
           if (reg.incidencia === 'LA') {
             entradaTexto = 'LA';
             salidaTexto = 'LA';
+            esLA = true;
           } else if (reg.incidencia === 'EXENTO' || reg.incidencia === 'EXCENTO') {
-            entradaTexto = 'EXENTO';
-            salidaTexto = 'EXENTO';
-          } else if (reg.incidencia === 'FERIADO' || reg.incidencia === 'SIN_CONTRATO') { 
+            entradaTexto = 'EX';
+            salidaTexto = 'EX';
+            esEX = true;
+          } else if (reg.incidencia === 'FERIADO' || reg.incidencia === 'SIN_CONTRATO') {
             entradaTexto = '';
             salidaTexto = '';
             esFeriado = true;
@@ -980,10 +984,17 @@ router.get('/descargar-reporte', async (req, res) => {
         celdaSalida.alignment = { horizontal: 'center' };
 
         if (tieneRetardo) {
-          celdaEntrada.font = { color: { argb: 'FFCC0000' }, bold: true };
-        } else if (esFeriado) { 
+          celdaEntrada.font = { color: { argb: 'FFCC0000' }, bold: true, size: 8 };
+        } else if (esFeriado) {
           celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBCBCBC' } };
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBCBCBC' } };
+        }
+        // AGREGAR ESTO PARA LA y EXENTO:
+        if (esLA || esEX) {
+          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD3DCF5' } };
+          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD3DCF5' } };
+          celdaEntrada.font = { color: { argb: 'FF33539E' }, bold: true, size: 7 };
+          celdaSalida.font = { color: { argb: 'FF33539E' }, bold: true, size: 7 };
         }
 
         colIdx += 2; 
