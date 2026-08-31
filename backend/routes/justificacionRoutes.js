@@ -26,7 +26,7 @@ router.get('/pendientes', async (req, res) => {
             id: true,
             numeroEmpleado: true,
             nombreCompleto: true,
-            area: { select: { nombre: true } }, // 💡 El arreglo: traemos el nombre desde el catálogo
+            area: { select: { nombre: true } }, 
             regimen: true
           }
         }
@@ -36,7 +36,6 @@ router.get('/pendientes', async (req, res) => {
       }
     });
 
-    // 💡 EL DISFRAZ: Mapeamos el nombre del área de vuelta a la propiedad 'departamento'
     const respuesta = pendientes.map(p => ({
       ...p,
       servidor: {
@@ -56,56 +55,92 @@ router.get('/pendientes', async (req, res) => {
 });
 
 // ==============================================================================
-// 2. REGISTRAR JUSTIFICACIÓN (INDIVIDUAL)
+// 2. REGISTRAR JUSTIFICACIÓN (INDIVIDUAL / POR RANGO)
 // ==============================================================================
-router.post('/registrar', async (req, res) => {
-  const { asistenciaId, servidorId, motivo, folio, observaciones, siglas, cobertura } = req.body;
+router.post('/registrar-rango', async (req, res) => {
+  const { servidorId, fechaInicio, fechaFin, motivo, folio, observaciones, siglas, cobertura } = req.body;
 
-  if (!asistenciaId || !servidorId || !motivo || !siglas || !cobertura) {
-    return res.status(400).json({ error: "Faltan parámetros requeridos para procesar." });
+  if (!servidorId || !fechaInicio || !fechaFin || !motivo || !siglas || !cobertura) {
+    return res.status(400).json({ error: "Faltan parámetros requeridos para procesar el rango." });
   }
 
   try {
+    const start = new Date(`${fechaInicio}T00:00:00Z`);
+    const end = new Date(`${fechaFin}T23:59:59Z`);
+
+    // Buscamos todas las asistencias generadas en ese rango para el empleado
+    const asistencias = await prisma.asistencia.findMany({
+      where: {
+        servidorId: Number(servidorId),
+        fecha: { gte: start, lte: end }
+      }
+    });
+
+    if (asistencias.length === 0) {
+      return res.status(404).json({ error: "No se encontraron registros de asistencia en el rango seleccionado." });
+    }
+
     const dataAsistencia = {
       minutosRetardo: 0,
       incidencia: "JUSTIFICADA" 
     };
 
-    if (cobertura === 'ENTRADA') {
-      dataAsistencia.entrada = siglas; 
-    } else if (cobertura === 'SALIDA') {
-      dataAsistencia.salida = siglas;  
-    } else if (cobertura === 'COMPLETO') {
+    if (cobertura === 'ENTRADA') dataAsistencia.entrada = siglas;
+    else if (cobertura === 'SALIDA') dataAsistencia.salida = siglas;
+    else if (cobertura === 'COMPLETO') {
       dataAsistencia.entrada = siglas;
       dataAsistencia.salida = siglas;
     }
 
-    await prisma.$transaction([
-      prisma.justificacion.create({
-        data: {
-          asistenciaId: Number(asistenciaId),
-          servidorId: Number(servidorId),
-          motivo: motivo,
-          folioDocumento: folio || null,
-          observaciones: observaciones || null,
-          cobertura: cobertura
-        }
-      }),
-      prisma.asistencia.update({
-        where: { id: Number(asistenciaId) },
-        data: dataAsistencia
-      })
-    ]);
+    const transacciones = [];
+    
+    for (const ast of asistencias) {
+      // 1. Borramos justificaciones previas en esos días (para evitar errores de duplicidad)
+      transacciones.push(
+        prisma.justificacion.deleteMany({
+          where: { asistenciaId: Number(ast.id) }
+        })
+      );
 
-    res.json({ mensaje: "Justificación procesada y guardada exitosamente." });
+      // 2. Creamos la nueva justificación
+      transacciones.push(
+        prisma.justificacion.create({
+          data: {
+            asistenciaId: Number(ast.id),
+            servidorId: Number(ast.servidorId),
+            motivo: motivo,
+            folioDocumento: folio || null,
+            observaciones: observaciones || null,
+            cobertura: cobertura
+          }
+        })
+      );
+      
+      // 3. Actualizamos el registro de asistencia
+      transacciones.push(
+        prisma.asistencia.update({
+          where: { id: Number(ast.id) },
+          data: dataAsistencia
+        })
+      );
+    }
+
+    await prisma.$transaction(transacciones);
+
+    res.json({ 
+      mensaje: asistencias.length > 1 
+        ? `Se justificaron ${asistencias.length} días exitosamente.` 
+        : "Justificación procesada y guardada exitosamente." 
+    });
+
   } catch (error) {
-    console.error("Error crítico durante la transacción de justificación:", error);
+    console.error("Error crítico durante la justificación por rango:", error);
     res.status(500).json({ error: "No se pudo completar el registro debido a un fallo interno." });
   }
 });
 
 // ==============================================================================
-// 2.5 REGISTRAR JUSTIFICACIÓN MASIVA
+// 2.5 REGISTRAR JUSTIFICACIÓN MASIVA (MÚLTIPLES PERSONAS, 1 DÍA)
 // ==============================================================================
 router.post('/registrar-masiva', async (req, res) => {
   const { asistencias, motivo, folio, observaciones, siglas, cobertura } = req.body;
@@ -150,10 +185,10 @@ router.post('/registrar-masiva', async (req, res) => {
       );
     }
 
-  await prisma.$transaction(transacciones, {
-  maxWait: 10000, // 10 segundos máximo esperando conexión
-  timeout: 60000  // 60 segundos para procesar todo el lote masivo
-});
+    await prisma.$transaction(transacciones, {
+      maxWait: 10000, 
+      timeout: 60000  
+    });
 
     res.json({ mensaje: `Se justificaron ${asistencias.length} registros exitosamente.` });
   } catch (error) {
@@ -173,7 +208,7 @@ router.get('/historial', async (req, res) => {
           select: {
             numeroEmpleado: true,
             nombreCompleto: true,
-            area: { select: { nombre: true } } // 💡 El arreglo en el historial
+            area: { select: { nombre: true } }
           }
         },
         asistencia: {
@@ -198,7 +233,7 @@ router.get('/historial', async (req, res) => {
       servidor: {
         numeroEmpleado: item.servidor?.numeroEmpleado || 'N/A',
         nombreCompleto: item.servidor?.nombreCompleto || 'Desconocido',
-        departamento: item.servidor?.area ? item.servidor.area.nombre : 'Sin Área' // 💡 Se manda por si el frontend decide mostrarlo en el historial futuro
+        departamento: item.servidor?.area ? item.servidor.area.nombre : 'Sin Área' 
       },
       asistencia: {
         fecha: item.asistencia?.fecha || null

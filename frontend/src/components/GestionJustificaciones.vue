@@ -9,14 +9,16 @@ const pestanaActiva = ref('pendientes');
 // Estados de datos
 const listaPendientes = ref([]);
 const listaHistorial = ref([]);
-const areasAdscripcion = ref([]); // NUEVO: Para guardar el catálogo de áreas
+const areasAdscripcion = ref([]); 
 const cargando = ref(false);
 const valorBusquedaPendientes = ref('');
 const valorBusquedaHistorial = ref('');
 
-// Variables del Formulario de Registro Individual
+// Variables del Formulario de Registro Individual / Rango
 const empleadoSeleccionado = ref(null);
 const formulario = ref({
+  fechaInicio: '',
+  fechaFin: '',
   cobertura: '',
   tipoIncidencia: '',
   folio: '',
@@ -27,10 +29,10 @@ const formulario = ref({
 const filtroMasivo = ref({
   fecha: '',
   tipoAlerta: '',
-  area: 'TODAS' // NUEVO: Filtro por área
+  area: 'TODAS' 
 });
-const registrosSeleccionados = ref([]); // NUEVO: Mantiene los items que el usuario seleccionó con checkbox
-const mostrarModalMasivo = ref(false); // NUEVO: Controla la visibilidad del modal de afectación
+const registrosSeleccionados = ref([]); 
+const mostrarModalMasivo = ref(false); 
 const formularioMasivo = ref({
   cobertura: '',
   tipoIncidencia: '',
@@ -49,18 +51,16 @@ const catalogoIncidencias = [
   "16. Comisión sindical", "17. Salida antes con autorización", "18. Otros"
 ];
 
-// Lenguaje humano para los filtros de justificación masiva
 const tiposAlerta = [
   { valor: 'ENTRADA', texto: 'Solo Entrada (Retardos y Omisiones)' },
   { valor: 'SALIDA', texto: 'Solo Salida (Omisiones de Salida)' },
   { valor: 'COMPLETO', texto: 'Día Completo (Faltas)' }
 ];
 
-// Encabezados de Tablas
 const headersPendientes = [
   { text: "NUM. EMP", value: "servidor.numeroEmpleado", sortable: true },
   { text: "SERVIDOR PÚBLICO", value: "servidor.nombreCompleto", sortable: true },
-  { text: "ÁREA", value: "servidor.departamento", sortable: true }, // NUEVO
+  { text: "ÁREA", value: "servidor.departamento", sortable: true }, 
   { text: "FECHA", value: "fecha", sortable: true },
   { text: "ENTRADA", value: "entrada" },
   { text: "SALIDA", value: "salida" },
@@ -85,7 +85,6 @@ const headersHistorial = [
   { text: "FECHA CAPTURA", value: "fechaRegistro", sortable: true }
 ];
 
-// Lógica Computada
 const fechasDisponibles = computed(() => {
   const fechas = listaPendientes.value.map(item => formatearFecha(item.fecha));
   return [...new Set(fechas)].sort((a, b) => new Date(b) - new Date(a));
@@ -112,7 +111,6 @@ const registrosAfectados = computed(() => {
   });
 });
 
-// Resetea las selecciones cuando cambian los filtros masivos
 import { watch } from 'vue';
 watch([() => filtroMasivo.value.fecha, () => filtroMasivo.value.tipoAlerta, () => filtroMasivo.value.area], () => {
   registrosSeleccionados.value = []; 
@@ -131,8 +129,6 @@ const formatearFecha = (fechaInput) => {
   const d = new Date(fechaInput);
   return d.toISOString().split('T')[0];
 };
-
-// --- LLAMADAS REALES AL BACKEND ---
 
 const cargarPendientes = async () => {
   cargando.value = true;
@@ -180,7 +176,6 @@ const cargarHistorial = async () => {
   }
 };
 
-// NUEVO: Cargar catálogo de áreas para los filtros
 const cargarAreas = async () => {
   try {
     const res = await fetch(apiUrl('/api/empleados/areas')); 
@@ -190,32 +185,48 @@ const cargarAreas = async () => {
   }
 };
 
+// 🔥 MODIFICADO: Pre-llenamos fechaInicio y fechaFin con el día de la incidencia
 const prepararJustificacion = (item) => {
   empleadoSeleccionado.value = item;
-  formulario.value = { cobertura: '', tipoIncidencia: '', folio: '', observaciones: '' };
+  const fechaDetectada = formatearFecha(item.fecha);
+
+  formulario.value = { 
+    fechaInicio: fechaDetectada,
+    fechaFin: fechaDetectada,
+    cobertura: '', 
+    tipoIncidencia: '', 
+    folio: '', 
+    observaciones: '' 
+  };
   pestanaActiva.value = 'registrar';
 };
 
 const cancelarRegistro = () => {
   empleadoSeleccionado.value = null;
-  formulario.value = { cobertura: '', tipoIncidencia: '', folio: '', observaciones: '' };
+  formulario.value = { fechaInicio: '', fechaFin: '', cobertura: '', tipoIncidencia: '', folio: '', observaciones: '' };
   formularioMasivo.value = { cobertura: '', tipoIncidencia: '', folio: '', observaciones: '' };
   registrosSeleccionados.value = [];
   mostrarModalMasivo.value = false;
   pestanaActiva.value = 'pendientes';
 };
 
-// Guardado Individual
+// 🔥 MODIFICADO: Envía rango de fechas al backend
 const guardarJustificacion = async () => {
-  if (!formulario.value.cobertura || !formulario.value.tipoIncidencia) {
-    Swal.fire('Atención', 'Selecciona el alcance y motivo del catálogo.', 'warning');
+  if (!formulario.value.fechaInicio || !formulario.value.fechaFin || !formulario.value.cobertura || !formulario.value.tipoIncidencia) {
+    Swal.fire('Atención', 'Selecciona el rango de fechas, alcance y motivo.', 'warning');
+    return;
+  }
+
+  if (formulario.value.fechaInicio > formulario.value.fechaFin) {
+    Swal.fire('Error de Rango', 'La fecha de inicio no puede ser mayor a la fecha de fin.', 'error');
     return;
   }
 
   const siglasOficiales = obtenerSiglasJustificacion(formulario.value.tipoIncidencia);
   const payload = {
-    asistenciaId: empleadoSeleccionado.value.id, 
     servidorId: empleadoSeleccionado.value.servidorId, 
+    fechaInicio: formulario.value.fechaInicio,
+    fechaFin: formulario.value.fechaFin,
     motivo: formulario.value.tipoIncidencia,
     cobertura: formulario.value.cobertura,
     folio: formulario.value.folio,
@@ -224,15 +235,18 @@ const guardarJustificacion = async () => {
   };
 
   try {
-    const respuesta = await fetch(apiUrl('/api/justificaciones/registrar'), {
+    Swal.fire({ title: 'Procesando...', text: 'Validando rango de fechas y aplicando justificación...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    const respuesta = await fetch(apiUrl('/api/justificaciones/registrar-rango'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     
-    if (!respuesta.ok) throw new Error('Error al guardar');
+    const data = await respuesta.json();
+    if (!respuesta.ok) throw new Error(data.error || 'Error al guardar');
     
-    Swal.fire({ icon: 'success', title: '¡Justificación Aplicada!', confirmButtonColor: '#902c3e' });
+    Swal.fire({ icon: 'success', title: '¡Justificación Aplicada!', text: data.mensaje, confirmButtonColor: '#902c3e' });
     await cargarPendientes();
     await cargarHistorial();
     cancelarRegistro();
@@ -241,7 +255,6 @@ const guardarJustificacion = async () => {
   }
 };
 
-// Guardado Masivo
 const guardarJustificacionMasiva = async () => {
   if (!formularioMasivo.value.cobertura || !formularioMasivo.value.tipoIncidencia) {
     Swal.fire('Atención', 'Debes seleccionar el alcance y motivo del catálogo.', 'warning');
@@ -249,8 +262,6 @@ const guardarJustificacionMasiva = async () => {
   }
 
   const siglasOficiales = obtenerSiglasJustificacion(formularioMasivo.value.tipoIncidencia);
-  
-  // 💡 CLAVE: Solo enviamos al backend los registros que el usuario palomeó en la tabla
   const asistenciasPayload = registrosSeleccionados.value.map(item => ({
     id: item.id,
     servidorId: item.servidorId
@@ -298,7 +309,7 @@ const abrirModalAfectacion = () => {
 onMounted(() => {
   cargarPendientes();
   cargarHistorial();
-  cargarAreas(); // Cargamos áreas al iniciar
+  cargarAreas(); 
 });
 </script>
 
@@ -313,7 +324,7 @@ onMounted(() => {
       
       <button @click="pestanaActiva = 'registrar'" 
         :class="['whitespace-nowrap px-6 py-2 rounded-md font-bold text-sm transition', pestanaActiva === 'registrar' ? 'bg-inst-primario text-white' : 'text-gray-600 hover:bg-gray-100']">
-        <i class="fa-solid fa-user-check mr-2"></i> Individual
+        <i class="fa-solid fa-user-check mr-2"></i> Individual / Rango
       </button>
 
       <button @click="pestanaActiva = 'masiva'" 
@@ -327,6 +338,7 @@ onMounted(() => {
       </button>
     </div>
 
+    <!-- BANDEJA DE PENDIENTES -->
     <div v-if="pestanaActiva === 'pendientes'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-4 space-y-4">
       <div class="flex justify-between items-center bg-gray-50 p-3 rounded border border-gray-200">
         <div class="w-full max-w-md">
@@ -375,8 +387,9 @@ onMounted(() => {
       </EasyDataTable>
     </div>
 
+    <!-- REGISTRO INDIVIDUAL / RANGO -->
     <div v-if="pestanaActiva === 'registrar'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 max-w-3xl mx-auto">
-      <h2 class="text-base font-bold text-gray-700 border-b pb-3 mb-6 uppercase tracking-wide">Captura de Justificación Individual</h2>
+      <h2 class="text-base font-bold text-gray-700 border-b pb-3 mb-6 uppercase tracking-wide">Captura de Justificación (Individual o por Rango)</h2>
       
       <div v-if="!empleadoSeleccionado" class="text-center py-12 bg-gray-50 border border-dashed border-gray-300 rounded-lg">
         <i class="fa-solid fa-hand-pointer text-4xl text-gray-400 mb-3"></i>
@@ -389,16 +402,25 @@ onMounted(() => {
       <div v-else class="space-y-5">
         <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg flex justify-between items-center">
           <div>
-            <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Registro Seleccionado</p>
+            <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Empleado Seleccionado</p>
             <p class="font-bold text-gray-800 text-lg">{{ empleadoSeleccionado.servidor?.nombreCompleto }}</p>
             <p class="text-sm text-gray-600">No. Empleado: <span class="font-mono font-bold text-gray-800">{{ empleadoSeleccionado.servidor?.numeroEmpleado }}</span></p>
-            <p class="text-sm text-gray-600">Fecha: <strong class="text-gray-800">{{ formatearFecha(empleadoSeleccionado.fecha) }}</strong></p>
           </div>
-          <div class="text-right">
-            <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 border border-red-200">
-              Alerta: {{ empleadoSeleccionado.incidencia }}
-            </span> 
+        </div>
+
+        <!-- 🔥 NUEVO: SELECCIÓN DE RANGOS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 border border-gray-200 rounded-lg">
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Abarca desde el día: <span class="text-red-500">*</span></label>
+            <input type="date" v-model="formulario.fechaInicio" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white" />
           </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Hasta el día: <span class="text-red-500">*</span></label>
+            <input type="date" v-model="formulario.fechaFin" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white" />
+          </div>
+          <p class="text-xs text-gray-500 col-span-1 md:col-span-2">
+            <i class="fa-solid fa-circle-info text-blue-500 mr-1"></i> Si es un permiso de un solo día, deja la misma fecha en ambos campos.
+          </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -421,26 +443,27 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Folio Documento</label>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Folio Documento (Opcional)</label>
           <input v-model="formulario.folio" type="text" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm shadow-sm" />
         </div>
         <div>
-          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observaciones</label>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Observaciones (Opcional)</label>
           <textarea v-model="formulario.observaciones" rows="3" class="w-full p-2.5 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm shadow-sm resize-none"></textarea>
         </div>
 
         <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
-          <button @click="cancelarRegistro" class="px-5 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg text-sm">Cancelar</button>
-          <button @click="guardarJustificacion" class="px-6 py-2 bg-inst-primario text-white font-bold rounded-lg text-sm"><i class="fa-solid fa-floppy-disk mr-2"></i> Guardar</button>
+          <button @click="cancelarRegistro" class="px-5 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg text-sm transition hover:bg-gray-300">Cancelar</button>
+          <button @click="guardarJustificacion" class="px-6 py-2 bg-inst-primario text-white font-bold rounded-lg text-sm shadow-md hover:bg-inst-secundario transition"><i class="fa-solid fa-floppy-disk mr-2"></i> Procesar Justificación</button>
         </div>
       </div>
     </div>
 
+    <!-- JUSTIFICACIÓN MASIVA -->
     <div v-if="pestanaActiva === 'masiva'" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 max-w-6xl mx-auto space-y-6">
       <div class="border-b pb-3 flex justify-between items-end">
         <div>
           <h2 class="text-base font-bold text-gray-700 uppercase tracking-wide"><i class="fa-solid fa-bolt text-yellow-500 mr-2"></i> Justificación Masiva en Lote</h2>
-          <p class="text-sm text-gray-500 mt-1">Busca los registros afectados, selecciona a quiénes aplicar y genera el formato general.</p>
+          <p class="text-sm text-gray-500 mt-1">Busca los registros afectados de un día en específico, selecciona a quiénes aplicar y genera el formato general.</p>
         </div>
       </div>
 
@@ -469,7 +492,6 @@ onMounted(() => {
       </div>
 
       <div v-if="filtroMasivo.fecha && filtroMasivo.tipoAlerta">
-        
         <div class="flex justify-between items-center mb-3">
           <p class="text-sm font-bold text-gray-600">
             Registros encontrados: <span class="text-inst-primario">{{ registrosAfectados.length }}</span> | 
@@ -508,6 +530,7 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- HISTORIAL -->
     <div v-if="pestanaActiva === 'historial'" class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-4 space-y-4">
       <div class="w-full max-w-md bg-gray-50 p-2 rounded border border-gray-200">
         <input v-model="valorBusquedaHistorial" type="text" placeholder="Buscar en el archivo histórico..." class="w-full p-2 border border-gray-300 rounded outline-none focus:border-inst-primario text-sm" />
@@ -558,6 +581,7 @@ onMounted(() => {
       </EasyDataTable>
     </div>
 
+    <!-- MODAL MASIVO -->
     <div v-if="mostrarModalMasivo" class="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all" style="background-color: rgba(0,0,0,0.4); backdrop-filter: blur(4px);">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate__animated animate__fadeInDown">
         <div class="bg-inst-cafe-oscuro p-4 text-white font-bold flex justify-between items-center">
@@ -597,7 +621,7 @@ onMounted(() => {
         </div>
 
         <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3">
-          <button @click="mostrarModalMasivo = false" class="px-5 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg text-sm">Cancelar</button>
+          <button @click="mostrarModalMasivo = false" class="px-5 py-2 bg-gray-200 text-gray-700 font-bold rounded-lg text-sm transition hover:bg-gray-300">Cancelar</button>
           <button @click="guardarJustificacionMasiva" class="px-6 py-2 bg-inst-primario text-white font-bold rounded-lg text-sm shadow-md hover:bg-inst-secundario transition">
             <i class="fa-solid fa-check-double mr-2"></i> Aplicar a Todos
           </button>
