@@ -42,13 +42,23 @@ const formularioMasivo = ref({
 
 // Catálogo oficial de incidencias
 const catalogoIncidencias = [
-  "1. Falta de puntualidad a la entrada", "2. Falta de asistencia", "3. Días económicos",
-  "4. Comisión de Servicios", "5. Consulta médica", "6. Permiso por lactancia (9 meses)",
-  "7. Robo, extravío o deterioro de Gafete-Credencial", "8. Falla eléctrica del reloj o lector óptico",
-  "9. Enfermedad no profesional", "10. Riesgo profesional", "11. Licencia por matrimonio",
-  "12. Licencia por nacimiento o adopción de hijo", "13. Licencia por examen profesional",
-  "14. Licencia por fallecimiento de familiar", "15. Licencia por Enfermedad familiar",
-  "16. Comisión sindical", "17. Salida antes con autorización", "18. Otros"
+  "1. Falta de puntualidad a la entrada", 
+  "2. Salida antes con autorización", 
+  "3. Enfermedad no profesional", 
+  "4. Riesgo profesional", 
+  "5. Falta de asistencia autorizada", 
+  "6. Consulta médica", 
+  "7. Permiso por lactancia", 
+  "8. Matrimonio", 
+  "9. Nacimiento o adopción de hijo", 
+  "10. Examen profesional", 
+  "11. Fallecimiento familiar", 
+  "12. Enfermedad o accidentes graves (hijo, cónyuge, concubino)", 
+  "13. Suspensión de labores", 
+  "14. Falla eléctrica", 
+  "15. Sanción", 
+  "16. Comisión de servicios",
+  "17. Otros"
 ];
 
 const tiposAlerta = [
@@ -117,10 +127,30 @@ watch([() => filtroMasivo.value.fecha, () => filtroMasivo.value.tipoAlerta, () =
 });
 
 const obtenerSiglasJustificacion = (motivo) => {
-  if (motivo.includes("Comisión de Servicios") || motivo.includes("Comisión sindical")) return "CS";
-  if (motivo.includes("médica") || motivo.includes("Enfermedad") || motivo.includes("Riesgo") || motivo.includes("lactancia")) return "IN";
-  if (motivo.includes("Días económicos")) return "DE";
-  if (motivo.includes("Licencia") || motivo.includes("matrimonio") || motivo.includes("nacimiento") || motivo.includes("fallecimiento") || motivo.includes("examen")) return "LI";
+  // Convertimos a minúsculas para que las búsquedas no fallen por un acento o mayúscula
+  const m = motivo.toLowerCase();
+  
+  if (m.includes("falta de puntualidad a la entrada")) return "FPE";
+  if (m.includes("salida antes con autorización")) return "SA";
+  if (m.includes("enfermedad no profesional")) return "ENP";
+  if (m.includes("riesgo profesional")) return "RP";
+  if (m.includes("falta de asistencia")) return "FA";
+  if (m.includes("consulta médica") || m.includes("consulta medica")) return "CM";
+  if (m.includes("lactancia")) return "PL";
+  if (m.includes("matrimonio")) return "M";
+  if (m.includes("nacimiento") || m.includes("adopción")) return "N";
+  if (m.includes("examen profesional")) return "EP";
+  if (m.includes("fallecimiento")) return "FF";
+  if (m.includes("enfermedad familiar") || m.includes("accidentes graves")) return "EAG";
+  if (m.includes("suspensión de labores")) return "SL";
+  if (m.includes("falla eléctrica") || m.includes("falla electrica")) return "FE";
+  if (m.includes("sanción") || m.includes("sancion")) return "S";
+  if (m.includes("comisión de servicios") || m.includes("comisión sindical")) return "CS";
+  
+  // Mantenemos "Días económicos" por si lo usan en el catálogo 
+  if (m.includes("días económicos") || m.includes("dias economicos")) return "DE";
+  
+  // Por defecto (Para "Robo de Gafete", "Otros", etc.)
   return "JU"; 
 };
 
