@@ -149,14 +149,14 @@ const subirExcel = async () => {
 const confirmarYGuardar = async () => {
   if (existenDatosPreviosBD.value) {
     const confirmacion = await Swal.fire({
-      title: '⚠️ ¿Sobrescribir esta Quincena?',
-      html: 'El sistema detectó que <b>ya existen registros y justificaciones guardadas</b> para estas fechas.<br><br>Si continúas, <b>se borrará TODO tu trabajo manual anterior</b> de esta quincena para empezar de cero.',
-      icon: 'warning',
+      title: 'ℹ️ Integrar Quincena',
+      html: 'El sistema detectó que <b>ya existen registros</b> procesados en estas fechas.<br><br>Se agregarán los datos nuevos y <b>se conservará intacto tu trabajo anterior</b> (como justificaciones y registros previos). ¿Deseas aplicar la integración?',
+      icon: 'info',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Sí, borrar y sobrescribir todo',
-      cancelButtonText: 'Cancelar y mantener mi trabajo'
+      confirmButtonColor: '#16a34a', // Verde de éxito
+      cancelButtonColor: '#6B1C3A',  // Vino institucional
+      confirmButtonText: 'Sí, integrar datos',
+      cancelButtonText: 'Cancelar'
     });
 
     if (!confirmacion.isConfirmed) {
@@ -168,7 +168,7 @@ const confirmarYGuardar = async () => {
 
   Swal.fire({
     title: '¡Guardando en Base de Datos! 🚀',
-    html: 'Inyectando los registros... No cierres la ventana.',
+    html: 'Inyectando y complementando los registros... No cierres la ventana.',
     allowOutsideClick: false,
     showConfirmButton: false,
     didOpen: () => { Swal.showLoading(); }
