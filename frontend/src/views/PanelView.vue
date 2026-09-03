@@ -327,6 +327,35 @@ watch(busquedaSabana, () => {
 });
 
 const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
+
+// LÓGICA REUTILIZABLE DE CLASES (Para estandarizar colores de SR)
+const getClaseCelda = (registro, tipo) => {
+  if (!registro) return 'bg-gray-50 text-gray-300';
+  const estatus = String(registro.estatus || '').trim().toUpperCase();
+  const valor = tipo === 'entrada' ? registro.entrada : registro.salida;
+  const esEspecial = estatus.includes('ESPECIAL');
+  const valMostrar = String(valor || (esEspecial ? '---' : 'SR')).trim().toUpperCase();
+
+  if (valMostrar === '---') return 'bg-[#FCF9E8] text-gray-500';
+  if (valMostrar === 'SR') return 'bg-[#FFE2DE] text-[#BD2C0B] font-bold';
+
+  if (tipo === 'entrada') {
+    if (estatus.includes('RETARDO')) return 'text-red-600 font-bold bg-red-50';
+    if (estatus === 'OMISION_E') return 'text-gray-600';
+  } else {
+    if (estatus === 'OMISION_S' || estatus === 'RETARDO_Y_OMISION') return 'text-gray-600';
+  }
+
+  return 'text-gray-700';
+};
+
+const getValorCelda = (registro, tipo) => {
+  if (!registro) return '-';
+  const estatus = String(registro.estatus || '').trim().toUpperCase();
+  const valor = tipo === 'entrada' ? registro.entrada : registro.salida;
+  const esEspecial = estatus.includes('ESPECIAL');
+  return valor || (esEspecial ? '---' : 'SR');
+};
 </script>
 
 <template>
@@ -518,38 +547,29 @@ const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
                     <td class="sticky left-[240px] z-10 bg-white py-2 pl-4 pr-3 text-sm font-medium text-gray-900 border border-gray-200 whitespace-nowrap shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" :class="{'bg-gray-50': index % 2 === 0}">{{ emp.nombre }}</td>
                     <template v-for="fecha in diasSabana" :key="'data-'+fecha">
                       <template v-if="emp.asistencias[fecha]">
-                       <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-[#D3DCF5]">
-  <span class="font-bold text-[#33539E] text-[10px] tracking-widest">LA</span>
-</td>
-<td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-[#D3DCF5]">
-  <span class="font-bold text-[#33539E] text-[10px] tracking-widest">EX</span>
-</td>
+                        <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-[#D3DCF5]">
+                          <span class="font-bold text-[#33539E] text-[10px] tracking-widest">LA</span>
+                        </td>
+                        <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-[#D3DCF5]">
+                          <span class="font-bold text-[#33539E] text-[10px] tracking-widest">EX</span>
+                        </td>
                         <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-gray-600"></td>
                         <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'BAJA'" class="py-2 text-center border border-gray-300 align-middle bg-gray-200"><span class="font-bold text-gray-500 text-[10px] tracking-widest">BAJA</span></td>
                         <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
+                        
                         <template v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FALTA'">
-                          <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs  text-gray-600  bg-gray-50 tabular-nums">SR</td>
-                          <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs  text-gray-600  bg-gray-50 tabular-nums">SR</td>
+                          <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-[#BD2C0B] bg-[#FFE2DE] tabular-nums">SR</td>
+                          <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-[#BD2C0B] bg-[#FFE2DE] tabular-nums">SR</td>
                         </template>
-                       <template v-else>
-                          <!-- Entrada -->
+
+                        <template v-else>
                           <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" 
-                              :class="{
-                                'text-red-600 font-bold bg-red-50': String(emp.asistencias[fecha].estatus || '').includes('RETARDO'), 
-                                'text-gray-600': String(emp.asistencias[fecha].estatus || '') === 'OMISION_E', 
-                                'text-gray-700': !String(emp.asistencias[fecha].estatus || '').includes('RETARDO') && String(emp.asistencias[fecha].estatus || '') !== 'OMISION_E' && (emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR')) !== '---',
-                                'bg-[#FCF9E8] text-gray-500': (emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR')) === '---'
-                              }">
-                            {{ emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
+                              :class="getClaseCelda(emp.asistencias[fecha], 'entrada')">
+                            {{ getValorCelda(emp.asistencias[fecha], 'entrada') }}
                           </td>
-                          <!-- Salida -->
                           <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" 
-                              :class="{
-                                'text-gray-600': String(emp.asistencias[fecha].estatus || '') === 'OMISION_S' || String(emp.asistencias[fecha].estatus || '') === 'RETARDO_Y_OMISION', 
-                                'text-gray-500 bg-gray-50/30': String(emp.asistencias[fecha].estatus || '') !== 'OMISION_S' && String(emp.asistencias[fecha].estatus || '') !== 'RETARDO_Y_OMISION' && (emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR')) !== '---', 
-                                'bg-[#FCF9E8] text-gray-500': (emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR')) === '---'
-                              }">
-                            {{ emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
+                              :class="getClaseCelda(emp.asistencias[fecha], 'salida')">
+                            {{ getValorCelda(emp.asistencias[fecha], 'salida') }}
                           </td>
                         </template>
                       </template>

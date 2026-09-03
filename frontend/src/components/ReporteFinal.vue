@@ -87,10 +87,9 @@ const datosPivotados = computed(() => {
       };
     }
     
-    // Mapeamos las propiedades para que coincidan con la tabla original
     empleadosMap[numEmp].asistencias[fechaLimpia] = {
       ...registro,
-      estatus: registro.incidencia // Renombramos incidencia a estatus para que la vista matricial lo entienda
+      estatus: registro.incidencia 
     };
   });
   
@@ -141,6 +140,52 @@ const sabanaPaginada = computed(() => {
 
 watch(busquedaSabana, () => { paginaActualSabana.value = 1; });
 watch([mesSeleccionadoSabana, quincenaSeleccionada], () => { mostrarTablaPrevisualizacion.value = false; });
+
+// --- LÓGICA DE COLORES Y CLASES DINÁMICAS ---
+const getClaseJustificacion = (sigla) => {
+  const s = String(sigla).trim().toUpperCase();
+  if (['CS', 'FPE', 'SA'].includes(s)) return 'bg-[#F3FCE8] text-[#6B8741] font-bold';
+  if (['RP', 'M', 'N', 'EP', 'FF', 'SL', 'FE'].includes(s)) return 'bg-white text-[#911A1C] font-bold';
+  if (['ENP', 'CM', 'PL', 'EAG'].includes(s)) return 'bg-[#B6D6E3] text-[#911A1C] font-bold';
+  if (['FA'].includes(s)) return 'bg-[#E3B9B6] text-[#A82A22] font-bold';
+  
+  return 'bg-blue-50 text-blue-700 font-bold'; // Valor por defecto (JU, DE, etc)
+};
+
+const getClaseCelda = (registro, tipo) => {
+  if (!registro) return 'bg-gray-50 text-gray-300';
+  const estatus = String(registro.estatus || '').trim().toUpperCase();
+  const valor = tipo === 'entrada' ? registro.entrada : registro.salida;
+  const esEspecial = estatus.includes('ESPECIAL');
+  const valMostrar = String(valor || (esEspecial ? '---' : 'SR')).trim().toUpperCase();
+
+  if (valMostrar === '---') return 'bg-[#FCF9E8] text-gray-500';
+  
+  // 🔥 NUEVA REGLA: Pinta automáticamente cualquier SR con tu diseño
+  if (valMostrar === 'SR') return 'bg-[#FFE2DE] text-[#BD2C0B] font-bold';
+
+  const justifAcronyms = ['CS', 'FPE', 'SA', 'RP', 'M', 'N', 'EP', 'FF', 'SL', 'FE', 'ENP', 'CM', 'PL', 'EAG', 'FA', 'JU', 'DE'];
+  if (justifAcronyms.includes(valMostrar)) {
+    return getClaseJustificacion(valMostrar);
+  }
+  
+  if (tipo === 'entrada') {
+    if (estatus.includes('RETARDO')) return 'text-red-600 font-bold bg-red-50';
+    if (estatus === 'OMISION_E') return 'text-orange-600 font-bold bg-orange-50';
+  } else {
+    if (estatus === 'OMISION_S' || estatus === 'RETARDO_Y_OMISION') return 'text-orange-600 font-bold bg-orange-50';
+  }
+  
+  return 'text-gray-700';
+};
+
+const getValorCelda = (registro, tipo) => {
+  if (!registro) return '-';
+  const estatus = String(registro.estatus || '').trim().toUpperCase();
+  const valor = tipo === 'entrada' ? registro.entrada : registro.salida;
+  const esEspecial = estatus.includes('ESPECIAL');
+  return valor || (esEspecial ? '---' : 'SR');
+};
 
 // --- LÓGICA: PREVISUALIZAR SÁBANA (PASO 1) ---
 const generarPrevisualizacion = async () => {
@@ -307,28 +352,38 @@ const descargarSabanaOficial = async () => {
               
               <template v-for="fecha in diasSabana" :key="'data-'+fecha">
                 <template v-if="emp.asistencias[fecha]">
-                  <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-blue-50/50"><span class="font-bold text-blue-700 text-sm tracking-widest">LA</span></td>
-                  <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-green-50/50"><span class="font-bold text-green-700 text-sm tracking-widest">EXENTO</span></td>
+                  
+                  <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-[#D3DCF5]">
+                    <span class="font-bold text-[#33539E] text-[10px] tracking-widest">LA</span>
+                  </td>
+                  <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-[#D3DCF5]">
+                    <span class="font-bold text-[#33539E] text-[10px] tracking-widest">EX</span>
+                  </td>
                   <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-[#BCBCBC]"></td>
                   <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'BAJA'" class="py-2 text-center border border-gray-300 align-middle bg-gray-200"><span class="font-bold text-gray-500 text-[10px] tracking-widest">BAJA</span></td>
                   <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
                   
                   <template v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FALTA'">
-                    <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs text-gray-600 bg-gray-50 tabular-nums">SR</td>
-                    <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs text-gray-600 bg-gray-50 tabular-nums">SR</td>
+                    <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-[#BD2C0B] bg-[#FFE2DE] tabular-nums">SR</td>
+                    <td class="py-2 px-1 text-center border border-gray-300 align-middle text-xs font-bold text-[#BD2C0B] bg-[#FFE2DE] tabular-nums">SR</td>
                   </template>
                   
+                  <!-- Resto de registros y justificaciones -->
                   <template v-else>
-                    <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-red-600 font-bold bg-red-50': String(emp.asistencias[fecha].estatus || '').includes('RETARDO'), 'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_E', 'text-blue-700 font-bold bg-blue-50': String(emp.asistencias[fecha].estatus || '') === 'JUSTIFICADA' && (emp.asistencias[fecha].entrada === 'CS' || emp.asistencias[fecha].entrada === 'IN' || emp.asistencias[fecha].entrada === 'DE' || emp.asistencias[fecha].entrada === 'LI' || emp.asistencias[fecha].entrada === 'JU'), 'text-gray-700': !String(emp.asistencias[fecha].estatus || '').includes('RETARDO') && String(emp.asistencias[fecha].estatus || '') !== 'OMISION_E' && String(emp.asistencias[fecha].estatus || '') !== 'JUSTIFICADA'}">
-                      {{ emp.asistencias[fecha].entrada || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
+                    <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" 
+                        :class="getClaseCelda(emp.asistencias[fecha], 'entrada')">
+                      {{ getValorCelda(emp.asistencias[fecha], 'entrada') }}
                     </td>
-                    <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" :class="{'text-orange-600 font-bold bg-orange-50': String(emp.asistencias[fecha].estatus || '') === 'OMISION_S' || String(emp.asistencias[fecha].estatus || '') === 'RETARDO_Y_OMISION', 'text-blue-700 font-bold bg-blue-50': String(emp.asistencias[fecha].estatus || '') === 'JUSTIFICADA' && (emp.asistencias[fecha].salida === 'CS' || emp.asistencias[fecha].salida === 'IN' || emp.asistencias[fecha].salida === 'DE' || emp.asistencias[fecha].salida === 'LI' || emp.asistencias[fecha].salida === 'JU'), 'text-gray-500 bg-gray-50/30': String(emp.asistencias[fecha].estatus || '') !== 'OMISION_S' && String(emp.asistencias[fecha].estatus || '') !== 'RETARDO_Y_OMISION' && String(emp.asistencias[fecha].estatus || '') !== 'JUSTIFICADA'}">
-                      {{ emp.asistencias[fecha].salida || (String(emp.asistencias[fecha].estatus || '').includes('ESPECIAL') ? '---' : 'SR') }}
+                    <td class="py-2 px-1 text-center border border-gray-200 align-middle text-xs tabular-nums whitespace-nowrap transition-colors" 
+                        :class="getClaseCelda(emp.asistencias[fecha], 'salida')">
+                      {{ getValorCelda(emp.asistencias[fecha], 'salida') }}
                     </td>
                   </template>
+                  
                 </template>
-                <!-- 💡 Si el día no existe (Fines de semana sin guardia) -->
-                <td colspan="2" v-else class="py-2 text-center border border-gray-200 align-middle bg-gray-50"><span class="text-gray-300 font-bold">-</span></td>
+                <td colspan="2" v-else class="py-2 text-center border border-gray-200 align-middle bg-[#FCF9E8]">
+                  <span class="text-gray-500">---</span>
+                </td>
               </template>
               <td class="py-2 text-center border border-gray-300 bg-orange-50 font-bold text-orange-700 text-sm tabular-nums">{{ emp.totalPuntualidad > 0 ? emp.totalPuntualidad : '-' }}</td>
               <td class="py-2 text-center border border-gray-300 bg-red-50 font-bold text-red-700 text-sm tabular-nums">{{ emp.totalAsistencia > 0 ? emp.totalAsistencia : '-' }}</td>

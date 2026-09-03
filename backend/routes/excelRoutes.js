@@ -73,7 +73,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
     const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
     let mapDiasInhabiles = new Map();
-    let mapaDB = new Map(); // 🔥 Almacén para rescatar datos previos
+    let mapaDB = new Map(); 
     let fechaMin, fechaMax;
     
     if (fechasUnicas.length > 0) {
@@ -91,7 +91,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       });
       diasInhabiles.forEach(d => mapDiasInhabiles.set(d.fecha.toISOString().split('T')[0], d.tipo));
 
-      // Extraemos la historia previa
       const registrosExistentesDB = await prisma.asistencia.findMany({
         where: { fecha: { gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) } }
       });
@@ -117,7 +116,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         continue; 
       }
 
-      // Validamos si ya existía para proteger la justificación
       const llaveMapaDB = `${empleado.id}_${fecha}`;
       const registroPrevioDB = mapaDB.get(llaveMapaDB);
 
@@ -139,7 +137,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       const esDiaFeriado = tipoInhabil === 'FERIADO' || tipoInhabil === 'VACACIONES';
       const esSinContrato = tipoInhabil === 'SIN_CONTRATO';
 
-      // Protegemos justificación
       if (registroPrevioDB && registroPrevioDB.incidencia === 'JUSTIFICADA') {
         estatus = "JUSTIFICADA";
         entradaFinal = registroPrevioDB.entrada;
@@ -237,7 +234,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             const llaveMapaDB = `${emp.id}_${fechaStr}`;
             const registroPrevioDB = mapaDB.get(llaveMapaDB);
 
-            // 🔥 ¡LA MAGIA! Si no venía en este Excel, pero sí en la BD, lo mantenemos intacto
             if (registroPrevioDB) {
               const entMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.entrada || '---');
               const salMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.salida || '---');
@@ -411,7 +407,6 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       });
       diasInhabiles.forEach(d => mapDiasInhabiles.set(d.fecha.toISOString().split('T')[0], d.tipo));
 
-      // Extraemos la historia previa
       const registrosExistentesDB = await prisma.asistencia.findMany({
         where: { fecha: { gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) } }
       });
@@ -549,7 +544,6 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
             const llaveMapaDB = `${emp.id}_${fechaStr}`;
             const registroPrevioDB = mapaDB.get(llaveMapaDB);
 
-            // 🔥 MERGE DB COMPLEMENTARIO
             if (registroPrevioDB) {
               const entMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.entrada || '---');
               const salMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.salida || '---');
@@ -663,7 +657,6 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
     const fechasUnicasStr = [...new Set(datosParaGuardar.map(d => new Date(d.fechaParaPrisma).toISOString()))];
     const fechasObj = fechasUnicasStr.map(f => new Date(f));
 
-    // Consultamos qué registros ya existen realmente en la base de datos
     const asistenciasViejas = await prisma.asistencia.findMany({
       where: { fecha: { in: fechasObj } },
       select: { id: true, servidorId: true, fecha: true }
@@ -680,7 +673,7 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
       datosUnicosMap.set(llaveDuplicidad, {
         servidorId: dato.servidorId,
         fecha: new Date(dato.fechaParaPrisma),
-        entrada: dato.entradaFinal, // Aseguramos el nombre correcto de la variable
+        entrada: dato.entradaFinal, 
         salida: dato.salidaFinal,
         minutosRetardo: dato.minutosRetardo,
         incidencia: dato.estatus
@@ -690,7 +683,6 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
     const toCreate = [];
     const toUpdate = [];
 
-    // Separamos: Los nuevos se crean de golpe, los existentes se actualizan.
     datosUnicosMap.forEach((dato, llave) => {
       const idExistente = mapaViejas.get(llave);
       if (idExistente) {
@@ -700,12 +692,10 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
       }
     });
 
-    // 1. Inserción masiva ultra-rápida (Complemento de nuevos registros)
     if (toCreate.length > 0) {
       await prisma.asistencia.createMany({ data: toCreate });
     }
 
-    // 2. Actualización en bloques pequeños (Para evitar el error de Transacción Timeout)
     const chunkSize = 100;
     for (let i = 0; i < toUpdate.length; i += chunkSize) {
        const bloque = toUpdate.slice(i, i + chunkSize);
@@ -769,7 +759,6 @@ router.get('/datos-reporte', async (req, res) => {
       }
     }));
 
-    // 🔥 INYECCIÓN DE FERIADOS/SIN_CONTRATO PARA REPORTE FINAL
     const diasInhabiles = await prisma.diaInhabil.findMany({
       where: { fecha: { gte: fechaInicio, lte: fechaFin } }
     });
@@ -787,7 +776,6 @@ router.get('/datos-reporte', async (req, res) => {
             if (!existe) {
                const esEspecial = String(emp.regimen || '').toUpperCase().trim() === 'ESPECIAL';
                
-               // Si es sin contrato aplica a todos. Si es feriado normal, solo si no es especial
                if (esSinContrato || !esEspecial) {
                    formateados.push({
                       id: `feriado-${emp.numeroEmpleado}-${fechaInhabil}`,
@@ -902,6 +890,27 @@ router.get('/descargar-reporte', async (req, res) => {
 
     const empleadosArr = Object.values(empleadosMap).sort((a, b) => a.nombre.localeCompare(b.nombre));
 
+    // Mapeo Maestro de Colores de Justificaciones (ARGB)
+    const justifColors = {
+      'CS':  { bg: 'FFF3FCE8', text: 'FF6B8741' },
+      'FPE': { bg: 'FFF3FCE8', text: 'FF6B8741' },
+      'SA':  { bg: 'FFF3FCE8', text: 'FF6B8741' },
+      'RP':  { bg: null, text: 'FF911A1C' },
+      'M':   { bg: null, text: 'FF911A1C' },
+      'N':   { bg: null, text: 'FF911A1C' },
+      'EP':  { bg: null, text: 'FF911A1C' },
+      'FF':  { bg: null, text: 'FF911A1C' },
+      'SL':  { bg: null, text: 'FF911A1C' },
+      'FE':  { bg: null, text: 'FF911A1C' },
+      'ENP': { bg: 'FFB6D6E3', text: 'FF911A1C' },
+      'CM':  { bg: 'FFB6D6E3', text: 'FF911A1C' },
+      'PL':  { bg: 'FFB6D6E3', text: 'FF911A1C' },
+      'EAG': { bg: 'FFB6D6E3', text: 'FF911A1C' },
+      'FA':  { bg: 'FFE3B9B6', text: 'FFA82A22' },
+      'JU':  { bg: 'FFEBF5FF', text: 'FF1D4ED8' },
+      'DE':  { bg: 'FFEBF5FF', text: 'FF1D4ED8' }
+    };
+
     let filaActual = 5;
 
     empleadosArr.forEach(emp => {
@@ -922,8 +931,8 @@ router.get('/descargar-reporte', async (req, res) => {
         let tieneRetardo = false;
         let esFalta = false; 
         let esFeriado = false; 
-        let esLA = false; // Nueva variable
-        let esEX = false; // Nueva variable
+        let esLA = false;
+        let esEX = false;
 
         const tipoInhabil = mapDiasInhabiles.get(fecha);
         const esSinContrato = tipoInhabil === 'SIN_CONTRATO';
@@ -935,7 +944,7 @@ router.get('/descargar-reporte', async (req, res) => {
           entradaTexto = '';
           salidaTexto = '';
         } 
-        if (reg) {
+        else if (reg) {
           if (reg.incidencia === 'LA') {
             entradaTexto = 'LA';
             salidaTexto = 'LA';
@@ -944,7 +953,7 @@ router.get('/descargar-reporte', async (req, res) => {
             entradaTexto = 'EX';
             salidaTexto = 'EX';
             esEX = true;
-          } else if (reg.incidencia === 'FERIADO' || reg.incidencia === 'SIN_CONTRATO') {
+          } else if (reg.incidencia === 'FERIADO' || reg.incidencia === 'SIN_CONTRATO') { 
             entradaTexto = '';
             salidaTexto = '';
             esFeriado = true;
@@ -952,6 +961,7 @@ router.get('/descargar-reporte', async (req, res) => {
             entradaTexto = 'BAJA';
             salidaTexto = 'BAJA';
           } else if (reg.incidencia === 'FALTA') {
+            // Conversión de Falta regresada a SR
             entradaTexto = 'SR';
             salidaTexto = 'SR';
             esFalta = true;
@@ -983,20 +993,56 @@ router.get('/descargar-reporte', async (req, res) => {
         celdaEntrada.alignment = { horizontal: 'center' };
         celdaSalida.alignment = { horizontal: 'center' };
 
+        // Aplicación de Formatos Base
         if (tieneRetardo) {
           celdaEntrada.font = { color: { argb: 'FFCC0000' }, bold: true, size: 8 };
-        } else if (esFeriado) {
+        } else if (esFeriado) { 
           celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBCBCBC' } };
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBCBCBC' } };
         }
-        // AGREGAR ESTO PARA LA y EXENTO:
+        
         if (esLA || esEX) {
           celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD3DCF5' } };
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD3DCF5' } };
           celdaEntrada.font = { color: { argb: 'FF33539E' }, bold: true, size: 7 };
           celdaSalida.font = { color: { argb: 'FF33539E' }, bold: true, size: 7 };
         }
-     // AGREGAR ESTO PARA LAS CELDAS CON "---":
+
+        // Aplicación de Color para Cualquier SR o Falta
+        if (esFalta) {
+          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE2DE' } };
+          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE2DE' } };
+          celdaEntrada.font = { color: { argb: 'FFBD2C0B' }, bold: true, size: 8 };
+          celdaSalida.font = { color: { argb: 'FFBD2C0B' }, bold: true, size: 8 };
+        } else {
+          if (entradaTexto === 'SR') {
+            celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE2DE' } };
+            celdaEntrada.font = { color: { argb: 'FFBD2C0B' }, bold: true, size: 8 };
+          }
+          if (salidaTexto === 'SR') {
+            celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE2DE' } };
+            celdaSalida.font = { color: { argb: 'FFBD2C0B' }, bold: true, size: 8 };
+          }
+        }
+
+        // 🔥 NUEVA REGLA: Aplicación de colores evaluando directamente la sigla
+        const applyJustifStyle = (texto, celda) => {
+           const strUpper = String(texto).trim().toUpperCase();
+           if (justifColors[strUpper]) {
+              const colors = justifColors[strUpper];
+              if (colors.bg) {
+                 celda.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.bg } };
+              } else {
+                 celda.fill = { type: 'pattern', pattern: 'none' };
+              }
+              celda.font = { color: { argb: colors.text }, bold: true, size: 8 };
+           }
+        };
+
+        applyJustifStyle(entradaTexto, celdaEntrada);
+        applyJustifStyle(salidaTexto, celdaSalida);
+
+        // Guiones vacíos
         if (entradaTexto === '---') {
           celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCF9E8' } };
         }
