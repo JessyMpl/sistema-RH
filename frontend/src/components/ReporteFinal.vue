@@ -144,7 +144,7 @@ watch([mesSeleccionadoSabana, quincenaSeleccionada], () => { mostrarTablaPrevisu
 // --- LÓGICA DE COLORES Y CLASES DINÁMICAS ---
 const getClaseJustificacion = (sigla) => {
   const s = String(sigla).trim().toUpperCase();
-  if (['CS', 'FPE', 'SA'].includes(s)) return 'bg-[#F3FCE8] text-[#6B8741] font-bold';
+  if (['CS', 'FPE', 'SA'].includes(s)) return 'bg-[#C1E887] text-[#4A6E1F] font-bold';
   if (['RP', 'M', 'N', 'EP', 'FF', 'SL', 'FE'].includes(s)) return 'bg-white text-[#911A1C] font-bold';
   if (['ENP', 'CM', 'PL', 'EAG'].includes(s)) return 'bg-[#B6D6E3] text-[#911A1C] font-bold';
   if (['FA'].includes(s)) return 'bg-[#E3B9B6] text-[#A82A22] font-bold';
@@ -356,9 +356,9 @@ const descargarSabanaOficial = async () => {
                   <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-[#D3DCF5]">
                     <span class="font-bold text-[#33539E] text-[10px] tracking-widest">LA</span>
                   </td>
-                  <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-[#D3DCF5]">
-                    <span class="font-bold text-[#33539E] text-[10px] tracking-widest">EX</span>
-                  </td>
+                  <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-[#E0E0E0]">
+  <span class="font-bold text-[#274975] text-[10px] tracking-widest">EX</span>
+</td>
                   <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-[#BCBCBC]"></td>
                   <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'BAJA'" class="py-2 text-center border border-gray-300 align-middle bg-gray-200"><span class="font-bold text-gray-500 text-[10px] tracking-widest">BAJA</span></td>
                   <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>

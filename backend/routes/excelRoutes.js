@@ -234,7 +234,23 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             const llaveMapaDB = `${emp.id}_${fechaStr}`;
             const registroPrevioDB = mapaDB.get(llaveMapaDB);
 
+            let rescatarDB = false;
             if (registroPrevioDB) {
+              rescatarDB = true;
+              const regimenActual = String(emp.regimen || '').toUpperCase().trim();
+              const incPrev = String(registroPrevioDB.incidencia || '').toUpperCase().trim();
+
+              // Validación cruzada para cambios de horario
+              if (incPrev !== 'JUSTIFICADA') {
+                if (regimenActual === 'LISTA' && incPrev !== 'LA') rescatarDB = false;
+                if ((regimenActual === 'EXENTO' || regimenActual === 'EXCENTO') && (incPrev !== 'EXENTO' && incPrev !== 'EXCENTO')) rescatarDB = false;
+                if ((regimenActual === 'NORMAL' || regimenActual === 'ESPECIAL') && (incPrev === 'LA' || incPrev === 'EXENTO' || incPrev === 'EXCENTO')) rescatarDB = false;
+                if (regimenActual === 'NORMAL' && incPrev.includes('ESPECIAL')) rescatarDB = false;
+                if (regimenActual === 'ESPECIAL' && (incPrev === 'OK' || incPrev === 'RETARDO' || incPrev === 'OMISION_E' || incPrev === 'OMISION_S' || incPrev === 'RETARDO_Y_OMISION')) rescatarDB = false;
+              }
+            }
+
+            if (rescatarDB) {
               const entMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.entrada || '---');
               const salMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.salida || '---');
 
@@ -544,7 +560,22 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
             const llaveMapaDB = `${emp.id}_${fechaStr}`;
             const registroPrevioDB = mapaDB.get(llaveMapaDB);
 
+            let rescatarDB = false;
             if (registroPrevioDB) {
+              rescatarDB = true;
+              const regimenActual = String(emp.regimen || '').toUpperCase().trim();
+              const incPrev = String(registroPrevioDB.incidencia || '').toUpperCase().trim();
+
+              if (incPrev !== 'JUSTIFICADA') {
+                if (regimenActual === 'LISTA' && incPrev !== 'LA') rescatarDB = false;
+                if ((regimenActual === 'EXENTO' || regimenActual === 'EXCENTO') && (incPrev !== 'EXENTO' && incPrev !== 'EXCENTO')) rescatarDB = false;
+                if ((regimenActual === 'NORMAL' || regimenActual === 'ESPECIAL') && (incPrev === 'LA' || incPrev === 'EXENTO' || incPrev === 'EXCENTO')) rescatarDB = false;
+                if (regimenActual === 'NORMAL' && incPrev.includes('ESPECIAL')) rescatarDB = false;
+                if (regimenActual === 'ESPECIAL' && (incPrev === 'OK' || incPrev === 'RETARDO' || incPrev === 'OMISION_E' || incPrev === 'OMISION_S' || incPrev === 'RETARDO_Y_OMISION')) rescatarDB = false;
+              }
+            }
+
+            if (rescatarDB) {
               const entMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.entrada || '---');
               const salMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.salida || '---');
 
@@ -620,7 +651,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
             } else if (generarFalta) {
               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "FALTA" });
               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'SR', salida: 'SR', estatus: 'FALTA', minutosRetardo: 0 });
-            }
+            } 
           }
         }
       }
@@ -635,7 +666,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       existenDatosPrevios = conteoExistentes > 0;
     }
 
-    res.json({ mensaje: 'Datos procesados y fusionados desde BD!', diasProcesados: fechasUnicas.length, datosVisuales: resultadosProcesados, datosParaGuardar: datosAProcesar, existenDatosPrevios });
+    res.json({ mensaje: 'Datos analizados listos para revisión!', diasProcesados: fechasUnicas.length, datosVisuales: resultadosProcesados, datosParaGuardar: datosAProcesar, existenDatosPrevios });
 
   } catch (error) {
     console.error("Error previsualizando desde BD:", error);
@@ -892,9 +923,9 @@ router.get('/descargar-reporte', async (req, res) => {
 
     // Mapeo Maestro de Colores de Justificaciones (ARGB)
     const justifColors = {
-      'CS':  { bg: 'FFF3FCE8', text: 'FF6B8741' },
-      'FPE': { bg: 'FFF3FCE8', text: 'FF6B8741' },
-      'SA':  { bg: 'FFF3FCE8', text: 'FF6B8741' },
+      'CS':  { bg: 'FFC1E887', text: 'FF4A6E1F' },
+      'FPE': { bg: 'FFC1E887', text: 'FF4A6E1F' },
+      'SA':  { bg: 'FFC1E887', text: 'FF4A6E1F'},
       'RP':  { bg: null, text: 'FF911A1C' },
       'M':   { bg: null, text: 'FF911A1C' },
       'N':   { bg: null, text: 'FF911A1C' },
@@ -961,7 +992,6 @@ router.get('/descargar-reporte', async (req, res) => {
             entradaTexto = 'BAJA';
             salidaTexto = 'BAJA';
           } else if (reg.incidencia === 'FALTA') {
-            // Conversión de Falta regresada a SR
             entradaTexto = 'SR';
             salidaTexto = 'SR';
             esFalta = true;
@@ -1001,11 +1031,18 @@ router.get('/descargar-reporte', async (req, res) => {
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBCBCBC' } };
         }
         
-        if (esLA || esEX) {
+        if (esLA) {
           celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD3DCF5' } };
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD3DCF5' } };
           celdaEntrada.font = { color: { argb: 'FF33539E' }, bold: true, size: 7 };
           celdaSalida.font = { color: { argb: 'FF33539E' }, bold: true, size: 7 };
+        }
+        if (esEX) {
+          celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+          celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
+          celdaEntrada.font = { color: { argb: 'FF274975' }, bold: true, size: 7 };
+          celdaSalida.font = { color: { argb: 'FF274975' }, bold: true, size: 7 };
+
         }
 
         // Aplicación de Color para Cualquier SR o Falta
