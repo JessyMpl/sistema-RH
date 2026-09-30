@@ -9,7 +9,7 @@ const prisma = require('../config/db');
 const upload = multer({ storage: multer.memoryStorage() });
 
 // ==============================================================================
-// 1. RUTA DE VISTA PREVIA (Lee el Excel, calcula, y complementa BD)
+// 1. RUTA DE VISTA PREVIA (Excel Normal - Carga Manual)
 // ==============================================================================
 router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (req, res) => {
   try {
@@ -100,9 +100,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
     const resultadosProcesados = []; 
     const datosAProcesar = [];       
 
-    // =========================================================
-    // CICLO 1: EMPLEADOS EN EL EXCEL NUEVO
-    // =========================================================
     for (const llave in registrosPorDia) {
       const { numEmp, fecha, horas } = registrosPorDia[llave];
       const empleado = empleados.find(e => String(e.numeroEmpleado).trim() === numEmp);
@@ -208,9 +205,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       });
     }
     
-    // =========================================================
-    // CICLO 2: EMPLEADOS QUE NO VENÍAN (RESCATE DESDE LA BD)
-    // =========================================================
     if (fechasUnicas.length > 0) {
       const empleadosActivos = empleados.filter(emp => {
         if (emp.fechaBaja) return new Date(emp.fechaBaja) >= fechaMin; 
@@ -240,7 +234,6 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
               const regimenActual = String(emp.regimen || '').toUpperCase().trim();
               const incPrev = String(registroPrevioDB.incidencia || '').toUpperCase().trim();
 
-              // Validación cruzada para cambios de horario
               if (incPrev !== 'JUSTIFICADA') {
                 if (regimenActual === 'LISTA' && incPrev !== 'LA') rescatarDB = false;
                 if ((regimenActual === 'EXENTO' || regimenActual === 'EXCENTO') && (incPrev !== 'EXENTO' && incPrev !== 'EXCENTO')) rescatarDB = false;
@@ -417,9 +410,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       fechaMax = new Date(Math.max(...fechasObj));
 
       const diasInhabiles = await prisma.diaInhabil.findMany({
-        where: {
-          fecha: { gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) }
-        }
+        where: { gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) }
       });
       diasInhabiles.forEach(d => mapDiasInhabiles.set(d.fecha.toISOString().split('T')[0], d.tipo));
 
@@ -675,6 +666,189 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 });
 
 // ==============================================================================
+// 1.8. RUTA DE VISTA PREVIA (Excel Secundario / Formato Matriz CAIM)
+// ==============================================================================
+router.post('/previsualizar-excel-secundario', upload.single('archivoExcel'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No se envió ningún archivo.' });
+
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const hoja = workbook.Sheets[workbook.SheetNames[0]];
+    const rawData = xlsx.utils.sheet_to_json(hoja, { header: 1, defval: '' });
+
+    const empleados = await prisma.servidorPublico.findMany({ include: { horario: true, area: true } });
+    const registrosPorDia = {};
+
+    let headerRowIndex = -1;
+    for (let i = 0; i < rawData.length; i++) {
+      const rowStr = rawData[i].map(c => String(c).toLowerCase()).join('|');
+      if (rowStr.includes('employee id') || rowStr.includes('id empleado') || rowStr.includes('employee no')) {
+        headerRowIndex = i;
+        break;
+      }
+    }
+
+    if (headerRowIndex === -1) return res.status(400).json({ error: 'No se encontró la fila "Employee ID" en el archivo.' });
+
+    const headers = rawData[headerRowIndex];
+    const dateColIndices = [];
+    let empIdIndex = -1;
+
+    for (let j = 0; j < headers.length; j++) {
+      const colName = String(headers[j]).trim();
+      if (colName.toLowerCase() === 'employee id' || colName.toLowerCase() === 'id') empIdIndex = j;
+      if (/^\d{4}[\/\-]\d{2}[\/\-]\d{2}$/.test(colName)) {
+        dateColIndices.push({ index: j, name: colName.replace(/\//g, '-') }); 
+      }
+    }
+
+    for (let i = headerRowIndex + 2; i < rawData.length; i++) {
+      const fila = rawData[i];
+      if (!fila || fila.length === 0) continue;
+
+      const rawId = fila[empIdIndex];
+      const numEmp = String(rawId || '').replace(/['"]/g, '').trim().replace(/^0+/, ''); 
+      if (!numEmp) continue;
+
+      for (const dateCol of dateColIndices) {
+        const cellValue = String(fila[dateCol.index]);
+        const regexHoras = /\b(\d{2}:\d{2})\b/g;
+        let match;
+        const horasEncontradas = [];
+        
+        while ((match = regexHoras.exec(cellValue)) !== null) {
+          horasEncontradas.push(match[1]);
+        }
+
+        if (horasEncontradas.length > 0) {
+          const llave = `${numEmp}_${dateCol.name}`;
+          if (!registrosPorDia[llave]) registrosPorDia[llave] = { numEmp, fecha: dateCol.name, horas: [] };
+          registrosPorDia[llave].horas.push(...horasEncontradas);
+        }
+      }
+    }
+
+    let conteoPrimera = 0;
+    let conteoSegunda = 0;
+
+    for (const llave in registrosPorDia) {
+      const dia = parseInt(registrosPorDia[llave].fecha.split('-')[2], 10);
+      if (dia <= 15) conteoPrimera++;
+      else conteoSegunda++;
+    }
+
+    const esSegundaQuincena = conteoSegunda > conteoPrimera;
+
+    for (const llave in registrosPorDia) {
+      const dia = parseInt(registrosPorDia[llave].fecha.split('-')[2], 10);
+      if (esSegundaQuincena && dia <= 15) delete registrosPorDia[llave];
+      else if (!esSegundaQuincena && dia > 15) delete registrosPorDia[llave];
+    }
+
+    const fechasUnicas = [...new Set(Object.values(registrosPorDia).map(r => r.fecha))];
+    let mapDiasInhabiles = new Map();
+    let mapaDB = new Map(); 
+    let fechaMin, fechaMax;
+    
+    if (fechasUnicas.length > 0) {
+      const fechasObj = fechasUnicas.map(f => new Date(`${f}T12:00:00Z`));
+      fechaMin = new Date(Math.min(...fechasObj));
+      fechaMax = new Date(Math.max(...fechasObj));
+
+      const diasInhabiles = await prisma.diaInhabil.findMany({
+        where: { fecha: { gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) } }
+      });
+      diasInhabiles.forEach(d => mapDiasInhabiles.set(d.fecha.toISOString().split('T')[0], d.tipo));
+
+      const registrosExistentesDB = await prisma.asistencia.findMany({
+        where: { fecha: { gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) } }
+      });
+      registrosExistentesDB.forEach(r => mapaDB.set(`${r.servidorId}_${r.fecha.toISOString().split('T')[0]}`, r));
+    }
+
+    const resultadosProcesados = []; 
+    const datosAProcesar = [];       
+    
+    // EXTRACCIÓN ESTRICTA DE EMPLEADOS DEL EXCEL (CANDADO)
+    const numerosEmpExcel = [...new Set(Object.values(registrosPorDia).map(r => r.numEmp))];
+
+    // CICLO ÚNICO: Analiza SOLO a la gente que viene en este Excel
+    for (const numEmp of numerosEmpExcel) {
+      const empleado = empleados.find(e => String(e.numeroEmpleado).trim().replace(/^0+/, '') === numEmp);
+      if (!empleado) continue;
+
+      for (const fechaStr of fechasUnicas) {
+        const llave = `${numEmp}_${fechaStr}`;
+        const registroHoy = registrosPorDia[llave];
+        
+        let primeraChecada = null;
+        let ultimaChecada = null;
+
+        if (registroHoy && registroHoy.horas.length > 0) {
+           const horasUnicas = [...new Set(registroHoy.horas)].sort(); 
+           primeraChecada = horasUnicas[0];
+           ultimaChecada = horasUnicas.length > 1 ? horasUnicas[horasUnicas.length - 1] : null;
+        }
+
+        const llaveMapaDB = `${empleado.id}_${fechaStr}`;
+        const registroPrevioDB = mapaDB.get(llaveMapaDB);
+        const tipoInhabil = mapDiasInhabiles.get(fechaStr);
+        const regimenDB = String(empleado.regimen || '').toUpperCase().trim();
+
+        let estatus = "OK";
+        let minutosRetardo = 0;
+        let entradaFinal = primeraChecada;
+        let salidaFinal = ultimaChecada;
+
+        if (registroPrevioDB && registroPrevioDB.incidencia === 'JUSTIFICADA') {
+          estatus = "JUSTIFICADA"; entradaFinal = registroPrevioDB.entrada; salidaFinal = registroPrevioDB.salida;
+        }
+        else if (tipoInhabil === 'SIN_CONTRATO') { estatus = "SIN_CONTRATO"; entradaFinal = null; salidaFinal = null; } 
+        else if ((tipoInhabil === 'FERIADO' || tipoInhabil === 'VACACIONES') && regimenDB !== 'ESPECIAL') { estatus = "FERIADO"; entradaFinal = null; salidaFinal = null; } 
+        else if (regimenDB === 'LISTA') { estatus = "LA"; entradaFinal = null; salidaFinal = null; }
+        else if (regimenDB === 'EXENTO' || regimenDB === 'EXCENTO') { estatus = "EXENTO"; entradaFinal = null; salidaFinal = null; }
+        else if (!primeraChecada) {
+           const dSemana = new Date(`${fechaStr}T12:00:00Z`).getDay();
+           if (regimenDB === 'NORMAL' && dSemana !== 0 && dSemana !== 6) estatus = "FALTA";
+           else estatus = "FALTA"; 
+        } else {
+           const horaPrimera = parseInt(primeraChecada.split(':')[0], 10);
+           if (!ultimaChecada) {
+             if (horaPrimera >= 14) { entradaFinal = null; salidaFinal = primeraChecada; estatus = "OMISION_E"; } 
+             else { entradaFinal = primeraChecada; salidaFinal = null; estatus = "OMISION_S"; }
+           } else {
+             const horaUltima = parseInt(ultimaChecada.split(':')[0], 10);
+             if (horaPrimera >= 14) { entradaFinal = null; salidaFinal = ultimaChecada; estatus = "OMISION_E"; } 
+             else if (horaUltima < 14) { entradaFinal = primeraChecada; salidaFinal = null; estatus = "OMISION_S"; } 
+           }
+
+           let horaOficial = empleado.horario?.horaEntrada || (horaPrimera <= 8 ? '07:00' : '09:00');
+           const totalOficial = parseInt(horaOficial.split(':')[0]) * 60 + parseInt(horaOficial.split(':')[1]) + 10;
+           const totalReal = horaPrimera * 60 + parseInt(primeraChecada.split(':')[1]);
+           if (totalReal > totalOficial && entradaFinal) {
+              minutosRetardo = totalReal - totalOficial;
+              estatus = estatus === "OMISION_S" ? "RETARDO_Y_OMISION" : (regimenDB === 'ESPECIAL' ? "RETARDO_ESPECIAL" : "RETARDO");
+           }
+        }
+
+        const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
+        datosAProcesar.push({ servidorId: empleado.id, fechaParaPrisma, entradaFinal, salidaFinal, minutosRetardo, estatus });
+        resultadosProcesados.push({ 
+          numEmp, nombre: empleado.nombreCompleto, departamento: empleado.area ? empleado.area.nombre : 'Sin Área', 
+          fecha: fechaStr, entrada: entradaFinal || '---', salida: salidaFinal || '---', estatus, minutosRetardo
+        });
+      }
+    }
+
+    res.json({ mensaje: 'Datos analizados exitosamente.', diasProcesados: fechasUnicas.length, datosVisuales: resultadosProcesados, datosParaGuardar: datosAProcesar, existenDatosPrevios: false });
+
+  } catch (error) {
+    console.error("Error procesando Excel secundario:", error);
+    res.status(500).json({ error: 'Hubo un error al procesar la matriz.' });
+  }
+});
+
+// ==============================================================================
 // 2. RUTA DE GUARDADO (COMPLEMENTA SIN BORRAR Y SIN TIMEOUTS)
 // ==============================================================================
 router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req, res) => {
@@ -921,7 +1095,6 @@ router.get('/descargar-reporte', async (req, res) => {
 
     const empleadosArr = Object.values(empleadosMap).sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-    // Mapeo Maestro de Colores de Justificaciones (ARGB)
     const justifColors = {
       'CS':  { bg: 'FFC1E887', text: 'FF4A6E1F' },
       'FPE': { bg: 'FFC1E887', text: 'FF4A6E1F' },
@@ -1023,7 +1196,6 @@ router.get('/descargar-reporte', async (req, res) => {
         celdaEntrada.alignment = { horizontal: 'center' };
         celdaSalida.alignment = { horizontal: 'center' };
 
-        // Aplicación de Formatos Base
         if (tieneRetardo) {
           celdaEntrada.font = { color: { argb: 'FFCC0000' }, bold: true, size: 8 };
         } else if (esFeriado) { 
@@ -1042,10 +1214,8 @@ router.get('/descargar-reporte', async (req, res) => {
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
           celdaEntrada.font = { color: { argb: 'FF274975' }, bold: true, size: 7 };
           celdaSalida.font = { color: { argb: 'FF274975' }, bold: true, size: 7 };
-
         }
 
-        // Aplicación de Color para Cualquier SR o Falta
         if (esFalta) {
           celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE2DE' } };
           celdaSalida.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFE2DE' } };
@@ -1062,7 +1232,6 @@ router.get('/descargar-reporte', async (req, res) => {
           }
         }
 
-        // 🔥 NUEVA REGLA: Aplicación de colores evaluando directamente la sigla
         const applyJustifStyle = (texto, celda) => {
            const strUpper = String(texto).trim().toUpperCase();
            if (justifColors[strUpper]) {
@@ -1079,7 +1248,6 @@ router.get('/descargar-reporte', async (req, res) => {
         applyJustifStyle(entradaTexto, celdaEntrada);
         applyJustifStyle(salidaTexto, celdaSalida);
 
-        // Guiones vacíos
         if (entradaTexto === '---') {
           celdaEntrada.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCF9E8' } };
         }

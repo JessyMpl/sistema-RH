@@ -14,7 +14,7 @@ import ModuloAdministracion from '@/components/ModuloAdministracion.vue';
 const vistaActiva = ref('reporte'); 
 
 // CONTROL DE PESTAÑAS DE ORIGEN DE DATOS
-const metodoCarga = ref('cron'); // 'excel' o 'cron'
+const metodoCarga = ref('cron'); // 'excel', 'cron' o 'excel_secundario'
 const fechaInicio = ref('');
 const fechaFin = ref('');
 
@@ -93,13 +93,12 @@ const procesarDesdeCron = async () => {
   } catch (error) {
     Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo contactar al servidor.', confirmButtonColor: '#902c3e' });
   } finally {
-    const selectorVelas = document.getElementById("canvas");
     estaSubiendo.value = false;
   }
 };
 
 // =========================================================
-//  MÉTODO B: PROCESAR DESDE ARCHIVO EXCEL
+//  MÉTODO B: PROCESAR DESDE ARCHIVO EXCEL NORMAL
 // =========================================================
 const subirExcel = async () => {
   if (!archivoSeleccionado.value) {
@@ -146,23 +145,87 @@ const subirExcel = async () => {
   }
 };
 
-const confirmarYGuardar = async () => {
-  if (existenDatosPreviosBD.value) {
-    const confirmacion = await Swal.fire({
-      title: 'ℹ️ Integrar Quincena',
-      html: 'El sistema detectó que <b>ya existen registros</b> procesados en estas fechas.<br><br>Se agregarán los datos nuevos y <b>se conservará intacto tu trabajo anterior</b> (como justificaciones y registros previos). ¿Deseas aplicar la integración?',
-      icon: 'info',
-      showCancelButton: true,
-      confirmButtonColor: '#16a34a', // Verde de éxito
-      cancelButtonColor: '#6B1C3A',  // Vino institucional
-      confirmButtonText: 'Sí, integrar datos',
-      cancelButtonText: 'Cancelar'
-    });
-
-    if (!confirmacion.isConfirmed) {
-      return; 
-    }
+// =========================================================
+//  MÉTODO C: PROCESAR DESDE ARCHIVO MATRIZ (CAIM ECATEPEC)
+// =========================================================
+const subirExcelSecundario = async () => {
+  if (!archivoSeleccionado.value) {
+    Swal.fire({ icon: 'warning', title: '¡Falta el archivo!', text: 'Por favor, selecciona un archivo Excel primero.', confirmButtonColor: '#902c3e' });
+    return;
   }
+  
+  estaSubiendo.value = true;
+  mensajeStatus.value = ''; 
+  
+  const formData = new FormData();
+  formData.append('archivoExcel', archivoSeleccionado.value);
+
+  Swal.fire({
+    title: '¡Analizando Matriz! 📊',
+    html: 'Extrayendo columnas y calculando horarios. Solo tomará unos segundos...',
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    didOpen: () => { Swal.showLoading(); }
+  });
+
+  try {
+    const respuesta = await fetch(apiUrl('/api/excel/previsualizar-excel-secundario'), {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await respuesta.json();
+    
+    if (respuesta.ok) {
+      Swal.fire({ icon: 'success', title: '¡Análisis terminado!', text: 'Revisa los datos en la tabla antes de guardarlos.', confirmButtonColor: '#902c3e' });
+      
+      datosExtraidos.value = data.datosVisuales; 
+      datosParaGuardarBD.value = data.datosParaGuardar; 
+      existenDatosPreviosBD.value = data.existenDatosPrevios || false; 
+      vistaActual.value = 'validacion'; 
+    } else {
+      Swal.fire({ icon: 'error', title: '¡Ups!', text: data.error || 'Hubo un error al leer el archivo secundario.', confirmButtonColor: '#902c3e' });
+    }
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo contactar al servidor.', confirmButtonColor: '#902c3e' });
+  } finally {
+    estaSubiendo.value = false;
+  }
+};
+
+// =========================================================
+//  MÉTODO DE GUARDADO (DINÁMICO SEGÚN PESTAÑA)
+// =========================================================
+const confirmarYGuardar = async () => {
+  let tituloSwal = '';
+  let htmlSwal = '';
+  let btnSwal = '';
+
+  // Detección inteligente de la pestaña activa
+  if (metodoCarga.value === 'excel_secundario') {
+    tituloSwal = '➕ Añadir a la Quincena';
+    htmlSwal = 'Se integrarán <b>únicamente</b> los registros de este archivo matriz a la base de datos.<br><br>Tu trabajo previo quedará intacto. ¿Deseas añadir estos datos?';
+    btnSwal = 'Sí, añadir datos';
+  } else {
+    tituloSwal = existenDatosPreviosBD.value ? '⚠️ Actualizar Quincena' : '💾 Guardar Quincena';
+    htmlSwal = existenDatosPreviosBD.value 
+      ? 'El sistema detectó que <b>ya existen registros</b> en estas fechas. Se actualizará la información base. ¿Deseas continuar?' 
+      : 'Se guardarán los registros de toda la plantilla en la base de datos.';
+    btnSwal = 'Sí, guardar quincena';
+  }
+
+  const confirmacion = await Swal.fire({
+    title: tituloSwal,
+    html: htmlSwal,
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonColor: '#16a34a', // Verde de éxito
+    cancelButtonColor: '#6B1C3A',  // Vino institucional
+    confirmButtonText: btnSwal,
+    cancelButtonText: 'Cancelar'
+  });
+
+  if (!confirmacion.isConfirmed) return; 
 
   estaGuardando.value = true;
 
@@ -205,6 +268,10 @@ watch(metodoCarga, () => {
   datosParaGuardarBD.value = null;
   existenDatosPreviosBD.value = false;
   vistaActual.value = 'validacion';
+  
+  // Limpiar el input de archivo visualmente si existe
+  const fileInput = document.querySelector('input[type="file"]');
+  if(fileInput) fileInput.value = '';
 });
 
 const diasSabana = computed(() => {
@@ -328,7 +395,6 @@ watch(busquedaSabana, () => {
 
 const getDia = (fechaString) => parseInt(fechaString.split('-')[2], 10);
 
-// LÓGICA REUTILIZABLE DE CLASES (Para estandarizar colores de SR)
 const getClaseCelda = (registro, tipo) => {
   if (!registro) return 'bg-gray-50 text-gray-300';
   const estatus = String(registro.estatus || '').trim().toUpperCase();
@@ -362,7 +428,7 @@ const getValorCelda = (registro, tipo) => {
   <div class="min-h-screen bg-gray-100 flex">
     <SidebarRH :vistaActiva="vistaActiva" @cambiar-vista="(nuevaVista) => vistaActiva = nuevaVista" />
 
-   <main class="flex-1 ml-64 p-8 pt-24 min-h-screen overflow-y-auto"> <!-- Contenido principal ajuste de espacio superior  entre el contendor y el logo en pt-20 -->
+   <main class="flex-1 ml-64 p-8 pt-24 min-h-screen overflow-y-auto">
       
       <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-inst-primario">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Sistematizar Datos de Asistencia</h1>
@@ -378,8 +444,36 @@ const getValorCelda = (registro, tipo) => {
                   class="pb-2 px-2 transition-colors flex items-center gap-2 cursor-pointer">
             <i class="fa-solid fa-file-excel text-green-600"></i> Carga Manual (Excel)
           </button>
+          <button @click="metodoCarga = 'excel_secundario'" 
+                  :class="metodoCarga === 'excel_secundario' ? 'border-inst-primario text-inst-primario border-b-2 font-bold' : 'text-gray-500 font-medium hover:text-gray-800'" 
+                  class="pb-2 px-2 transition-colors flex items-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-table-cells text-orange-500"></i> Carga Matriz (Excel)
+          </button>
         </div>
 
+        <!-- MÓDULO EXCEL SECUNDARIO (MATRIZ) -->
+        <div v-if="metodoCarga === 'excel_secundario'" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors mb-6 relative group">
+          <i class="fa-solid fa-table-cells text-5xl text-gray-400 group-hover:text-inst-primario group-hover:scale-110 transition-all duration-300 mb-4 block"></i>
+          
+          <p class="text-gray-600 font-medium mb-6">
+            <i class="fas fa-file-excel text-orange-500 mr-2 text-lg"></i>
+            Carga el archivo Excel secundario (Formato transversal por columnas / CAIM Ecatepec).
+          </p>
+          
+          <div class="flex flex-col items-center justify-center gap-4">
+            <input type="file" accept=".xlsx, .xls" @change="seleccionarArchivo"
+              class="block w-full max-w-sm text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-inst-primario/10 file:text-inst-primario hover:file:bg-inst-primario/20 cursor-pointer transition"
+            /> 
+            
+            <button @click="subirExcelSecundario" :disabled="estaSubiendo"
+              class="mt-4 bg-inst-primario hover:bg-inst-secundario disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-6 rounded-md shadow-sm transition flex items-center gap-2 cursor-pointer">
+              <i class="fa-solid" :class="estaSubiendo ? 'fa-spinner fa-spin' : 'fa-magnifying-glass-chart'"></i>
+              {{ estaSubiendo ? 'Analizando...' : 'Analizar Matriz' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- MÓDULO EXCEL NORMAL -->
         <div v-if="metodoCarga === 'excel'" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50 hover:bg-gray-100 transition-colors mb-6 relative group">
           <i class="fa-solid fa-cloud-arrow-up text-5xl text-gray-400 group-hover:text-inst-primario group-hover:scale-110 transition-all duration-300 mb-4 block"></i>
           
@@ -401,6 +495,7 @@ const getValorCelda = (registro, tipo) => {
           </div>
         </div>
 
+        <!-- MÓDULO CRON -->
         <div v-if="metodoCarga === 'cron'" class="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 mb-6">
           <div class="text-center mb-6">
             <i class="fa-solid fa-calendar-days text-5xl text-gray-400 mb-4 block"></i>
@@ -439,8 +534,8 @@ const getValorCelda = (registro, tipo) => {
             </div>
             
             <button v-if="datosParaGuardarBD" @click="confirmarYGuardar" :disabled="estaGuardando" class="bg-inst-primario hover:bg-inst-secundario text-white font-bold py-2 px-6 rounded-lg shadow-md transition flex items-center gap-2 cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z"/></svg>
-              {{ estaGuardando ? 'Guardando...' : 'Guardar en BD' }}
+              <i class="fas" :class="metodoCarga === 'excel_secundario' ? 'fa-plus' : 'fa-save'"></i>
+              {{ estaGuardando ? 'Procesando...' : (metodoCarga === 'excel_secundario' ? 'Añadir a la Quincena' : 'Guardar en BD') }}
             </button>
           </div>
 
@@ -573,7 +668,6 @@ const getValorCelda = (registro, tipo) => {
                           </td>
                         </template>
                       </template>
-                      <!-- Cuando no hay ningún registro en la base de datos para ese día -->
                       <td colspan="2" v-else class="py-2 text-center border border-gray-200 align-middle bg-[#FCF9E8]">
                         <span class="text-gray-500">---</span>
                       </td>
