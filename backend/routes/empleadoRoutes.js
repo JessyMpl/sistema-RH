@@ -299,4 +299,132 @@ router.post('/importar', upload.single('archivoExcel'), async (req, res) => {
   }
 });
 
+// ==========================================
+// 5. RUTA: SINCRONIZADOR NOMINAL (ALTAS, MODIFICACIONES Y BAJAS LÓGICAS)
+// ==========================================
+router.post('/sincronizar-plantilla', upload.single('archivoNominal'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Falta el archivo nominal de Excel.' });
+
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const hoja = workbook.Sheets[workbook.SheetNames[0]];
+    const rawData = xlsx.utils.sheet_to_json(hoja, { header: 1, defval: '' });
+
+    const empleadosProcesados = [];
+    const areasSet = new Set();
+    
+    // 1. EXTRAER Y TRADUCIR DATOS (Asumimos que fila 0 son títulos, empezamos en 1)
+    for (let i = 1; i < rawData.length; i++) {
+      const fila = rawData[i];
+      const numEmp = String(fila[0] || '').trim().replace(/^0+/, ''); // Columna A
+      const areaNombre = String(fila[1] || '').trim().toUpperCase();  // Columna B
+      const nombreCompleto = String(fila[2] || '').trim().toUpperCase(); // Columna C
+      const horarioRaw = String(fila[3] || '').trim().toLowerCase();  // Columna D
+
+      if (!numEmp || !nombreCompleto) continue; 
+
+      let regimenFinal = 'NORMAL';
+      let horarioIdCalculado = 2; 
+
+      if (horarioRaw.includes('lista')) { regimenFinal = 'LISTA'; horarioIdCalculado = 3; }
+      else if (horarioRaw.includes('especial')) { regimenFinal = 'ESPECIAL'; horarioIdCalculado = 4; }
+      else if (horarioRaw.includes('exento')) { regimenFinal = 'EXENTO'; horarioIdCalculado = 6; }
+
+      empleadosProcesados.push({ numEmp, areaNombre, nombreCompleto, regimenFinal, horarioIdCalculado });
+      if (areaNombre) areasSet.add(areaNombre);
+    }
+
+    // 2. MAPEAR ÁREAS (Crea las áreas nuevas si no existen)
+    const areasMapeadas = {};
+    for (const nombre of areasSet) {
+      let areaDB = await prisma.areaAdscripcion.findFirst({ where: { nombre } });
+      if (!areaDB) {
+        areaDB = await prisma.areaAdscripcion.create({ data: { nombre, activo: true } });
+      }
+      areasMapeadas[nombre] = areaDB.id;
+    }
+
+    // 3. OBTENER EMPLEADOS ACTUALES PARA COMPARACIÓN RÁPIDA (O(1))
+    const empleadosDB = await prisma.servidorPublico.findMany();
+    const mapaEmpleadosDB = new Map();
+    empleadosDB.forEach(e => mapaEmpleadosDB.set(e.numeroEmpleado, e));
+
+    const numEmpleadosExcel = [];
+    let altas = 0;
+    let modificaciones = 0;
+
+    // 4. PROCESAR ALTAS Y MODIFICACIONES
+    for (const emp of empleadosProcesados) {
+      numEmpleadosExcel.push(emp.numEmp);
+      const areaId = areasMapeadas[emp.areaNombre] || null;
+      const existe = mapaEmpleadosDB.get(emp.numEmp);
+      
+      if (existe) {
+         // Si detecta un cambio en régimen, área, nombre o si estaba de baja y regresó
+         if (existe.regimen !== emp.regimenFinal || existe.areaId !== areaId || existe.nombreCompleto !== emp.nombreCompleto || existe.fechaBaja) {
+             const nuevosMovimientos = [];
+             
+             if (existe.fechaBaja) {
+                nuevosMovimientos.push({ tipoMovimiento: "REINGRESO / REACTIVACIÓN", datoNuevo: "ACTIVO" });
+             }
+             if (existe.regimen !== emp.regimenFinal) {
+                nuevosMovimientos.push({ tipoMovimiento: "CAMBIO DE RÉGIMEN SINC", datoAnterior: existe.regimen, datoNuevo: emp.regimenFinal });
+             }
+
+             await prisma.servidorPublico.update({
+               where: { id: existe.id },
+               data: {
+                 nombreCompleto: emp.nombreCompleto,
+                 regimen: emp.regimenFinal,
+                 areaId: areaId,
+                 horarioId: emp.horarioIdCalculado,
+                 fechaBaja: null, 
+                 activo: true,
+                 historial: nuevosMovimientos.length > 0 ? { create: nuevosMovimientos } : undefined
+               }
+             });
+             modificaciones++;
+         }
+      } else {
+         // Si no existe, ALTA NUEVA
+         await prisma.servidorPublico.create({
+           data: {
+             numeroEmpleado: emp.numEmp,
+             nombreCompleto: emp.nombreCompleto,
+             regimen: emp.regimenFinal,
+             areaId: areaId,
+             horarioId: emp.horarioIdCalculado,
+             activo: true,
+             historial: { create: [{ tipoMovimiento: "ALTA POR SINCRONIZACIÓN", datoNuevo: emp.areaNombre || "SIN ÁREA" }] }
+           }
+         });
+         altas++;
+      }
+    }
+
+    // 5. BAJAS LÓGICAS (Soft Delete) - Protege el historial
+    const bajasGeneradas = await prisma.servidorPublico.updateMany({
+      where: {
+        activo: true,
+        fechaBaja: null,
+        NOT: { numeroEmpleado: { in: numEmpleadosExcel } }
+      },
+      data: {
+        activo: false,
+        fechaBaja: new Date(),
+        motivoBaja: 'Baja automática por sincronización nominal'
+      }
+    });
+
+    res.json({ 
+      mensaje: 'Plantilla sincronizada exitosamente.',
+      resultados: { altas, modificaciones, bajas: bajasGeneradas.count }
+    });
+
+  } catch (error) {
+    console.error("Error en sincronización nominal:", error);
+    res.status(500).json({ error: 'Hubo un error al procesar el padrón nominal.' });
+  }
+});
+
 module.exports = router;

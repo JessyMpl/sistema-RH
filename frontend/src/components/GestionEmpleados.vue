@@ -12,6 +12,7 @@ const areasAdscripcion = ref([]);
 const vistaInterna = ref('lista'); 
 const searchValue = ref('');
 const filtroArea = ref('TODAS'); 
+const filtroEstatus = ref('ACTIVOS'); // 'ACTIVOS', 'BAJAS' o 'TODOS'
 
 const headers = [
   { text: "No. Empleado", value: "numeroEmpleado", sortable: true },
@@ -198,13 +199,20 @@ const procesarImportacion = async () => {
 };
 
 // ==========================================
-// 6. COMPUTADOS (Filtros)
+// 6. COMPUTADOS (Filtros Avanzados)
 // ==========================================
 const empleadosFiltrados = computed(() => {
-  if (filtroArea.value === 'TODAS') {
-    return empleados.value;
-  }
-  return empleados.value.filter(emp => emp.departamento === filtroArea.value);
+  return empleados.value.filter(emp => {
+    // 1. Validar filtro de Área
+    const pasaArea = filtroArea.value === 'TODAS' || emp.departamento === filtroArea.value;
+    
+    // 2. Validar filtro de Estatus
+    let pasaEstatus = true;
+    if (filtroEstatus.value === 'ACTIVOS') pasaEstatus = emp.activo === true;
+    if (filtroEstatus.value === 'BAJAS') pasaEstatus = emp.activo === false;
+    
+    return pasaArea && pasaEstatus;
+  });
 });
 
 onMounted(() => {
@@ -212,34 +220,110 @@ onMounted(() => {
   cargarHorarios(); 
   cargarAreas();
 });
+
+// ==========================================
+// 7. SINCRONIZACIÓN NOMINAL (BOTÓN MÁGICO)
+// ==========================================
+const inputPadron = ref(null);
+
+const subirPadronNominal = async (event) => {
+  const archivo = event.target.files[0];
+  if (!archivo) return;
+
+  const formData = new FormData();
+  formData.append('archivoNominal', archivo);
+
+  Swal.fire({
+    title: '¡Sincronizando Padrón! 🔄',
+    html: 'Analizando altas, bajas y cambios de régimen. Esto tomará un par de segundos...',
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    didOpen: () => { Swal.showLoading(); }
+  });
+
+  try {
+    const respuesta = await fetch(apiUrl('/api/empleados/sincronizar-plantilla'), {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await respuesta.json();
+    
+    if (respuesta.ok) {
+      Swal.fire({ 
+        icon: 'success', 
+        title: '¡Padrón Sincronizado!', 
+        html: `
+          <div class="text-left text-sm mt-4 text-gray-700 bg-gray-50 p-4 rounded-lg border">
+            <p class="mb-2"><span class="text-green-600 font-bold"><i class="fa-solid fa-user-plus w-5"></i> Nuevas Altas:</span> ${data.resultados.altas}</p>
+            <p class="mb-2"><span class="text-blue-600 font-bold"><i class="fa-solid fa-user-pen w-5"></i> Actualizados:</span> ${data.resultados.modificaciones}</p>
+            <p><span class="text-red-600 font-bold"><i class="fa-solid fa-user-minus w-5"></i> Bajas procesadas:</span> ${data.resultados.bajas}</p>
+          </div>
+        `,
+        confirmButtonColor: '#16a34a' 
+      });
+      
+      cargarEmpleados();
+      cargarAreas();
+      vistaInterna.value = 'lista';
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: data.error, confirmButtonColor: '#902c3e' });
+    }
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Falló la conexión con el servidor.', confirmButtonColor: '#902c3e' });
+  } finally {
+    if (event.target) event.target.value = null; 
+  }
+};
+
 </script>
 
 <template>
   <div class="space-y-6">
     
-    <div class="flex space-x-4 mb-6">
+    <div class="flex flex-wrap gap-4 mb-6 items-center">
       <button @click="vistaInterna = 'lista'" :class="vistaInterna === 'lista' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Ver Catálogo</button>
       <button @click="vistaInterna = 'nuevo'" :class="vistaInterna === 'nuevo' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Registro Manual</button>
-      <button @click="vistaInterna = 'importar'" :class="vistaInterna === 'importar' ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Importar Excel</button>
+      
+      <!-- BOTÓN DE SINCRONIZACIÓN NOMINAL -->
+      <input type="file" ref="inputPadron" accept=".xlsx, .xls" class="hidden" @change="subirPadronNominal" />
+      <button @click="$refs.inputPadron.click()" class="bg-mauve-600 hover:bg-mauve-700 text-white font-bold px-5 py-2 rounded-lg shadow-md transition flex items-center gap-2 cursor-pointer">
+        <i class="fa-solid fa-users-arrows-rotate"></i> Sincronizar Padrón Nominal
+      </button>
     </div>
-
 
     <div v-if="vistaInterna === 'lista'" class="space-y-4">
       
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 rounded-lg border-t-4 border-inst-primario gap-4">
+        
+        <!-- NUEVO BLOQUE DE 3 COLUMNAS PARA FILTROS -->
         <div class="flex flex-col md:flex-row w-full gap-4">
-          <div class="w-full md:w-1/2">
-            <label class="block text-xs font-bold uppercase text-inst-primario mb-1">Buscar Servidor Público <i class="fa-solid fa-magnifying-glass ml-2 text-lg"></i></label>
+          <!-- Columna 1: Búsqueda -->
+          <div class="w-full md:w-1/3">
+            <label class="block text-xs font-bold uppercase text-inst-primario mb-1">Buscar <i class="fa-solid fa-magnifying-glass ml-2 text-lg"></i></label>
             <input v-model="searchValue" type="text" placeholder="ID o Nombre..." class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 transition shadow-sm text-sm" />
           </div>
-          <div class="w-full md:w-1/2">
-            <label class="block text-xs font-bold uppercase text-inst-primario mb-1">Filtrar por Área de Adscripción <i class="fa-solid fa-filter ml-2 text-lg"></i></label>
-            <select v-model="filtroArea" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 transition shadow-sm text-sm bg-white">
+          
+          <!-- Columna 2: Filtro de Área -->
+          <div class="w-full md:w-1/3">
+            <label class="block text-xs font-bold uppercase text-inst-primario mb-1">Área <i class="fa-solid fa-filter ml-2 text-lg"></i></label>
+            <select v-model="filtroArea" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 transition shadow-sm text-sm bg-white cursor-pointer">
               <option value="TODAS">TODAS LAS ÁREAS</option>
               <option v-for="area in areasAdscripcion" :key="area.id" :value="area.nombre">{{ area.nombre }}</option>
             </select>
           </div>
+
+          <!-- Columna 3: Filtro de Estatus -->
+          <div class="w-full md:w-1/3">
+            <label class="block text-xs font-bold uppercase text-inst-primario mb-1">Estatus <i class="fa-solid fa-user-check ml-2 text-lg"></i></label>
+            <select v-model="filtroEstatus" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-blue-500 transition shadow-sm text-sm bg-white cursor-pointer">
+              <option value="ACTIVOS" class="text-green-700 font-bold">SOLO ACTIVOS</option>
+              <option value="BAJAS" class="text-red-700 font-bold">SOLO BAJAS</option>
+              <option value="TODOS" class="text-gray-700 font-bold">MOSTRAR TODOS</option>
+            </select>
+          </div>
         </div>
+
         <div class="text-sm text-gray-500 font-medium whitespace-nowrap md:mt-6">Total: <span class="font-bold text-gray-800">{{ empleadosFiltrados.length }}</span> registros</div>
       </div>
 
@@ -281,7 +365,7 @@ onMounted(() => {
       </div>
     </div>
 
-
+    <!-- Modal Editar -->
     <div v-if="mostrarModalEditar" class="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all" style="background-color: rgba(0,0,0,0.4); backdrop-filter: blur(4px);">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate__animated animate__fadeInDown">
         <div class="bg-inst-cafe-oscuro p-3 text-white font-bold flex justify-between items-center">
@@ -358,7 +442,7 @@ onMounted(() => {
       </div>
     </div>
 
-
+    <!-- Modal Detalles -->
     <div v-if="mostrarModalDetalle" class="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all" style="background-color: rgba(0,0,0,0.4); backdrop-filter: blur(4px);">
       <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate__animated animate__fadeInDown flex flex-col max-h-[85vh]">
         
@@ -459,7 +543,6 @@ onMounted(() => {
       </div>
     </div>
 
-
     <div v-if="vistaInterna === 'nuevo'" class="bg-white p-6 rounded-lg shadow-sm border-t-4 border-inst-primario">
       <h2 class="text-xl font-bold mb-4 text-gray-800 uppercase">Alta Individual de Personal</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -479,18 +562,6 @@ onMounted(() => {
         <div><label class="block text-sm font-medium text-gray-700 mb-1">Horario</label><select v-model="formulario.horarioId" class="w-full p-2 border rounded outline-none bg-white"><option v-for="h in horarios" :key="h.id" :value="h.id">{{ h.nombre }}</option></select></div>
       </div>
       <div class="mt-6 flex justify-end"><button @click="guardarManual" class="bg-inst-primario hover:bg-inst-secundario text-white font-bold py-2 px-6 rounded shadow transition">Guardar Personal</button></div>
-    </div>
-
-
-    <div v-if="vistaInterna === 'importar'" class="bg-white p-6 rounded-lg shadow-sm border-t-4 border-green-600">
-      <h2 class="text-xl font-bold mb-6 text-gray-800 uppercase text-center">Carga Masiva vía Excel</h2>
-      <div class="border-2 border-dashed border-green-300 bg-green-50 p-10 text-center rounded-xl flex flex-col items-center">
-        <i class="fa-solid fa-file-excel text-5xl text-green-600 mb-4"></i>
-        <input type="file" @change="seleccionarArchivoCatalogo" class="mb-6 block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-green-100 file:text-green-800 cursor-pointer" />
-        <button @click="procesarImportacion" :disabled="importando" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-10 rounded-lg shadow transition">
-          {{ importando ? 'Procesando...' : 'Iniciar Importación' }}
-        </button>
-      </div>
     </div>
 
   </div>

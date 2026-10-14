@@ -422,6 +422,9 @@ const getValorCelda = (registro, tipo) => {
   const esEspecial = estatus.includes('ESPECIAL');
   return valor || (esEspecial ? '---' : 'SR');
 };
+
+
+
 </script>
 
 <template>
