@@ -1153,6 +1153,11 @@ router.get('/descargar-reporte', async (req, res) => {
             entradaTexto = 'LA';
             salidaTexto = 'LA';
             esLA = true;
+          } else if (reg.incidencia === 'FALTA_LA') {
+            entradaTexto = '***';
+            salidaTexto = '***';
+            esFalta = true; // Se pinta de naranja y suma como falta
+            totalAsistencia++;
           } else if (reg.incidencia === 'EXENTO' || reg.incidencia === 'EXCENTO') {
             entradaTexto = 'EX';
             salidaTexto = 'EX';
@@ -1300,7 +1305,7 @@ router.get('/consultar-incidencias', async (req, res) => {
       where: {
         fecha: { gte: fechaInicio, lte: fechaFin },
         incidencia: {
-          in: ['RETARDO', 'RETARDO_ESPECIAL', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION', 'FALTA']
+          in: ['RETARDO', 'RETARDO_ESPECIAL', 'OMISION_E', 'OMISION_S', 'RETARDO_Y_OMISION', 'FALTA', 'FALTA_LA']
         }
       },
       include: {

@@ -201,7 +201,6 @@ const confirmarYGuardar = async () => {
   let htmlSwal = '';
   let btnSwal = '';
 
-  // Detección inteligente de la pestaña activa
   if (metodoCarga.value === 'excel_secundario') {
     tituloSwal = '➕ Añadir a la Quincena';
     htmlSwal = 'Se integrarán <b>únicamente</b> los registros de este archivo matriz a la base de datos.<br><br>Tu trabajo previo quedará intacto. ¿Deseas añadir estos datos?';
@@ -219,8 +218,8 @@ const confirmarYGuardar = async () => {
     html: htmlSwal,
     icon: 'info',
     showCancelButton: true,
-    confirmButtonColor: '#16a34a', // Verde de éxito
-    cancelButtonColor: '#6B1C3A',  // Vino institucional
+    confirmButtonColor: '#16a34a',
+    cancelButtonColor: '#6B1C3A',
     confirmButtonText: btnSwal,
     cancelButtonText: 'Cancelar'
   });
@@ -269,7 +268,6 @@ watch(metodoCarga, () => {
   existenDatosPreviosBD.value = false;
   vistaActual.value = 'validacion';
   
-  // Limpiar el input de archivo visualmente si existe
   const fileInput = document.querySelector('input[type="file"]');
   if(fileInput) fileInput.value = '';
 });
@@ -349,7 +347,7 @@ const datosPivotados = computed(() => {
       
       if (reg) {
         if (reg.estatus.includes('RETARDO')) faltasPuntualidad++;
-        if (reg.estatus === 'FALTA') faltasAsistencia++;
+        if (reg.estatus === 'FALTA' || reg.estatus === 'FALTA_LA') faltasAsistencia++;
         if (reg.minutosRetardo && reg.minutosRetardo > 0) {
           totalMinutos += Number(reg.minutosRetardo);
         }
@@ -403,7 +401,7 @@ const getClaseCelda = (registro, tipo) => {
   const valMostrar = String(valor || (esEspecial ? '---' : 'SR')).trim().toUpperCase();
 
   if (valMostrar === '---') return 'bg-[#FCF9E8] text-gray-500';
-  if (valMostrar === 'SR') return 'bg-[#FFE2DE] text-[#BD2C0B] font-bold';
+  if (valMostrar === 'SR' || estatus === 'FALTA_LA') return 'bg-[#FFE2DE] text-[#BD2C0B] font-bold';
 
   if (tipo === 'entrada') {
     if (estatus.includes('RETARDO')) return 'text-red-600 font-bold bg-red-50';
@@ -418,13 +416,51 @@ const getClaseCelda = (registro, tipo) => {
 const getValorCelda = (registro, tipo) => {
   if (!registro) return '-';
   const estatus = String(registro.estatus || '').trim().toUpperCase();
+  if (estatus === 'FALTA_LA') return '***';
   const valor = tipo === 'entrada' ? registro.entrada : registro.salida;
   const esEspecial = estatus.includes('ESPECIAL');
   return valor || (esEspecial ? '---' : 'SR');
 };
 
+// ==============================================================================
+// LÓGICA PARA CONTROL DE LISTAS FÍSICAS (LA)
+// ==============================================================================
+const busquedaLista = ref(''); 
 
+const empleadosConLista = computed(() => {
+  if (!datosPivotados.value) return [];
+  return datosPivotados.value.filter(emp => 
+    Object.values(emp.asistencias).some(a => a.estatus === 'LA' || a.estatus === 'FALTA_LA')
+  ).map(emp => {
+    const entregoFisico = Object.values(emp.asistencias).some(a => a.estatus === 'LA');
+    return { ...emp, entregoFisico };
+  });
+});
 
+const empleadosConListaFiltrados = computed(() => {
+  let lista = empleadosConLista.value;
+  if (busquedaLista.value) {
+    const query = busquedaLista.value.toLowerCase();
+    lista = lista.filter(emp =>
+      emp.nombre.toLowerCase().includes(query) ||
+      emp.numEmp.toLowerCase().includes(query) ||
+      (emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || '').toLowerCase().includes(query)
+    );
+  }
+  return lista;
+});
+
+const toggleEntregaLista = (numEmp, entrego) => {
+  const estatusNuevo = entrego ? 'LA' : 'FALTA_LA';
+  datosExtraidos.value.forEach((registro, index) => {
+    if (registro.numEmp === numEmp && (registro.estatus === 'LA' || registro.estatus === 'FALTA_LA')) {
+      registro.estatus = estatusNuevo;
+      if (datosParaGuardarBD.value && datosParaGuardarBD.value[index]) {
+        datosParaGuardarBD.value[index].estatus = estatusNuevo;
+      }
+    }
+  });
+};
 </script>
 
 <template>
@@ -530,6 +566,12 @@ const getValorCelda = (registro, tipo) => {
               <button @click="vistaActual = 'validacion'" :class="vistaActual === 'validacion' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition cursor-pointer">
                <i class="fas fa-eye mr-2"></i> Validar Registros
               </button>
+              
+              <!-- NUEVO BOTÓN CONTROL LISTAS -->
+              <button @click="vistaActual = 'controlListas'" :class="vistaActual === 'controlListas' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition cursor-pointer">
+                <i class="fas fa-clipboard-check mr-2"></i> Control Listas
+              </button>
+
               <button @click="vistaActual = 'sabana'" :class="vistaActual === 'sabana' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition cursor-pointer">
                 <i class="fas fa-table mr-2"></i>  
                 Sábana Quincenal
@@ -560,27 +602,27 @@ const getValorCelda = (registro, tipo) => {
               >
                 <template #item-entrada="item">
                   <span v-if="String(item.estatus || '').trim().toUpperCase() === 'BAJA'" class="text-gray-400 font-bold tracking-widest text-xs">BAJA</span>
-                  <span v-else :class="{'text-red-600 font-bold': String(item.estatus || '').includes('RETARDO') || String(item.estatus || '') === 'FALTA', 'text-gray-700': !String(item.estatus || '').includes('RETARDO')}">
+                  <span v-else :class="{'text-red-600 font-bold': String(item.estatus || '').includes('RETARDO') || String(item.estatus || '') === 'FALTA' || String(item.estatus || '') === 'FALTA_LA', 'text-gray-700': !String(item.estatus || '').includes('RETARDO')}">
                     {{ item.entrada || 'SR' }}
                   </span>
                 </template>
                 
                 <template #item-salida="item">
                   <span v-if="String(item.estatus || '').trim().toUpperCase() === 'BAJA'" class="text-gray-400 font-bold tracking-widest text-xs">BAJA</span>
-                  <span v-else :class="{'text-red-600 font-bold': String(item.estatus || '') === 'FALTA', 'text-gray-700': String(item.estatus || '') !== 'FALTA'}">
+                  <span v-else :class="{'text-red-600 font-bold': String(item.estatus || '') === 'FALTA' || String(item.estatus || '') === 'FALTA_LA', 'text-gray-700': String(item.estatus || '') !== 'FALTA' && String(item.estatus || '') !== 'FALTA_LA'}">
                     {{ item.salida || 'SR' }}
                   </span>
                 </template>
 
                 <template #item-estatus="item">
                   <span v-if="String(item.estatus || '').trim().toUpperCase() === 'BAJA'" class="bg-gray-800 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Baja</span>
-                  
                   <span v-else-if="item.estatus === 'OK'" class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Normal</span>
                   <span v-else-if="item.estatus.includes('RETARDO')" class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">Retardo ({{ item.minutosRetardo }} min)</span>
                   <span v-else-if="item.estatus === 'OK_ESPECIAL'" class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-bold">Especial</span>
                   <span v-else-if="item.estatus === 'NO ENCONTRADO'" class="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta en BD</span>
                   <span v-else-if="item.estatus === 'FALTA'" class="bg-red-800 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Falta</span>
                   <span v-else-if="item.estatus === 'LA'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Lista</span>
+                  <span v-else-if="item.estatus === 'FALTA_LA'" class="bg-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Pendiente de Lista</span>
                   <span v-else-if="item.estatus === 'EXENTO'" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Exento</span>
                   <span v-else-if="item.estatus === 'FERIADO'" class="bg-gray-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm">Día Inhábil</span>
                   <span v-else-if="item.estatus === 'OMISION_E'" class="bg-orange-200 text-orange-800 px-3 py-1 rounded-full text-xs font-bold">Omisión Entrada</span>
@@ -588,6 +630,57 @@ const getValorCelda = (registro, tipo) => {
                   <span v-else class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-xs">{{ item.estatus }}</span>
                 </template>
               </EasyDataTable>
+            </div>
+          </div>
+
+          <!-- VISTA DE CONTROL DE LISTAS FÍSICAS -->
+          <div v-if="vistaActual === 'controlListas'" class="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-4 gap-4">
+              <div>
+                <h3 class="text-lg font-bold text-gray-800 uppercase"><i class="fas fa-clipboard-list text-inst-primario mr-2"></i> Recepción de Listas Físicas</h3>
+                <p class="text-sm text-gray-500 mt-1">Marca a quienes ya entregaron. Los desmarcados saldrán con <b class="text-orange-600">***</b> en el reporte.</p>
+              </div>
+              
+              <div class="w-full md:w-72 relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400"></i>
+                <input type="text" v-model="busquedaLista" placeholder="Buscar por número o nombre..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-inst-primario text-sm shadow-sm" />
+              </div>
+            </div>
+            
+            <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+              <table class="min-w-full bg-white">
+                <thead class="bg-gray-100 border-b border-gray-200">
+                  <tr>
+                    <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase w-24">No. Emp</th>
+                    <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase">Servidor Público</th>
+                    <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase">Área</th>
+                    <th class="py-3 px-4 text-center text-xs font-bold text-gray-600 uppercase w-40">Recepción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="emp in empleadosConListaFiltrados" :key="emp.numEmp" class="border-b border-gray-100 hover:bg-gray-50 transition">
+                    <td class="py-3 px-4 text-sm font-bold text-gray-700">{{ emp.numEmp }}</td>
+                    <td class="py-3 px-4 text-sm font-medium text-gray-800">{{ emp.nombre }}</td>
+                    <td class="py-3 px-4 text-xs text-gray-500 truncate max-w-[200px]">{{ emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento }}</td>
+                    <td class="py-3 px-4 text-center">
+                      <button 
+                        @click="emp.entregoFisico = !emp.entregoFisico; toggleEntregaLista(emp.numEmp, emp.entregoFisico)"
+                        :class="emp.entregoFisico ? 'bg-green-50 text-green-700 border-green-600 hover:bg-green-100' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100'"
+                        class="border-2 rounded-md px-3 py-1.5 text-xs font-bold flex items-center justify-center gap-2 transition-all w-28 mx-auto cursor-pointer shadow-sm"
+                      >
+                        <i :class="emp.entregoFisico ? 'fa-solid fa-square-check text-lg' : 'fa-regular fa-square text-lg'"></i>
+                        {{ emp.entregoFisico ? 'Entregado' : 'Pendiente' }}
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="empleadosConListaFiltrados.length === 0">
+                    <td colspan="4" class="py-8 text-center text-gray-500 font-medium italic">
+                      <i class="fa-solid fa-folder-open text-3xl mb-2 text-gray-300 block"></i>
+                      No se encontraron registros de Listas de Asistencia.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
           
@@ -648,9 +741,12 @@ const getValorCelda = (registro, tipo) => {
                         <td colspan="2" v-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'LA'" class="py-2 text-center border border-gray-200 align-middle bg-[#D3DCF5]">
                           <span class="font-bold text-[#33539E] text-[10px] tracking-widest">LA</span>
                         </td>
+                        <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FALTA_LA'" class="py-2 text-center border border-gray-200 align-middle bg-[#FFE2DE]">
+                          <span class="font-bold text-[#BD2C0B] text-[10px] tracking-widest">***</span>
+                        </td>
                         <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'EXENTO'" class="py-2 text-center border border-gray-200 align-middle bg-[#E0E0E0]">
-  <span class="font-bold text-[#274975] text-[10px] tracking-widest">EX</span>
-</td>
+                          <span class="font-bold text-[#274975] text-[10px] tracking-widest">EX</span>
+                        </td>
                         <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'FERIADO'" class="py-2 text-center border border-gray-400 align-middle bg-gray-600"></td>
                         <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'BAJA'" class="py-2 text-center border border-gray-300 align-middle bg-gray-200"><span class="font-bold text-gray-500 text-[10px] tracking-widest">BAJA</span></td>
                         <td colspan="2" v-else-if="String(emp.asistencias[fecha].estatus || '').trim().toUpperCase() === 'NO ENCONTRADO'" class="py-2 text-center border border-gray-200 align-middle bg-red-50"><span class="text-[10px] font-bold text-red-600 tracking-wider">FALTA BD</span></td>
@@ -742,8 +838,6 @@ const getValorCelda = (registro, tipo) => {
     <ModuloAdministracion /> 
  </div>
 
-  
-      
     </main>
   </div>
 </template>
