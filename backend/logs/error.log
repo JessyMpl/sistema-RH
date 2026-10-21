@@ -830,3 +830,201 @@
 2026-10-14 10:58:12: 
 2026-10-14 10:58:12: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
 2026-10-14 10:58:12: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-21 09:13:10: Error previsualizando desde BD: PrismaClientValidationError: 
+2026-10-21 09:13:10: Invalid `prisma.diaInhabil.findMany()` invocation in
+2026-10-21 09:13:10: /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:53
+2026-10-21 09:13:10: 
+2026-10-21 09:13:10:   409 fechaMin = new Date(Math.min(...fechasObj));
+2026-10-21 09:13:10:   410 fechaMax = new Date(Math.max(...fechasObj));
+2026-10-21 09:13:10:   411 
+2026-10-21 09:13:10: → 412 const diasInhabiles = await prisma.diaInhabil.findMany({
+2026-10-21 09:13:10:         where: {
+2026-10-21 09:13:10:           gte: new Date("2026-09-01T00:00:00.000Z"),
+2026-10-21 09:13:10:           ~~~
+2026-10-21 09:13:10:           lte: new Date("2026-09-15T23:59:59.000Z"),
+2026-10-21 09:13:10:       ?   AND?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:13:10:       ?   OR?: DiaInhabilWhereInput[],
+2026-10-21 09:13:10:       ?   NOT?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:13:10:       ?   id?: IntFilter | Int,
+2026-10-21 09:13:10:       ?   fecha?: DateTimeFilter | DateTime,
+2026-10-21 09:13:10:       ?   tipo?: StringFilter | String,
+2026-10-21 09:13:10:       ?   descripcion?: StringFilter | String,
+2026-10-21 09:13:10:       ?   createdAt?: DateTimeFilter | DateTime
+2026-10-21 09:13:10:         }
+2026-10-21 09:13:10:       })
+2026-10-21 09:13:10: 
+2026-10-21 09:13:10: Unknown argument `gte`. Did you mean `AND`? Available options are marked with ?.
+2026-10-21 09:13:10:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-10-21 09:13:10:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-10-21 09:13:10:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-10-21 09:13:10:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-10-21 09:13:10:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-10-21 09:13:10:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-10-21 09:13:10:     at async /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:29 {
+2026-10-21 09:13:10:   clientVersion: '7.8.0'
+2026-10-21 09:13:10: }
+2026-10-21 09:13:28: Error previsualizando desde BD: PrismaClientValidationError: 
+2026-10-21 09:13:28: Invalid `prisma.diaInhabil.findMany()` invocation in
+2026-10-21 09:13:28: /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:53
+2026-10-21 09:13:28: 
+2026-10-21 09:13:28:   409 fechaMin = new Date(Math.min(...fechasObj));
+2026-10-21 09:13:28:   410 fechaMax = new Date(Math.max(...fechasObj));
+2026-10-21 09:13:28:   411 
+2026-10-21 09:13:28: → 412 const diasInhabiles = await prisma.diaInhabil.findMany({
+2026-10-21 09:13:28:         where: {
+2026-10-21 09:13:28:           gte: new Date("2026-09-17T00:00:00.000Z"),
+2026-10-21 09:13:28:           ~~~
+2026-10-21 09:13:28:           lte: new Date("2026-09-30T23:59:59.000Z"),
+2026-10-21 09:13:28:       ?   AND?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:13:28:       ?   OR?: DiaInhabilWhereInput[],
+2026-10-21 09:13:28:       ?   NOT?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:13:28:       ?   id?: IntFilter | Int,
+2026-10-21 09:13:28:       ?   fecha?: DateTimeFilter | DateTime,
+2026-10-21 09:13:28:       ?   tipo?: StringFilter | String,
+2026-10-21 09:13:28:       ?   descripcion?: StringFilter | String,
+2026-10-21 09:13:28:       ?   createdAt?: DateTimeFilter | DateTime
+2026-10-21 09:13:28:         }
+2026-10-21 09:13:28:       })
+2026-10-21 09:13:28: 
+2026-10-21 09:13:28: Unknown argument `gte`. Did you mean `AND`? Available options are marked with ?.
+2026-10-21 09:13:28:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-10-21 09:13:28:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-10-21 09:13:28:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-10-21 09:13:28:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-10-21 09:13:28:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-10-21 09:13:28:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-10-21 09:13:28:     at async /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:29 {
+2026-10-21 09:13:28:   clientVersion: '7.8.0'
+2026-10-21 09:13:28: }
+2026-10-21 09:13:49: Error previsualizando desde BD: PrismaClientValidationError: 
+2026-10-21 09:13:49: Invalid `prisma.diaInhabil.findMany()` invocation in
+2026-10-21 09:13:49: /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:53
+2026-10-21 09:13:49: 
+2026-10-21 09:13:49:   409 fechaMin = new Date(Math.min(...fechasObj));
+2026-10-21 09:13:49:   410 fechaMax = new Date(Math.max(...fechasObj));
+2026-10-21 09:13:49:   411 
+2026-10-21 09:13:49: → 412 const diasInhabiles = await prisma.diaInhabil.findMany({
+2026-10-21 09:13:49:         where: {
+2026-10-21 09:13:49:           gte: new Date("2026-09-17T00:00:00.000Z"),
+2026-10-21 09:13:49:           ~~~
+2026-10-21 09:13:49:           lte: new Date("2026-09-30T23:59:59.000Z"),
+2026-10-21 09:13:49:       ?   AND?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:13:49:       ?   OR?: DiaInhabilWhereInput[],
+2026-10-21 09:13:49:       ?   NOT?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:13:49:       ?   id?: IntFilter | Int,
+2026-10-21 09:13:49:       ?   fecha?: DateTimeFilter | DateTime,
+2026-10-21 09:13:49:       ?   tipo?: StringFilter | String,
+2026-10-21 09:13:49:       ?   descripcion?: StringFilter | String,
+2026-10-21 09:13:49:       ?   createdAt?: DateTimeFilter | DateTime
+2026-10-21 09:13:49:         }
+2026-10-21 09:13:49:       })
+2026-10-21 09:13:49: 
+2026-10-21 09:13:49: Unknown argument `gte`. Did you mean `AND`? Available options are marked with ?.
+2026-10-21 09:13:49:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-10-21 09:13:49:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-10-21 09:13:49:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-10-21 09:13:49:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-10-21 09:13:49:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-10-21 09:13:49:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-10-21 09:13:49:     at async /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:29 {
+2026-10-21 09:13:49:   clientVersion: '7.8.0'
+2026-10-21 09:13:49: }
+2026-10-21 09:20:33: (node:871450) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-10-21 09:20:33: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-10-21 09:20:33: 
+2026-10-21 09:20:33: To prepare for this change:
+2026-10-21 09:20:33: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-10-21 09:20:33: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-10-21 09:20:33: 
+2026-10-21 09:20:33: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-10-21 09:20:33: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-21 09:21:15: Error previsualizando desde BD: PrismaClientValidationError: 
+2026-10-21 09:21:15: Invalid `prisma.diaInhabil.findMany()` invocation in
+2026-10-21 09:21:15: /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:53
+2026-10-21 09:21:15: 
+2026-10-21 09:21:15:   409 fechaMin = new Date(Math.min(...fechasObj));
+2026-10-21 09:21:15:   410 fechaMax = new Date(Math.max(...fechasObj));
+2026-10-21 09:21:15:   411 
+2026-10-21 09:21:15: → 412 const diasInhabiles = await prisma.diaInhabil.findMany({
+2026-10-21 09:21:15:         where: {
+2026-10-21 09:21:15:           gte: new Date("2026-09-01T00:00:00.000Z"),
+2026-10-21 09:21:15:           ~~~
+2026-10-21 09:21:15:           lte: new Date("2026-09-15T23:59:59.000Z"),
+2026-10-21 09:21:15:       ?   AND?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:21:15:       ?   OR?: DiaInhabilWhereInput[],
+2026-10-21 09:21:15:       ?   NOT?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:21:15:       ?   id?: IntFilter | Int,
+2026-10-21 09:21:15:       ?   fecha?: DateTimeFilter | DateTime,
+2026-10-21 09:21:15:       ?   tipo?: StringFilter | String,
+2026-10-21 09:21:15:       ?   descripcion?: StringFilter | String,
+2026-10-21 09:21:15:       ?   createdAt?: DateTimeFilter | DateTime
+2026-10-21 09:21:15:         }
+2026-10-21 09:21:15:       })
+2026-10-21 09:21:15: 
+2026-10-21 09:21:15: Unknown argument `gte`. Did you mean `AND`? Available options are marked with ?.
+2026-10-21 09:21:15:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-10-21 09:21:15:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-10-21 09:21:15:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-10-21 09:21:15:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-10-21 09:21:15:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-10-21 09:21:15:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-10-21 09:21:15:     at async /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:29 {
+2026-10-21 09:21:15:   clientVersion: '7.8.0'
+2026-10-21 09:21:15: }
+2026-10-21 09:21:25: Error previsualizando desde BD: PrismaClientValidationError: 
+2026-10-21 09:21:25: Invalid `prisma.diaInhabil.findMany()` invocation in
+2026-10-21 09:21:25: /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:53
+2026-10-21 09:21:25: 
+2026-10-21 09:21:25:   409 fechaMin = new Date(Math.min(...fechasObj));
+2026-10-21 09:21:25:   410 fechaMax = new Date(Math.max(...fechasObj));
+2026-10-21 09:21:25:   411 
+2026-10-21 09:21:25: → 412 const diasInhabiles = await prisma.diaInhabil.findMany({
+2026-10-21 09:21:25:         where: {
+2026-10-21 09:21:25:           gte: new Date("2026-09-01T00:00:00.000Z"),
+2026-10-21 09:21:25:           ~~~
+2026-10-21 09:21:25:           lte: new Date("2026-09-15T23:59:59.000Z"),
+2026-10-21 09:21:25:       ?   AND?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:21:25:       ?   OR?: DiaInhabilWhereInput[],
+2026-10-21 09:21:25:       ?   NOT?: DiaInhabilWhereInput | DiaInhabilWhereInput[],
+2026-10-21 09:21:25:       ?   id?: IntFilter | Int,
+2026-10-21 09:21:25:       ?   fecha?: DateTimeFilter | DateTime,
+2026-10-21 09:21:25:       ?   tipo?: StringFilter | String,
+2026-10-21 09:21:25:       ?   descripcion?: StringFilter | String,
+2026-10-21 09:21:25:       ?   createdAt?: DateTimeFilter | DateTime
+2026-10-21 09:21:25:         }
+2026-10-21 09:21:25:       })
+2026-10-21 09:21:25: 
+2026-10-21 09:21:25: Unknown argument `gte`. Did you mean `AND`? Available options are marked with ?.
+2026-10-21 09:21:25:     at throwValidationException (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/core/errorRendering/throwValidationException.ts:46:9)
+2026-10-21 09:21:25:     at zr.handleRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:211:7)
+2026-10-21 09:21:25:     at zr.handleAndLogRequestError (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:183:12)
+2026-10-21 09:21:25:     at zr.request (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/RequestHandler.ts:152:12)
+2026-10-21 09:21:25:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-10-21 09:21:25:     at async a (/var/www/html/sites/biometrico/backend/node_modules/.pnpm/@prisma+client@7.8.0_prisma@7.8.0_@types+react@19.2.16_react-dom@19.2.7_react@19.2.7__react@19.2.7_/node_modules/@prisma/client/src/runtime/getPrismaClient.ts:963:24)
+2026-10-21 09:21:25:     at async /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:412:29 {
+2026-10-21 09:21:25:   clientVersion: '7.8.0'
+2026-10-21 09:21:25: }
+2026-10-21 10:09:46: (node:872283) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-10-21 10:09:46: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-10-21 10:09:46: 
+2026-10-21 10:09:46: To prepare for this change:
+2026-10-21 10:09:46: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-10-21 10:09:46: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-10-21 10:09:46: 
+2026-10-21 10:09:46: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-10-21 10:09:46: (Use `node --trace-warnings ...` to show where the warning was created)
+2026-10-21 10:09:48: Error previsualizando desde BD: ReferenceError: fechaStr is not defined
+2026-10-21 10:09:48:     at /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:542:43
+2026-10-21 10:09:48:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-10-21 10:09:57: Error previsualizando desde BD: ReferenceError: fechaStr is not defined
+2026-10-21 10:09:57:     at /var/www/html/sites/biometrico/backend/routes/excelRoutes.js:542:43
+2026-10-21 10:09:57:     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2026-10-21 10:12:14: (node:872372) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+2026-10-21 10:12:14: In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+2026-10-21 10:12:14: 
+2026-10-21 10:12:14: To prepare for this change:
+2026-10-21 10:12:14: - If you want the current behavior, explicitly use 'sslmode=verify-full'
+2026-10-21 10:12:14: - If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+2026-10-21 10:12:14: 
+2026-10-21 10:12:14: See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+2026-10-21 10:12:14: (Use `node --trace-warnings ...` to show where the warning was created)

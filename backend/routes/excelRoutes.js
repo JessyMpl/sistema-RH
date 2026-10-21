@@ -235,7 +235,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
               const incPrev = String(registroPrevioDB.incidencia || '').toUpperCase().trim();
 
               if (incPrev !== 'JUSTIFICADA') {
-                if (regimenActual === 'LISTA' && incPrev !== 'LA') rescatarDB = false;
+                if (regimenActual === 'LISTA' && incPrev !== 'LA' && incPrev !== 'FALTA_LA') rescatarDB = false;
                 if ((regimenActual === 'EXENTO' || regimenActual === 'EXCENTO') && (incPrev !== 'EXENTO' && incPrev !== 'EXCENTO')) rescatarDB = false;
                 if ((regimenActual === 'NORMAL' || regimenActual === 'ESPECIAL') && (incPrev === 'LA' || incPrev === 'EXENTO' || incPrev === 'EXCENTO')) rescatarDB = false;
                 if (regimenActual === 'NORMAL' && incPrev.includes('ESPECIAL')) rescatarDB = false;
@@ -351,22 +351,42 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 
     if (!inicio || !fin) return res.status(400).json({ error: 'Faltan las fechas de inicio y fin para el periodo.' });
 
-    const minDateStrSpace = `${inicio} 00:00:00`;
-    const maxDateStrSpace = `${fin} 23:59:59`;
-    const minDateStrT = `${inicio}T00:00:00`;
-    const maxDateStrT = `${fin}T23:59:59`;
+    // BLINDAJE 1: Usar objetos Date reales para Prisma
+    const fechaInicioDate = new Date(`${inicio}T00:00:00Z`);
+    const fechaFinDate = new Date(`${fin}T23:59:59Z`);
 
-    const rawData = await prisma.attendanceRecord.findMany({
-      where: { OR: [{ timestamp: { gte: minDateStrSpace, lte: maxDateStrSpace } }, { timestamp: { gte: minDateStrT, lte: maxDateStrT } }] },
-      orderBy: { timestamp: 'asc' }
-    });
+    // Intento 1: Como objeto Date
+    let rawData = [];
+    try {
+        rawData = await prisma.attendanceRecord.findMany({
+          where: { timestamp: { gte: fechaInicioDate, lte: fechaFinDate } },
+          orderBy: { timestamp: 'asc' }
+        });
+    } catch (errDate) {
+        // Intento 2: Como String (Fallback)
+        const minDateStrSpace = `${inicio} 00:00:00`;
+        const maxDateStrSpace = `${fin} 23:59:59`;
+        const minDateStrT = `${inicio}T00:00:00`;
+        const maxDateStrT = `${fin}T23:59:59`;
+        rawData = await prisma.attendanceRecord.findMany({
+          where: { OR: [{ timestamp: { gte: minDateStrSpace, lte: maxDateStrSpace } }, { timestamp: { gte: minDateStrT, lte: maxDateStrT } }] },
+          orderBy: { timestamp: 'asc' }
+        });
+    }
 
     if (rawData.length === 0) return res.status(404).json({ error: 'No se encontraron checadas en el biométrico para este periodo.' });
 
     const registrosPorDia = {};
     rawData.forEach(record => {
       const numEmp = String(record.employeeId).trim().replace(/^0+/, ''); 
-      const timestampTexto = String(record.timestamp).replace('T', ' '); 
+      
+      let timestampTexto = '';
+      if (record.timestamp instanceof Date) {
+        timestampTexto = record.timestamp.toISOString().replace('T', ' ').substring(0, 19);
+      } else {
+        timestampTexto = String(record.timestamp).replace('T', ' '); 
+      }
+      
       const partesTexto = timestampTexto.split(' ');
       
       if (partesTexto.length >= 2) {
@@ -410,7 +430,12 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
       fechaMax = new Date(Math.max(...fechasObj));
 
       const diasInhabiles = await prisma.diaInhabil.findMany({
-        where: { gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) }
+        where: { 
+            fecha: { 
+                gte: new Date(`${fechaMin.toISOString().split('T')[0]}T00:00:00Z`), 
+                lte: new Date(`${fechaMax.toISOString().split('T')[0]}T23:59:59Z`) 
+            } 
+        }
       });
       diasInhabiles.forEach(d => mapDiasInhabiles.set(d.fecha.toISOString().split('T')[0], d.tipo));
 
@@ -513,6 +538,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         }
       }
 
+      // CORRECCIÓN APLICADA AQUÍ: Usamos `fecha` en lugar de `fechaStr`
       const fechaParaPrisma = new Date(`${fecha}T00:00:00Z`);
       datosAProcesar.push({ servidorId: empleado.id, fechaParaPrisma, entradaFinal, salidaFinal, minutosRetardo: minutesRetardo, estatus });
       
@@ -520,7 +546,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         numEmp, 
         nombre: empleado.nombreCompleto, 
         departamento: empleado.area ? empleado.area.nombre : 'Sin Área', 
-        fecha, 
+        fecha: fecha, // <-- Corrección
         entrada: (esSinContrato || (esDiaFeriado && regimenDB !== 'ESPECIAL')) && estatus !== 'JUSTIFICADA' ? '---' : entradaFinal, 
         salida: (esSinContrato || (esDiaFeriado && regimenDB !== 'ESPECIAL')) && estatus !== 'JUSTIFICADA' ? '---' : salidaFinal,  
         estatus, 
@@ -558,7 +584,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
               const incPrev = String(registroPrevioDB.incidencia || '').toUpperCase().trim();
 
               if (incPrev !== 'JUSTIFICADA') {
-                if (regimenActual === 'LISTA' && incPrev !== 'LA') rescatarDB = false;
+                if (regimenActual === 'LISTA' && incPrev !== 'LA' && incPrev !== 'FALTA_LA') rescatarDB = false;
                 if ((regimenActual === 'EXENTO' || regimenActual === 'EXCENTO') && (incPrev !== 'EXENTO' && incPrev !== 'EXCENTO')) rescatarDB = false;
                 if ((regimenActual === 'NORMAL' || regimenActual === 'ESPECIAL') && (incPrev === 'LA' || incPrev === 'EXENTO' || incPrev === 'EXCENTO')) rescatarDB = false;
                 if (regimenActual === 'NORMAL' && incPrev.includes('ESPECIAL')) rescatarDB = false;
@@ -661,9 +687,13 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 
   } catch (error) {
     console.error("Error previsualizando desde BD:", error);
-    res.status(500).json({ error: 'Hubo un error al extraer los datos de la base de datos.' });
+    res.status(500).json({ error: 'Hubo un error al extraer los datos de la base de datos.', detalle: error.message });
   }
 });
+
+
+
+
 
 // ==============================================================================
 // 1.8. RUTA DE VISTA PREVIA (Excel Secundario / Formato Matriz CAIM)
