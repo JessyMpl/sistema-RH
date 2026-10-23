@@ -1,0 +1,119 @@
+[33mc533cf6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m correcion sincronización cron
+[33mf8887b7[m validar listas de asistencia con checkbox
+[33m8efd64c[m actualizar padron de personal sincronizacion soft
+[33m2536a21[m Procesar datos de excel secundario biometricos offline, añade los registros a lo existente
+[33m1c6c653[m cambios para validar registros en caso de modificacion de horario y colores
+[33md592536[m ajustes reporte excel colores
+[33me7b6598[m modifcaciones colores en sabana y excel descargable
+[33mb1b9027[m modificacion colores en sabana inicial y descarga
+[33m2289dc4[m correcion guardar en BD, permite complementar los datos existentes sin sobreescribir o afectar a los que ya se trabajaron, esto por si falta integrar registros de otras areas posterior a un primer analisis
+[33mf5bf06e[m correción siglas de justificaciones
+[33mb7b8fd6[m justificación separada por personal correccion en justificaciones anteriormente aunque solo justificara entrada ya no podia justificar su salida se ocultaba
+[33mbfd60e7[m justificacion varios dias una persona
+[33mad04787[m plantilla corregida sabana
+[33m7c6cd64[m se adicionaron las reglas para los dias inhabiles como fuera de contrato
+[33mca50964[m actualizacion sabana dia inhabil y colores
+[33m30518b6[m correcion salida de horario especial en sabana excel
+[33m7e4609e[m CRUD y administracion de usuarios!
+[33m2e391fc[m crud dias inhabiles en administracion
+[33m1abd5a7[m modulo de administracion CRU areas de adscripcion
+[33m2dfdc99[m estilos en menu
+[33m37a41f0[m Validaciones login
+[33mfc09651[m estilos login
+[33m8e179a2[m ajuste espacio logo y contenido general
+[33mcb607ae[m favicon
+[33m5c47aea[m guardar pdf de sancion para historico!
+[33mf0ec728[m estilos de avsiso de sancion y checkbox
+[33m855acb7[m mejora de plantilla de aviso de sancion
+[33mfa91f67[m generacion de aviso de sancion con puppeteer
+[33ma4d8544[m complemento de los cambios en sanciones
+[33medc7563[m feat: generador de PDF con Puppeteer configurado y carpeta cache ignorada
+[33mc7f9f14[m instalacion puppeteer y corrreccion llamadas de atencion
+[33mf5690f6[m generacion de reporte final ok
+[33m2880cdd[m actualizacion sabana con dias inhabiles y deteccion de baja de personal
+[33m67d08b6[m identificando baja
+[33m49b643a[m componente consultas con checkbox para mosotrar solo incidencias
+[33mf87e722[m eliminacion del componente incidencias
+[33m0266e5d[m creación de tabla con dias inhabiles
+[33mee451ff[m extender tiempo de justificaciones masivas en sancionesRoutes
+[33m69bd2fe[m tabla y descarga de sanciones
+[33m449a525[m correcion de editar empleado
+[33m18c95d2[m justificacion masiva por área
+[33mb191f16[m select de las areas con la nueva tabla
+[33m1d629bb[m tabla area en BD y select en gestion empleados
+[33mdbcbfc1[m actualizacion de cron horario
+[33m1e28267[m Generar sanciones
+[33m60ba545[m modulo gestion de sanciones
+[33md37da48[m reporte final
+[33mbb3491a[m Visualizacion previa de reporte actualizado
+[33m06687ec[m justificacion masiva
+[33m3351efc[m modificacion para eliminar 0 a la izquierda en num de empleado
+[33meea7a70[m lectura y procesamiento de datos del cron correctos
+[33m0fa6ed0[m chore: eliminar SOLICITUD_PUERTO_80_FORTI.md del rastreo
+[33m1157f7d[m chore: eliminar SOLICITUD_PUERTO_80_FORTI.md del rastreo
+[33m058becf[m chore: eliminar SOLICITUD_PUERTO_80_FORTI.md del rastreo
+[33meab90f9[m componente para procesar los datos traidos desde el endpoint
+[33m1e7c636[m endpoint para traer datos de api carlos
+[33m6d05a70[m config server hidalgo
+[33ma37b481[m paginacion tabla sabana
+[33m52bbda5[m estilos procesar
+[33m8dde508[m estilos en procesar
+[33m15e6d8b[m correcion de bug sobreescribir datos de biometrico
+[33m4cf4d35[m componente reporte prueba
+[33m5a0074e[m estilos tabla
+[33m592448f[m estilos
+[33m85ae421[m estilos tabla justificaciones
+[33m1f742af[m correcion justificaciones ya aparecen las faltas
+[33m7dee7a1[m correcion buscadores de componente justificaciones
+[33m8d08725[m estilos en tabla de previsualizacion
+[33mce39340[m correccion descarga de plantilla
+[33me15da23[m correcion dias procesamiento quincenal y correcion de descarga de plantilla quincena 1-15 y 2 del 16 al 30
+[33m49c6488[m corrección guardar inasistencias y mostrar, se modifico el procesamiento inicial del biometrico
+[33m344e9fd[m creacion de modulo justificaciones modificaciones a la base con la tabla justificacion
+[33m9f04e15[m estilos modal empleados
+[33m60fce84[m cambios en el estilo de la tabla emplados
+[33mf5f5a36[m modificacion en la base fecha de alta y baja de emplado, modificar y ver historico del personal
+[33m94635a1[m mejoras visuales empleados
+[33m3cdf11d[m editar personal y estatus
+[33mda4def6[m componente consulta
+[33m3d71c7d[m mejoras incidencias
+[33m1b31516[m componente incidencias
+[33m8f07d48[m actualizacion sidebar
+[33m8df9b1f[m adicion total de minutos a descontar quincenal
+[33m4ce1069[m mejora visual en tabla catalogo de empleados
+[33m9914247[m Importacion de empleados con paginacion para hacerlo rapido y vue easy table en la tabla del catalogo de personal
+[33mb723925[m Estilo de exento en previsualizacion
+[33m9d7cf6b[m correcion doble registros y adicion de empleados exentos de checada
+[33m8a19ef8[m actualizacion de plantilla reporte quincenal
+[33ma6a75b4[m incremento de json limit 50MB para importar excel de biometrico y guardar
+[33mfb775be[m instalacion de vue3-easy-data-table y separación de procesamiento de biometrico, primero depura y valida antes de guardar en la tabla asistencia en la BD
+[33m795b062[m alerta de cargando datos procesados
+[33m8fe8a88[m agregamos horario exento y procesar datos en 8min
+[33m6086f5e[m mejoras visuales en sidevar y en procesar datos
+[33m1a7ba2c[m integración de Font Awesome CDN y mejoras en sidebar
+[33m21f6cf8[m formato en dias del excel
+[33m18484e4[m instalacion exceljs y descarga de reporte generado con plantilla excel
+[33m38e0f04[m Descarga de sabana en excel con datos en bruto sin formato
+[33m6fc6427[m importacion de usuario corregida ID de horario correcto
+[33m68d1f6a[m correccion 10min de tolerancia en retardos
+[33m31584cd[m identifica omision de checadas de entrada o salida en horario normal
+[33mdb8c8d0[m genera sabana quincenal
+[33m7621e4d[m procesa el excel del biometrico y lo depura correctamente detectando el tipo de horario e incidencias
+[33ma19f63b[m login identidad visual y paleta de colores institucional
+[33m7d8216f[m  estilos iniciados en login
+[33m0af5b7a[m Gestion de empleados completo con registro manual e importación desde excel
+[33m47c86ec[m registro manual de servidor publico en la base de datos correcta
+[33m7e4f8b1[m creación de la gestión de usuarios para registro manual o importacion
+[33m3f99ae1[m instalación adaptador de prisma y creación de archivo database.js
+[33m4cb5191[m procesar datos del excel y se muestra en tabla
+[33m7ba24b5[m modificacion de las tablas en Bd para recibir los datos de emplados
+[33m9a141fb[m creación de sidebar como componente
+[33m827087b[m instalación de sweetalert2
+[33m8a13aa9[m etapa 11: Acceso de login
+[33m87a72df[m Etapa 10: Frontend base con Vue y Tailwind, Login conectado y Panel de Control
+[33me288b31[m Etapa 9: Sistema de seguridad listo con JWT y tabla de Usuarios
+[33m5868bab[m Etapa 8: Rutas y controlador GET terminados
+[33m6e0ce35[m Etapa 7: Ventanilla lista con multer y xlsx para recibir el archivo de asistencias
+[33m51e52f9[m etapa 6 completa contraldores,ruta y conexion BD
+[33m61a6067[m Base de datos configurada, sincronizada en Neon y Prisma Client generado
+[33md400cd2[m Estructura inicial: backend y frontend base creados

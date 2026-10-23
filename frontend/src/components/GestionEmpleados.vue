@@ -222,7 +222,7 @@ onMounted(() => {
 });
 
 // ==========================================
-// 7. SINCRONIZACIÓN NOMINAL (BOTÓN MÁGICO)
+// 7. IMPORTACIÓN DE PERSONAL
 // ==========================================
 const inputPadron = ref(null);
 
@@ -234,8 +234,8 @@ const subirPadronNominal = async (event) => {
   formData.append('archivoNominal', archivo);
 
   Swal.fire({
-    title: '¡Sincronizando Padrón! 🔄',
-    html: 'Analizando altas, bajas y cambios de régimen. Esto tomará un par de segundos...',
+    title: '¡Importando Personal! 🚀',
+    html: 'Procesando y guardando registros por bloques. Esto tomará unos segundos...',
     allowOutsideClick: false,
     showConfirmButton: false,
     didOpen: () => { Swal.showLoading(); }
@@ -252,12 +252,12 @@ const subirPadronNominal = async (event) => {
     if (respuesta.ok) {
       Swal.fire({ 
         icon: 'success', 
-        title: '¡Padrón Sincronizado!', 
+        title: '¡Importación Exitosa!', 
         html: `
           <div class="text-left text-sm mt-4 text-gray-700 bg-gray-50 p-4 rounded-lg border">
-            <p class="mb-2"><span class="text-green-600 font-bold"><i class="fa-solid fa-user-plus w-5"></i> Nuevas Altas:</span> ${data.resultados.altas}</p>
-            <p class="mb-2"><span class="text-blue-600 font-bold"><i class="fa-solid fa-user-pen w-5"></i> Actualizados:</span> ${data.resultados.modificaciones}</p>
-            <p><span class="text-red-600 font-bold"><i class="fa-solid fa-user-minus w-5"></i> Bajas procesadas:</span> ${data.resultados.bajas}</p>
+            <p class="mb-2"><span class="text-green-600 font-bold"><i class="fa-solid fa-user-plus w-5"></i> Registros Nuevos:</span> ${data.resultados?.altas || 0}</p>
+            <p class="mb-2"><span class="text-blue-600 font-bold"><i class="fa-solid fa-user-pen w-5"></i> Actualizados:</span> ${data.resultados?.modificaciones || 0}</p>
+            <p><span class="text-gray-500 font-bold"><i class="fa-solid fa-user-minus w-5"></i> Bajas Procesadas:</span> ${data.resultados?.bajas || 0}</p>
           </div>
         `,
         confirmButtonColor: '#16a34a' 
@@ -267,10 +267,10 @@ const subirPadronNominal = async (event) => {
       cargarAreas();
       vistaInterna.value = 'lista';
     } else {
-      Swal.fire({ icon: 'error', title: 'Error', text: data.error, confirmButtonColor: '#902c3e' });
+      Swal.fire({ icon: 'error', title: 'Error', text: data.error || 'Hubo un problema en la importación.', confirmButtonColor: '#902c3e' });
     }
   } catch (error) {
-    Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Falló la conexión con el servidor.', confirmButtonColor: '#902c3e' });
+    Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Falló la conexión con el servidor (Timeout). Verifica tu red o reduce el archivo.', confirmButtonColor: '#902c3e' });
   } finally {
     if (event.target) event.target.value = null; 
   }
@@ -281,16 +281,16 @@ const subirPadronNominal = async (event) => {
 <template>
   <div class="space-y-6">
     
-    <div class="flex flex-wrap gap-4 mb-6 items-center">
-      <button @click="vistaInterna = 'lista'" :class="vistaInterna === 'lista' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Ver Catálogo</button>
-      <button @click="vistaInterna = 'nuevo'" :class="vistaInterna === 'nuevo' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Registro Manual</button>
-      
-      <!-- BOTÓN DE SINCRONIZACIÓN NOMINAL -->
-      <input type="file" ref="inputPadron" accept=".xlsx, .xls" class="hidden" @change="subirPadronNominal" />
-      <button @click="$refs.inputPadron.click()" class="bg-mauve-600 hover:bg-mauve-700 text-white font-bold px-5 py-2 rounded-lg shadow-md transition flex items-center gap-2 cursor-pointer">
-        <i class="fa-solid fa-users-arrows-rotate"></i> Sincronizar Padrón Nominal
-      </button>
-    </div>
+   <div class="flex flex-wrap gap-4 mb-6 items-center">
+  <button @click="vistaInterna = 'lista'" :class="vistaInterna === 'lista' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Ver Catálogo</button>
+  <button @click="vistaInterna = 'nuevo'" :class="vistaInterna === 'nuevo' ? 'bg-inst-primario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition"> Registro Manual</button>
+  
+  <!-- BOTÓN DE IMPORTAR PERSONAL -->
+  <input type="file" ref="inputPadron" accept=".xlsx, .xls" class="hidden" @change="subirPadronNominal" />
+  <button @click="$refs.inputPadron.click()" class="bg-white text-gray-600 border hover:text-white hover:bg-inst-primario  font-bold px-5 py-2 rounded-lg shadow-md transition flex items-center gap-2 cursor-pointer">
+    <i class="fa-solid fa-file-import"></i> Importar Personal
+  </button>
+</div>
 
     <div v-if="vistaInterna === 'lista'" class="space-y-4">
       

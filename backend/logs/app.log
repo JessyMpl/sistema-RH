@@ -28541,3 +28541,7 @@
 2026-10-21 10:09:17: Servidor corriendo sin problemas en el puerto 5176
 2026-10-21 10:11:57: ◇ injected env (3) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
 2026-10-21 10:11:57: Servidor corriendo sin problemas en el puerto 5176
+2026-10-23 10:19:54: ◇ injected env (3) from .env // tip: ⌘ enable debugging { debug: true }
+2026-10-23 10:19:55: Servidor corriendo sin problemas en el puerto 5176
+2026-10-23 10:49:43: ◇ injected env (3) from .env // tip: ⌘ suppress logs { quiet: true }
+2026-10-23 10:49:43: Servidor corriendo sin problemas en el puerto 5176
