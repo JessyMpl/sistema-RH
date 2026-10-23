@@ -240,4 +240,128 @@ router.post('/sincronizar-plantilla', upload.single('archivoNominal'), async (re
   }
 });
 
+// ==========================================
+// 6. RUTA: ACTUALIZADOR INTELIGENTE (ALTAS, BAJAS Y SUPERVIVIENTES)
+// ==========================================
+router.post('/actualizar-plantilla', upload.single('archivoActualizacion'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Falta el archivo Excel.' });
+
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const hoja = workbook.Sheets[workbook.SheetNames[0]];
+    // Quitamos header: 1 para buscar exactamente por el título de la columna
+    const rawData = xlsx.utils.sheet_to_json(hoja, { defval: '' });
+
+    const nombresSobrevivientes = new Set();
+    const empleadosAProcesar = [];
+    const areasSet = new Set();
+    
+    const normalizar = (txt) => String(txt || '').trim().toUpperCase().replace(/\s+/g, ' ');
+
+    for (const fila of rawData) {
+      // Búsqueda inteligente por nombre de columna (soporta variaciones de mayúsculas/minúsculas)
+      const numEmpRaw = fila['ID'] || fila['Id'] || fila['id'] || '';
+      const nombreRaw = fila['NOMBRE'] || fila['Nombre'] || fila['nombre'] || '';
+      const deptoRaw = fila['DEPARTAMENTO'] || fila['Departamento'] || fila['departamento'] || '';
+      const regimenRaw = fila['REGIMEN'] || fila['Regimen'] || fila['regimen'] || '';
+      const entradaRaw = fila['ENTRADA'] || fila['Entrada'] || fila['entrada'] || '';
+
+      const numEmp = String(numEmpRaw).trim().replace(/^0+/, '');
+      const nombreCompleto = normalizar(nombreRaw);
+      const areaNombre = normalizar(deptoRaw);
+      let regimenFinal = normalizar(regimenRaw);
+      const entradaLimpia = String(entradaRaw).trim();
+
+      if (!nombreCompleto) continue; 
+
+      // REGLA 1: SUPERVIVENCIA (Guardamos el nombre para que no se vaya de baja)
+      nombresSobrevivientes.add(nombreCompleto);
+
+      // REGLA 2: ALTAS Y ACTUALIZACIONES (Solo procesa si la columna ID realmente tiene un número)
+      if (numEmp) {
+        if (regimenFinal === 'EXCENTO') regimenFinal = 'EXENTO';
+        if (!regimenFinal) regimenFinal = 'NORMAL';
+
+        let horarioIdCalculado = 2; 
+        if (regimenFinal === 'LISTA') horarioIdCalculado = 3;
+        else if (regimenFinal === 'EXENTO') horarioIdCalculado = 6;
+        else if (regimenFinal === 'ESPECIAL') horarioIdCalculado = entradaLimpia.includes('7') ? 1 : 4;
+
+        empleadosAProcesar.push({ numEmp, areaNombre, nombreCompleto, regimenFinal, horarioIdCalculado });
+        if (areaNombre) areasSet.add(areaNombre);
+      }
+    }
+
+    // Mapeo seguro de Áreas
+    const areasMapeadas = {};
+    for (const nombre of areasSet) {
+      const areaDB = await prisma.areaAdscripcion.upsert({ where: { nombre }, update: {}, create: { nombre, activo: true } });
+      areasMapeadas[nombre] = areaDB.id;
+    }
+
+    // Procesar Altas/Modificaciones en lotes
+    let registrados = 0;
+    const toUpsert = empleadosAProcesar.map(emp => {
+      const areaIdAsignada = emp.areaNombre ? areasMapeadas[emp.areaNombre] : null;
+      return prisma.servidorPublico.upsert({
+        where: { numeroEmpleado: emp.numEmp },
+        update: {
+          nombreCompleto: emp.nombreCompleto,
+          areaId: areaIdAsignada,
+          regimen: emp.regimenFinal,
+          horarioId: emp.horarioIdCalculado,
+          activo: true,
+          fechaBaja: null
+        },
+        create: {
+          numeroEmpleado: emp.numEmp,
+          nombreCompleto: emp.nombreCompleto,
+          areaId: areaIdAsignada,
+          regimen: emp.regimenFinal,
+          horarioId: emp.horarioIdCalculado,
+          activo: true,
+          historial: { create: [{ tipoMovimiento: "ALTA POR ACTUALIZACIÓN", datoNuevo: emp.areaNombre || "SIN ÁREA" }] }
+        }
+      });
+    });
+
+    const chunkSize = 50;
+    for (let i = 0; i < toUpsert.length; i += chunkSize) {
+      const chunk = toUpsert.slice(i, i + chunkSize);
+      await Promise.all(chunk);
+      registrados += chunk.length;
+    }
+
+    // REGLA 3: LA GUILLOTINA (Bajas lógicas)
+    const empleadosDB = await prisma.servidorPublico.findMany({ where: { activo: true } });
+    const bajasGeneradas = [];
+    
+    for (const empDB of empleadosDB) {
+      const nombreDBLimpio = normalizar(empDB.nombreCompleto);
+      if (!nombresSobrevivientes.has(nombreDBLimpio)) {
+        bajasGeneradas.push(
+          prisma.servidorPublico.update({
+            where: { id: empDB.id },
+            data: { activo: false, fechaBaja: new Date(), motivoBaja: 'Baja automática (no reportado en última nómina)', historial: { create: [{ tipoMovimiento: "BAJA POR ACTUALIZACIÓN", datoNuevo: "No reportado en plantilla" }] } }
+          })
+        );
+      }
+    }
+
+    for (let i = 0; i < bajasGeneradas.length; i += chunkSize) {
+      const chunk = bajasGeneradas.slice(i, i + chunkSize);
+      await Promise.all(chunk);
+    }
+
+    res.json({ 
+      mensaje: 'Plantilla actualizada exitosamente.',
+      resultados: { altas: registrados, bajas: bajasGeneradas.length }
+    });
+
+  } catch (error) {
+    console.error("Error en actualizador inteligente:", error);
+    res.status(500).json({ error: 'Hubo un error al procesar el archivo de actualización.' });
+  }
+});
+
 module.exports = router;

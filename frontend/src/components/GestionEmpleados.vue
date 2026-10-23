@@ -276,6 +276,60 @@ const subirPadronNominal = async (event) => {
   }
 };
 
+// ACTUALIZAR EL PERSONAL 
+//////////////
+
+const inputActualizar = ref(null);
+
+const procesarActualizacion = async (event) => {
+  const archivo = event.target.files[0];
+  if (!archivo) return;
+
+  const formData = new FormData();
+  formData.append('archivoActualizacion', archivo);
+
+  Swal.fire({
+    title: '¡Actualizando Personal! ⚖️',
+    html: 'Cotejando supervivientes, registrando altas y ejecutando bajas...',
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    didOpen: () => { Swal.showLoading(); }
+  });
+
+  try {
+    const respuesta = await fetch(apiUrl('/api/empleados/actualizar-plantilla'), {
+      method: 'POST',
+      body: formData
+    });
+    
+    const data = await respuesta.json();
+    
+    if (respuesta.ok) {
+      Swal.fire({ 
+        icon: 'success', 
+        title: '¡Cruce Terminado!', 
+        html: `
+          <div class="text-left text-sm mt-4 text-gray-700 bg-gray-50 p-4 rounded-lg border">
+            <p class="mb-2"><span class="text-blue-600 font-bold"><i class="fa-solid fa-user-plus w-5"></i> Altas o Modificados:</span> ${data.resultados.altas}</p>
+            <p><span class="text-red-600 font-bold"><i class="fa-solid fa-user-minus w-5"></i> Bajas procesadas:</span> ${data.resultados.bajas}</p>
+          </div>
+        `,
+        confirmButtonColor: '#16a34a' 
+      });
+      
+      cargarEmpleados();
+      cargarAreas();
+      vistaInterna.value = 'lista';
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: data.error, confirmButtonColor: '#902c3e' });
+    }
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Falló la conexión con el servidor.', confirmButtonColor: '#902c3e' });
+  } finally {
+    if (event.target) event.target.value = null; 
+  }
+};
+
 </script>
 
 <template>
@@ -289,6 +343,11 @@ const subirPadronNominal = async (event) => {
   <input type="file" ref="inputPadron" accept=".xlsx, .xls" class="hidden" @change="subirPadronNominal" />
   <button @click="$refs.inputPadron.click()" class="bg-white text-gray-600 border hover:text-white hover:bg-inst-primario  font-bold px-5 py-2 rounded-lg shadow-md transition flex items-center gap-2 cursor-pointer">
     <i class="fa-solid fa-file-import"></i> Importar Personal
+  </button>
+  <!-- BOTÓN DE ACTUALIZAR (CRUCE INTELIGENTE) -->
+  <input type="file" ref="inputActualizar" accept=".xlsx, .xls" class="hidden" @change="procesarActualizacion" />
+  <button @click="$refs.inputActualizar.click()" class="bg-white text-inst-primario border border-inst-primario hover:text-white hover:bg-inst-secundario font-bold px-5 py-2 rounded-lg shadow-md transition flex items-center gap-2 cursor-pointer">
+    <i class="fa-solid fa-user-check"></i> Actualizar Nómina
   </button>
 </div>
 
