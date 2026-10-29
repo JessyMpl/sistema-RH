@@ -140,6 +140,11 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         salidaFinal = registroPrevioDB.salida;
         minutosRetardo = 0;
       }
+      else if (registroPrevioDB && (registroPrevioDB.incidencia === 'FALTA_LA' || registroPrevioDB.incidencia === 'LA')) {
+        estatus = registroPrevioDB.incidencia;
+        entradaFinal = null;
+        salidaFinal = null;
+      }
       else if (esSinContrato) {
         estatus = "SIN_CONTRATO";
         entradaFinal = null;
@@ -168,7 +173,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         if (registrosHistoricos[llaveAyer]) { entradaFinal = null; salidaFinal = ultimaChecada || primeraChecada; } 
         else { entradaFinal = primeraChecada; salidaFinal = null; calcularRetardo = true; }
       } 
-      else if (regimenDB === 'LISTA') { estatus = "LA"; entradaFinal = null; salidaFinal = null; }
+      else if (regimenDB === 'LISTA') { estatus = "FALTA_LA"; entradaFinal = null; salidaFinal = null; }
       else if (regimenDB === 'EXENTO' || regimenDB === 'EXCENTO') { estatus = "EXENTO"; entradaFinal = null; salidaFinal = null; }
 
       if (calcularRetardo && entradaFinal) {
@@ -191,7 +196,7 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
       }
 
       const fechaParaPrisma = new Date(`${fecha}T00:00:00Z`);
-      datosAProcesar.push({ servidorId: empleado.id, fechaParaPrisma, entradaFinal, salidaFinal, minutosRetardo, estatus });
+      datosAProcesar.push({ numEmp, servidorId: empleado.id, fechaParaPrisma, entradaFinal, salidaFinal, minutosRetardo, estatus }); // FIX: Agregado numEmp
 
       resultadosProcesados.push({ 
         numEmp, 
@@ -222,7 +227,8 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
         const estatusInhabil = esSinContrato ? 'SIN_CONTRATO' : 'FERIADO';
 
         for (const emp of empleadosActivos) {
-          const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
+          const numEmp = String(emp.numeroEmpleado).trim();
+          const llaveBusqueda = `${numEmp}_${fechaStr}`;
           
           if (!registrosPorDia[llaveBusqueda]) {
             const llaveMapaDB = `${emp.id}_${fechaStr}`;
@@ -248,14 +254,14 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
               const salMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.salida || '---');
 
               datosAProcesar.push({ 
-                servidorId: emp.id, fechaParaPrisma, 
+                numEmp, servidorId: emp.id, fechaParaPrisma, // FIX: Agregado numEmp
                 entradaFinal: registroPrevioDB.entrada, 
                 salidaFinal: registroPrevioDB.salida, 
                 minutosRetardo: registroPrevioDB.minutosRetardo, 
                 estatus: registroPrevioDB.incidencia 
               });
               resultadosProcesados.push({ 
-                numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', 
+                numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', 
                 fecha: fechaStr, 
                 entrada: entMostrar, 
                 salida: salMostrar, 
@@ -268,8 +274,8 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             const regimenC = String(emp.regimen || '').toUpperCase().trim();
 
             if (esBajaHoy) {
-               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "BAJA" });
-               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'BAJA', salida: 'BAJA', estatus: 'BAJA', minutosRetardo: 0 });
+               datosAProcesar.push({ numEmp, servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "BAJA" }); // FIX: Agregado numEmp
+               resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'BAJA', salida: 'BAJA', estatus: 'BAJA', minutosRetardo: 0 });
                continue; 
             }
 
@@ -278,9 +284,9 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
 
             if (regimenC === 'LISTA') {
               if (diaSemana !== 0 && diaSemana !== 6) {
-                const estatusReal = (esSinContrato || esDiaFeriado) ? estatusInhabil : 'LA';
-                datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
-                resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
+                const estatusReal = (esSinContrato || esDiaFeriado) ? estatusInhabil : 'FALTA_LA';
+                datosAProcesar.push({ numEmp, servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal }); // FIX: Agregado numEmp
+                resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
               }
               continue;
             }
@@ -288,8 +294,8 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
             if (regimenC === 'EXENTO' || regimenC === 'EXCENTO') {
               if (diaSemana !== 0 && diaSemana !== 6) {
                 const estatusReal = (esSinContrato || esDiaFeriado) ? estatusInhabil : 'EXENTO';
-                datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
-                resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
+                datosAProcesar.push({ numEmp, servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal }); // FIX: Agregado numEmp
+                resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
               }
               continue;
             }
@@ -307,18 +313,18 @@ router.post('/previsualizar-asistencias', upload.single('archivoExcel'), async (
               const fechaAyer = new Date(fechaActualDate.setDate(fechaActualDate.getDate() - 1)).toISOString().split('T')[0];
               const fechaManana = new Date(fechaActualDate.setDate(fechaActualDate.getDate() + 2)).toISOString().split('T')[0];
               
-              const tuvoChecadaAyer = !!registrosPorDia[`${String(emp.numeroEmpleado).trim()}_${fechaAyer}`] || !!mapaDB.get(`${emp.id}_${fechaAyer}`);
-              const tendraChecadaManana = !!registrosPorDia[`${String(emp.numeroEmpleado).trim()}_${fechaManana}`] || !!mapaDB.get(`${emp.id}_${fechaManana}`);
+              const tuvoChecadaAyer = !!registrosPorDia[`${numEmp}_${fechaAyer}`] || !!mapaDB.get(`${emp.id}_${fechaAyer}`);
+              const tendraChecadaManana = !!registrosPorDia[`${numEmp}_${fechaManana}`] || !!mapaDB.get(`${emp.id}_${fechaManana}`);
 
               if (tuvoChecadaAyer || tendraChecadaManana) generarFalta = false;
               else generarFalta = true;
             }
 
             if (pintarComoFeriado) {
-              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusInhabil, minutosRetardo: 0 });
+              resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusInhabil, minutosRetardo: 0 });
             } else if (generarFalta) {
-              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "FALTA" });
-              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'SR', salida: 'SR', estatus: 'FALTA', minutosRetardo: 0 });
+              datosAProcesar.push({ numEmp, servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "FALTA" }); // FIX: Agregado numEmp
+              resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'SR', salida: 'SR', estatus: 'FALTA', minutosRetardo: 0 });
             } 
           }
         }
@@ -351,11 +357,9 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 
     if (!inicio || !fin) return res.status(400).json({ error: 'Faltan las fechas de inicio y fin para el periodo.' });
 
-    // BLINDAJE 1: Usar objetos Date reales para Prisma
     const fechaInicioDate = new Date(`${inicio}T00:00:00Z`);
     const fechaFinDate = new Date(`${fin}T23:59:59Z`);
 
-    // Intento 1: Como objeto Date
     let rawData = [];
     try {
         rawData = await prisma.attendanceRecord.findMany({
@@ -363,7 +367,6 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
           orderBy: { timestamp: 'asc' }
         });
     } catch (errDate) {
-        // Intento 2: Como String (Fallback)
         const minDateStrSpace = `${inicio} 00:00:00`;
         const maxDateStrSpace = `${fin} 23:59:59`;
         const minDateStrT = `${inicio}T00:00:00`;
@@ -488,6 +491,11 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         salidaFinal = registroPrevioDB.salida;
         minutesRetardo = 0;
       }
+      else if (registroPrevioDB && (registroPrevioDB.incidencia === 'FALTA_LA' || registroPrevioDB.incidencia === 'LA')) {
+        estatus = registroPrevioDB.incidencia;
+        entradaFinal = null;
+        salidaFinal = null;
+      }
       else if (esSinContrato) {
         estatus = "SIN_CONTRATO";
         entradaFinal = null;
@@ -516,7 +524,7 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         if (registrosHistoricos[llaveAyer]) { entradaFinal = null; salidaFinal = ultimaChecada || primeraChecada; } 
         else { entradaFinal = primeraChecada; salidaFinal = null; calcularRetardo = true; }
       } 
-      else if (regimenDB === 'LISTA') { estatus = "LA"; entradaFinal = null; salidaFinal = null; }
+      else if (regimenDB === 'LISTA') { estatus = "FALTA_LA"; entradaFinal = null; salidaFinal = null; }
       else if (regimenDB === 'EXENTO' || regimenDB === 'EXCENTO') { estatus = "EXENTO"; entradaFinal = null; salidaFinal = null; }
 
       if (calcularRetardo && entradaFinal) {
@@ -538,15 +546,14 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         }
       }
 
-      // CORRECCIÓN APLICADA AQUÍ: Usamos `fecha` en lugar de `fechaStr`
       const fechaParaPrisma = new Date(`${fecha}T00:00:00Z`);
-      datosAProcesar.push({ servidorId: empleado.id, fechaParaPrisma, entradaFinal, salidaFinal, minutosRetardo: minutesRetardo, estatus });
+      datosAProcesar.push({ numEmp, servidorId: empleado.id, fechaParaPrisma, entradaFinal, salidaFinal, minutosRetardo: minutesRetardo, estatus }); // FIX: Agregado numEmp
       
       resultadosProcesados.push({ 
         numEmp, 
         nombre: empleado.nombreCompleto, 
         departamento: empleado.area ? empleado.area.nombre : 'Sin Área', 
-        fecha: fecha, // <-- Corrección
+        fecha: fecha, 
         entrada: (esSinContrato || (esDiaFeriado && regimenDB !== 'ESPECIAL')) && estatus !== 'JUSTIFICADA' ? '---' : entradaFinal, 
         salida: (esSinContrato || (esDiaFeriado && regimenDB !== 'ESPECIAL')) && estatus !== 'JUSTIFICADA' ? '---' : salidaFinal,  
         estatus, 
@@ -571,7 +578,8 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
         const estatusInhabil = esSinContrato ? 'SIN_CONTRATO' : 'FERIADO';
 
         for (const emp of empleadosActivos) {
-          const llaveBusqueda = `${String(emp.numeroEmpleado).trim()}_${fechaStr}`;
+          const numEmp = String(emp.numeroEmpleado).trim();
+          const llaveBusqueda = `${numEmp}_${fechaStr}`;
           
           if (!registrosPorDia[llaveBusqueda]) {
             const llaveMapaDB = `${emp.id}_${fechaStr}`;
@@ -597,14 +605,14 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
               const salMostrar = registroPrevioDB.incidencia === 'FALTA' ? 'SR' : (registroPrevioDB.salida || '---');
 
               datosAProcesar.push({ 
-                servidorId: emp.id, fechaParaPrisma, 
+                numEmp, servidorId: emp.id, fechaParaPrisma, // FIX: Agregado numEmp
                 entradaFinal: registroPrevioDB.entrada, 
                 salidaFinal: registroPrevioDB.salida, 
                 minutosRetardo: registroPrevioDB.minutosRetardo, 
                 estatus: registroPrevioDB.incidencia 
               });
               resultadosProcesados.push({ 
-                numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', 
+                numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', 
                 fecha: fechaStr, 
                 entrada: entMostrar, 
                 salida: salMostrar, 
@@ -617,8 +625,8 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
             const regimenC = String(emp.regimen || '').toUpperCase().trim();
 
             if (esBajaHoy) {
-               datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "BAJA" });
-               resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'BAJA', salida: 'BAJA', estatus: 'BAJA', minutosRetardo: 0 });
+               datosAProcesar.push({ numEmp, servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "BAJA" }); // FIX: Agregado numEmp
+               resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'BAJA', salida: 'BAJA', estatus: 'BAJA', minutosRetardo: 0 });
                continue; 
             }
 
@@ -627,9 +635,9 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
 
             if (regimenC === 'LISTA') {
               if (diaSemana !== 0 && diaSemana !== 6) {
-                const estatusReal = (esSinContrato || esDiaFeriado) ? estatusInhabil : 'LA';
-                datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
-                resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
+                const estatusReal = (esSinContrato || esDiaFeriado) ? estatusInhabil : 'FALTA_LA';
+                datosAProcesar.push({ numEmp, servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal }); // FIX: Agregado numEmp
+                resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
               }
               continue;
             }
@@ -637,8 +645,8 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
             if (regimenC === 'EXENTO' || regimenC === 'EXCENTO') {
               if (diaSemana !== 0 && diaSemana !== 6) {
                 const estatusReal = (esSinContrato || esDiaFeriado) ? estatusInhabil : 'EXENTO';
-                datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal });
-                resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
+                datosAProcesar.push({ numEmp, servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: estatusReal }); // FIX: Agregado numEmp
+                resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusReal, minutosRetardo: 0 });
               }
               continue;
             }
@@ -656,18 +664,18 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
               const fechaAyer = new Date(fechaActualDate.setDate(fechaActualDate.getDate() - 1)).toISOString().split('T')[0];
               const fechaManana = new Date(fechaActualDate.setDate(fechaActualDate.getDate() + 2)).toISOString().split('T')[0];
               
-              const tuvoChecadaAyer = !!registrosPorDia[`${String(emp.numeroEmpleado).trim()}_${fechaAyer}`] || !!mapaDB.get(`${emp.id}_${fechaAyer}`);
-              const tendraChecadaManana = !!registrosPorDia[`${String(emp.numeroEmpleado).trim()}_${fechaManana}`] || !!mapaDB.get(`${emp.id}_${fechaManana}`);
+              const tuvoChecadaAyer = !!registrosPorDia[`${numEmp}_${fechaAyer}`] || !!mapaDB.get(`${emp.id}_${fechaAyer}`);
+              const tendraChecadaManana = !!registrosPorDia[`${numEmp}_${fechaManana}`] || !!mapaDB.get(`${emp.id}_${fechaManana}`);
 
               if (tuvoChecadaAyer || tendraChecadaManana) generarFalta = false;
               else generarFalta = true;
             }
 
             if (pintarComoFeriado) {
-              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusInhabil, minutosRetardo: 0 });
+              resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: '---', salida: '---', estatus: estatusInhabil, minutosRetardo: 0 });
             } else if (generarFalta) {
-              datosAProcesar.push({ servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "FALTA" });
-              resultadosProcesados.push({ numEmp: emp.numeroEmpleado, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'SR', salida: 'SR', estatus: 'FALTA', minutosRetardo: 0 });
+              datosAProcesar.push({ numEmp, servidorId: emp.id, fechaParaPrisma, entradaFinal: null, salidaFinal: null, minutosRetardo: 0, estatus: "FALTA" }); // FIX: Agregado numEmp
+              resultadosProcesados.push({ numEmp, nombre: emp.nombreCompleto, departamento: emp.area ? emp.area.nombre : 'Sin Área', fecha: fechaStr, entrada: 'SR', salida: 'SR', estatus: 'FALTA', minutosRetardo: 0 });
             } 
           }
         }
@@ -690,10 +698,6 @@ router.post('/previsualizar-desde-bd', express.json(), async (req, res) => {
     res.status(500).json({ error: 'Hubo un error al extraer los datos de la base de datos.', detalle: error.message });
   }
 });
-
-
-
-
 
 // ==============================================================================
 // 1.8. RUTA DE VISTA PREVIA (Excel Secundario / Formato Matriz CAIM)
@@ -802,7 +806,6 @@ router.post('/previsualizar-excel-secundario', upload.single('archivoExcel'), as
     // EXTRACCIÓN ESTRICTA DE EMPLEADOS DEL EXCEL (CANDADO)
     const numerosEmpExcel = [...new Set(Object.values(registrosPorDia).map(r => r.numEmp))];
 
-    // CICLO ÚNICO: Analiza SOLO a la gente que viene en este Excel
     for (const numEmp of numerosEmpExcel) {
       const empleado = empleados.find(e => String(e.numeroEmpleado).trim().replace(/^0+/, '') === numEmp);
       if (!empleado) continue;
@@ -833,9 +836,12 @@ router.post('/previsualizar-excel-secundario', upload.single('archivoExcel'), as
         if (registroPrevioDB && registroPrevioDB.incidencia === 'JUSTIFICADA') {
           estatus = "JUSTIFICADA"; entradaFinal = registroPrevioDB.entrada; salidaFinal = registroPrevioDB.salida;
         }
+        else if (registroPrevioDB && (registroPrevioDB.incidencia === 'FALTA_LA' || registroPrevioDB.incidencia === 'LA')) {
+          estatus = registroPrevioDB.incidencia; entradaFinal = null; salidaFinal = null;
+        }
         else if (tipoInhabil === 'SIN_CONTRATO') { estatus = "SIN_CONTRATO"; entradaFinal = null; salidaFinal = null; } 
         else if ((tipoInhabil === 'FERIADO' || tipoInhabil === 'VACACIONES') && regimenDB !== 'ESPECIAL') { estatus = "FERIADO"; entradaFinal = null; salidaFinal = null; } 
-        else if (regimenDB === 'LISTA') { estatus = "LA"; entradaFinal = null; salidaFinal = null; }
+        else if (regimenDB === 'LISTA') { estatus = "FALTA_LA"; entradaFinal = null; salidaFinal = null; }
         else if (regimenDB === 'EXENTO' || regimenDB === 'EXCENTO') { estatus = "EXENTO"; entradaFinal = null; salidaFinal = null; }
         else if (!primeraChecada) {
            const dSemana = new Date(`${fechaStr}T12:00:00Z`).getDay();
@@ -862,7 +868,7 @@ router.post('/previsualizar-excel-secundario', upload.single('archivoExcel'), as
         }
 
         const fechaParaPrisma = new Date(`${fechaStr}T00:00:00Z`);
-        datosAProcesar.push({ servidorId: empleado.id, fechaParaPrisma, entradaFinal, salidaFinal, minutosRetardo, estatus });
+        datosAProcesar.push({ numEmp, servidorId: empleado.id, fechaParaPrisma, entradaFinal, salidaFinal, minutosRetardo, estatus }); // FIX: Agregado numEmp
         resultadosProcesados.push({ 
           numEmp, nombre: empleado.nombreCompleto, departamento: empleado.area ? empleado.area.nombre : 'Sin Área', 
           fecha: fechaStr, entrada: entradaFinal || '---', salida: salidaFinal || '---', estatus, minutosRetardo
@@ -927,13 +933,17 @@ router.post('/guardar-asistencias', express.json({ limit: '50mb' }), async (req,
       }
     });
 
+    // 🚀 LÓGICA DE INSERCIÓN POR BLOQUES (Evita Error de Red)
     if (toCreate.length > 0) {
-      await prisma.asistencia.createMany({ data: toCreate });
+      const createChunk = 500;
+      for (let i = 0; i < toCreate.length; i += createChunk) {
+        await prisma.asistencia.createMany({ data: toCreate.slice(i, i + createChunk) });
+      }
     }
 
-    const chunkSize = 100;
-    for (let i = 0; i < toUpdate.length; i += chunkSize) {
-       const bloque = toUpdate.slice(i, i + chunkSize);
+    const updateChunk = 50;
+    for (let i = 0; i < toUpdate.length; i += updateChunk) {
+       const bloque = toUpdate.slice(i, i + updateChunk);
        await Promise.all(bloque.map(item => 
          prisma.asistencia.update({
            where: { id: item.id },
@@ -975,7 +985,7 @@ router.get('/datos-reporte', async (req, res) => {
       },
       include: {
         servidor: {
-          select: { numeroEmpleado: true, nombreCompleto: true, regimen: true, area: { select: { nombre: true } } }
+          select: { numeroEmpleado: true, nombreCompleto: true, regimen: true, fechaBaja: true, area: { select: { nombre: true } } }
         }
       },
       orderBy: [
@@ -984,15 +994,32 @@ router.get('/datos-reporte', async (req, res) => {
       ]
     });
 
-    let formateados = asistencias.map(a => ({
-      ...a,
-      servidor: {
-        numeroEmpleado: a.servidor.numeroEmpleado,
-        nombreCompleto: a.servidor.nombreCompleto,
-        departamento: a.servidor.area ? a.servidor.area.nombre : 'Sin Área',
-        regimen: a.servidor.regimen
+    let formateados = [];
+    
+    // FILTRO ANTI-FANTASMAS (Bajas)
+    asistencias.forEach(a => {
+      if (a.servidor.fechaBaja) {
+        const fechaBaja = new Date(a.servidor.fechaBaja);
+        if (fechaBaja < fechaInicio) return; // Se dio de baja antes de la quincena: Ignorar por completo
+        
+        if (a.fecha > fechaBaja) {           // Se dio de baja en curso: A partir de su baja, mostrar "BAJA"
+          a.incidencia = 'BAJA';
+          a.entrada = 'BAJA';
+          a.salida = 'BAJA';
+          a.minutosRetardo = 0;
+        }
       }
-    }));
+
+      formateados.push({
+        ...a,
+        servidor: {
+          numeroEmpleado: a.servidor.numeroEmpleado,
+          nombreCompleto: a.servidor.nombreCompleto,
+          departamento: a.servidor.area ? a.servidor.area.nombre : 'Sin Área',
+          regimen: a.servidor.regimen
+        }
+      });
+    });
 
     const diasInhabiles = await prisma.diaInhabil.findMany({
       where: { fecha: { gte: fechaInicio, lte: fechaFin } }
@@ -1049,7 +1076,7 @@ router.get('/descargar-reporte', async (req, res) => {
     const fechaInicio = new Date(`${inicio}T00:00:00Z`);
     const fechaFin = new Date(`${fin}T23:59:59Z`);
 
-    const asistencias = await prisma.asistencia.findMany({
+    const asistenciasBase = await prisma.asistencia.findMany({
       where: {
         fecha: { gte: fechaInicio, lte: fechaFin }
       },
@@ -1057,9 +1084,26 @@ router.get('/descargar-reporte', async (req, res) => {
       orderBy: [{ fecha: 'asc' }]
     });
 
-    if (asistencias.length === 0) {
+    if (asistenciasBase.length === 0) {
       return res.status(404).json({ error: 'No hay datos para exportar en este rango de fechas.' });
     }
+
+    // FILTRO ANTI-FANTASMAS (Bajas)
+    const asistencias = [];
+    asistenciasBase.forEach(a => {
+      if (a.servidor.fechaBaja) {
+        const fechaBaja = new Date(a.servidor.fechaBaja);
+        if (fechaBaja < fechaInicio) return; // Ignorar bajas anteriores
+        
+        if (a.fecha > fechaBaja) {           
+          a.incidencia = 'BAJA';
+          a.entrada = 'BAJA';
+          a.salida = 'BAJA';
+          a.minutosRetardo = 0;
+        }
+      }
+      asistencias.push(a);
+    });
 
     const diasInhabiles = await prisma.diaInhabil.findMany({
       where: { fecha: { gte: fechaInicio, lte: fechaFin } }

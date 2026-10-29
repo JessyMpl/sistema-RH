@@ -426,6 +426,7 @@ const getValorCelda = (registro, tipo) => {
 // LÓGICA PARA CONTROL DE LISTAS FÍSICAS (LA)
 // ==============================================================================
 const busquedaLista = ref(''); 
+const filtroAreaLista = ref('TODAS'); 
 
 const empleadosConLista = computed(() => {
   if (!datosPivotados.value) return [];
@@ -437,8 +438,18 @@ const empleadosConLista = computed(() => {
   });
 });
 
+const areasParaLista = computed(() => {
+  if (!empleadosConLista.value) return [];
+  const areas = empleadosConLista.value.map(emp => emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área');
+  return [...new Set(areas)].sort();
+});
+
 const empleadosConListaFiltrados = computed(() => {
   let lista = empleadosConLista.value;
+  
+  if (filtroAreaLista.value !== 'TODAS') {
+    lista = lista.filter(emp => (emp.asistencias[Object.keys(emp.asistencias)[0]]?.departamento || 'Sin Área') === filtroAreaLista.value);
+  }
   if (busquedaLista.value) {
     const query = busquedaLista.value.toLowerCase();
     lista = lista.filter(emp =>
@@ -450,16 +461,33 @@ const empleadosConListaFiltrados = computed(() => {
   return lista;
 });
 
+// 🔥 NUEVA LÓGICA REACTIVA PARA EL CHECKBOX - CON CANDADO NUMEMP
 const toggleEntregaLista = (numEmp, entrego) => {
   const estatusNuevo = entrego ? 'LA' : 'FALTA_LA';
-  datosExtraidos.value.forEach((registro, index) => {
-    if (registro.numEmp === numEmp && (registro.estatus === 'LA' || registro.estatus === 'FALTA_LA')) {
+  
+  const nuevosDatosGuardar = [...(datosParaGuardarBD.value || [])];
+  
+  datosExtraidos.value = datosExtraidos.value.map((registro) => {
+    if (String(registro.numEmp) === String(numEmp) && (registro.estatus === 'LA' || registro.estatus === 'FALTA_LA')) {
       registro.estatus = estatusNuevo;
-      if (datosParaGuardarBD.value && datosParaGuardarBD.value[index]) {
-        datosParaGuardarBD.value[index].estatus = estatusNuevo;
+      
+      const fechaBuscada = new Date(`${registro.fecha}T00:00:00Z`).getTime();
+      
+      // FIX: Ahora usa numEmp para encontrar el registro exacto del empleado correcto en el array de guardado
+      const idxGuardar = nuevosDatosGuardar.findIndex(d => 
+         String(d.numEmp) === String(numEmp) &&
+         new Date(d.fechaParaPrisma).getTime() === fechaBuscada &&
+         (d.estatus === 'LA' || d.estatus === 'FALTA_LA')
+      );
+
+      if (idxGuardar !== -1) {
+         nuevosDatosGuardar[idxGuardar].estatus = estatusNuevo;
       }
     }
+    return registro;
   });
+
+  datosParaGuardarBD.value = nuevosDatosGuardar;
 };
 </script>
 
@@ -567,7 +595,6 @@ const toggleEntregaLista = (numEmp, entrego) => {
                <i class="fas fa-eye mr-2"></i> Validar Registros
               </button>
               
-              <!-- NUEVO BOTÓN CONTROL LISTAS -->
               <button @click="vistaActual = 'controlListas'" :class="vistaActual === 'controlListas' ? 'bg-inst-secundario text-white shadow-md' : 'bg-white text-gray-600 border'" class="px-5 py-2 rounded-lg font-bold transition cursor-pointer">
                 <i class="fas fa-clipboard-check mr-2"></i> Control Listas
               </button>
@@ -641,9 +668,17 @@ const toggleEntregaLista = (numEmp, entrego) => {
                 <p class="text-sm text-gray-500 mt-1">Marca a quienes ya entregaron. Los desmarcados saldrán con <b class="text-orange-600">***</b> en el reporte.</p>
               </div>
               
-              <div class="w-full md:w-72 relative">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400"></i>
-                <input type="text" v-model="busquedaLista" placeholder="Buscar por número o nombre..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-inst-primario text-sm shadow-sm" />
+              <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <div class="w-full sm:w-64">
+                  <select v-model="filtroAreaLista" class="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm cursor-pointer">
+                    <option value="TODAS">TODAS LAS ÁREAS</option>
+                    <option v-for="area in areasParaLista" :key="area" :value="area">{{ area }}</option>
+                  </select>
+                </div>
+                <div class="w-full sm:w-72 relative">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400"></i>
+                  <input type="text" v-model="busquedaLista" placeholder="Buscar por número o nombre..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-inst-primario text-sm shadow-sm" />
+                </div>
               </div>
             </div>
             
