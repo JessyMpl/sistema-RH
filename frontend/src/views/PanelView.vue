@@ -14,7 +14,7 @@ import ModuloAdministracion from '@/components/ModuloAdministracion.vue';
 const vistaActiva = ref('reporte'); 
 
 // CONTROL DE PESTAÑAS DE ORIGEN DE DATOS
-const metodoCarga = ref('cron'); // 'excel', 'cron' o 'excel_secundario'
+const metodoCarga = ref('cron'); // 'excel', 'cron', 'excel_secundario' o 'recepcion_listas'
 const fechaInicio = ref('');
 const fechaFin = ref('');
 
@@ -267,6 +267,11 @@ watch(metodoCarga, () => {
   datosParaGuardarBD.value = null;
   existenDatosPreviosBD.value = false;
   vistaActual.value = 'validacion';
+
+  // Limpiar variables de la nueva pestaña al cambiar
+  fechaInicioListasDB.value = '';
+  fechaFinListasDB.value = '';
+  listasDB.value = [];
   
   const fileInput = document.querySelector('input[type="file"]');
   if(fileInput) fileInput.value = '';
@@ -423,7 +428,7 @@ const getValorCelda = (registro, tipo) => {
 };
 
 // ==============================================================================
-// LÓGICA PARA CONTROL DE LISTAS FÍSICAS (LA)
+// LÓGICA PARA CONTROL DE LISTAS FÍSICAS (DURANTE PROCESAMIENTO)
 // ==============================================================================
 const busquedaLista = ref(''); 
 const filtroAreaLista = ref('TODAS'); 
@@ -461,7 +466,6 @@ const empleadosConListaFiltrados = computed(() => {
   return lista;
 });
 
-// 🔥 NUEVA LÓGICA REACTIVA PARA EL CHECKBOX - CON CANDADO NUMEMP
 const toggleEntregaLista = (numEmp, entrego) => {
   const estatusNuevo = entrego ? 'LA' : 'FALTA_LA';
   
@@ -473,7 +477,6 @@ const toggleEntregaLista = (numEmp, entrego) => {
       
       const fechaBuscada = new Date(`${registro.fecha}T00:00:00Z`).getTime();
       
-      // FIX: Ahora usa numEmp para encontrar el registro exacto del empleado correcto en el array de guardado
       const idxGuardar = nuevosDatosGuardar.findIndex(d => 
          String(d.numEmp) === String(numEmp) &&
          new Date(d.fechaParaPrisma).getTime() === fechaBuscada &&
@@ -489,6 +492,106 @@ const toggleEntregaLista = (numEmp, entrego) => {
 
   datosParaGuardarBD.value = nuevosDatosGuardar;
 };
+
+// ==============================================================================
+// 🚀 NUEVO: LÓGICA PARA MÓDULO INDEPENDIENTE DE RECEPCIÓN DE LISTAS
+// ==============================================================================
+const fechaInicioListasDB = ref('');
+const fechaFinListasDB = ref('');
+const listasDB = ref([]);
+const cargandoListas = ref(false);
+const guardandoListas = ref(false);
+
+const busquedaListasDB = ref('');
+const filtroAreaListasDB = ref('TODAS');
+const filtroEstadoListasDB = ref('TODOS'); 
+
+const buscarListasDB = async () => {
+  if (!fechaInicioListasDB.value || !fechaFinListasDB.value) {
+    Swal.fire('Atención', 'Selecciona la fecha de inicio y fin para buscar las listas.', 'warning');
+    return;
+  }
+  
+  cargandoListas.value = true;
+  listasDB.value = [];
+  
+  try {
+    const res = await fetch(apiUrl(`/api/excel/obtener-listas?inicio=${fechaInicioListasDB.value}&fin=${fechaFinListasDB.value}`));
+    if (!res.ok) throw new Error();
+    
+    listasDB.value = await res.json();
+    
+    if (listasDB.value.length === 0) {
+      Swal.fire('Info', 'No se encontraron personas con régimen de Lista en este periodo.', 'info');
+    }
+  } catch (error) {
+    Swal.fire('Error', 'No se pudieron cargar los registros de la base de datos.', 'error');
+  } finally {
+    cargandoListas.value = false;
+  }
+};
+
+const toggleListaIndependiente = (emp) => {
+  emp.entregoFisico = !emp.entregoFisico;
+  emp.huboCambio = !emp.huboCambio;
+};
+
+const guardarListasIndependiente = async () => {
+  const cambiados = listasDB.value.filter(e => e.huboCambio);
+  
+  if (cambiados.length === 0) {
+    Swal.fire('Atención', 'No has realizado ningún cambio.', 'info');
+    return;
+  }
+
+  guardandoListas.value = true;
+  
+  try {
+    const res = await fetch(apiUrl('/api/excel/guardar-listas'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        inicio: fechaInicioListasDB.value,
+        fin: fechaFinListasDB.value,
+        empleados: cambiados.map(c => ({ servidorId: c.servidorId, entregoFisico: c.entregoFisico }))
+      })
+    });
+    
+    if (!res.ok) throw new Error();
+    
+    Swal.fire({ icon: 'success', title: '¡Guardado!', text: 'El estatus de las listas se actualizó correctamente.', confirmButtonColor: '#16a34a' });
+    
+    cambiados.forEach(c => c.huboCambio = false);
+  } catch (error) {
+    Swal.fire({ icon: 'error', title: 'Error', text: 'No se guardaron los cambios en la base de datos.', confirmButtonColor: '#902c3e' });
+  } finally {
+    guardandoListas.value = false;
+  }
+};
+
+const areasListasIndependiente = computed(() => {
+  return [...new Set(listasDB.value.map(e => e.departamento))].sort();
+});
+
+const listasFiltradasIndependientes = computed(() => {
+  let f = listasDB.value;
+  
+  if (filtroAreaListasDB.value !== 'TODAS') {
+    f = f.filter(e => e.departamento === filtroAreaListasDB.value);
+  }
+  
+  if (filtroEstadoListasDB.value === 'PENDIENTES') {
+    f = f.filter(e => !e.entregoFisico);
+  } else if (filtroEstadoListasDB.value === 'ENTREGADOS') {
+    f = f.filter(e => e.entregoFisico);
+  }
+  
+  if (busquedaListasDB.value) {
+    const q = busquedaListasDB.value.toLowerCase();
+    f = f.filter(e => e.nombre.toLowerCase().includes(q) || e.numEmp.toLowerCase().includes(q));
+  }
+  return f;
+});
 </script>
 
 <template>
@@ -500,7 +603,7 @@ const toggleEntregaLista = (numEmp, entrego) => {
       <div v-if="vistaActiva === 'reporte'" class="bg-white rounded-lg shadow-md p-6 border-t-4 border-inst-primario">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Sistematizar Datos de Asistencia</h1>
         
-        <div class="flex gap-6 mb-6 border-b border-gray-200">
+        <div class="flex gap-6 mb-6 border-b border-gray-200 overflow-x-auto whitespace-nowrap">
           <button @click="metodoCarga = 'cron'" 
                   :class="metodoCarga === 'cron' ? 'border-inst-primario text-inst-primario border-b-2 font-bold' : 'text-gray-500 font-medium hover:text-gray-800'" 
                   class="pb-2 px-2 transition-colors flex items-center gap-2 cursor-pointer">
@@ -515,6 +618,11 @@ const toggleEntregaLista = (numEmp, entrego) => {
                   :class="metodoCarga === 'excel_secundario' ? 'border-inst-primario text-inst-primario border-b-2 font-bold' : 'text-gray-500 font-medium hover:text-gray-800'" 
                   class="pb-2 px-2 transition-colors flex items-center gap-2 cursor-pointer">
             <i class="fa-solid fa-table-cells text-orange-500"></i> Carga Matriz (Excel)
+          </button>
+          <button @click="metodoCarga = 'recepcion_listas'" 
+                  :class="metodoCarga === 'recepcion_listas' ? 'border-inst-primario text-inst-primario border-b-2 font-bold' : 'text-gray-500 font-medium hover:text-gray-800'" 
+                  class="pb-2 px-2 transition-colors flex items-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-clipboard-check text-purple-600"></i> Actualizar Listas
           </button>
         </div>
 
@@ -587,7 +695,98 @@ const toggleEntregaLista = (numEmp, entrego) => {
           </div>
         </div>
 
-        <div v-if="datosExtraidos && datosExtraidos.length > 0" class="mt-8">
+        <!-- 🚀 NUEVO: MÓDULO ACTUALIZACIÓN DE LISTAS POSTERIORES -->
+        <div v-if="metodoCarga === 'recepcion_listas'" class="border-2 border-dashed border-gray-300 rounded-lg p-8 bg-gray-50 mb-6">
+          <div class="text-center mb-6">
+            <i class="fa-solid fa-clipboard-list text-5xl text-purple-400 mb-4 block"></i>
+            <h3 class="text-xl font-bold text-gray-800">Actualizar Listas Físicas</h3>
+            <p class="text-gray-600 font-medium mt-1">Registra las entregas de listas posteriores al procesamiento original de la quincena.</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto mb-8">
+            <div class="w-full">
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Fecha Inicio</label>
+              <input type="date" v-model="fechaInicioListasDB" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-inst-primario" />
+            </div>
+            <div class="w-full">
+              <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Fecha Fin</label>
+              <input type="date" v-model="fechaFinListasDB" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-inst-primario" />
+            </div>
+            <div class="w-full sm:w-auto mt-5">
+              <button @click="buscarListasDB" :disabled="cargandoListas" class="w-full bg-inst-primario hover:bg-inst-secundario disabled:opacity-50 text-white font-bold py-2 px-6 rounded-md shadow-sm transition flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-solid" :class="cargandoListas ? 'fa-spinner fa-spin' : 'fa-search'"></i>
+                {{ cargandoListas ? 'Buscando...' : 'Cargar Listas' }}
+              </button>
+            </div>
+          </div>
+
+          <div v-if="listasDB.length > 0" class="animate-fade-in text-left">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+               <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                 
+                 <select v-model="filtroAreaListasDB" class="w-full sm:w-48 p-2 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm cursor-pointer">
+                    <option value="TODAS">TODAS LAS ÁREAS</option>
+                    <option v-for="area in areasListasIndependiente" :key="area" :value="area">{{ area }}</option>
+                 </select>
+                 
+                 <select v-model="filtroEstadoListasDB" class="w-full sm:w-48 p-2 border border-gray-300 rounded-lg outline-none focus:border-inst-primario text-sm bg-white shadow-sm cursor-pointer">
+                    <option value="TODOS">TODOS LOS ESTADOS</option>
+                    <option value="PENDIENTES">SOLO PENDIENTES</option>
+                    <option value="ENTREGADOS">YA ENTREGADOS</option>
+                 </select>
+
+                 <div class="w-full sm:w-64 relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400"></i>
+                    <input type="text" v-model="busquedaListasDB" placeholder="Buscar empleado..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-inst-primario text-sm shadow-sm" />
+                 </div>
+               </div>
+               
+               <button @click="guardarListasIndependiente" :disabled="guardandoListas || !listasDB.some(e => e.huboCambio)" class="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-bold py-2 px-6 rounded-lg shadow-md transition flex items-center gap-2 cursor-pointer w-full md:w-auto justify-center">
+                  <i class="fa-solid" :class="guardandoListas ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                  {{ guardandoListas ? 'Guardando...' : 'Guardar Cambios' }}
+               </button>
+            </div>
+
+            <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-sm">
+               <table class="min-w-full bg-white">
+                 <thead class="bg-gray-100 border-b border-gray-200">
+                    <tr>
+                      <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase w-24">No. Emp</th>
+                      <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase">Servidor Público</th>
+                      <th class="py-3 px-4 text-left text-xs font-bold text-gray-600 uppercase">Área</th>
+                      <th class="py-3 px-4 text-center text-xs font-bold text-gray-600 uppercase w-40">Recepción</th>
+                    </tr>
+                  </thead>
+                 <tbody>
+                    <tr v-for="emp in listasFiltradasIndependientes" :key="emp.numEmp" class="border-b border-gray-100 hover:bg-gray-50 transition" :class="{'bg-yellow-50': emp.huboCambio}">
+                      <td class="py-3 px-4 text-sm font-bold text-gray-700">{{ emp.numEmp }}</td>
+                      <td class="py-3 px-4 text-sm font-medium text-gray-800">
+                        {{ emp.nombre }}
+                        <span v-if="emp.huboCambio" class="ml-2 text-[10px] bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full font-bold">Cambio sin guardar</span>
+                      </td>
+                      <td class="py-3 px-4 text-xs text-gray-500 truncate max-w-[200px]">{{ emp.departamento }}</td>
+                      <td class="py-3 px-4 text-center">
+                        <button @click="toggleListaIndependiente(emp)"
+                                :class="emp.entregoFisico ? 'bg-green-50 text-green-700 border-green-600 hover:bg-green-100' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-100'"
+                                class="border-2 rounded-md px-3 py-1.5 text-xs font-bold flex items-center justify-center gap-2 transition-all w-28 mx-auto cursor-pointer shadow-sm">
+                          <i :class="emp.entregoFisico ? 'fa-solid fa-square-check text-lg' : 'fa-regular fa-square text-lg'"></i>
+                          {{ emp.entregoFisico ? 'Entregado' : 'Pendiente' }}
+                        </button>
+                      </td>
+                    </tr>
+                    <tr v-if="listasFiltradasIndependientes.length === 0">
+                      <td colspan="4" class="py-8 text-center text-gray-500 font-medium italic">
+                        <i class="fa-solid fa-clipboard-list text-3xl mb-2 text-gray-300 block"></i>
+                        No se encontraron empleados con esta búsqueda.
+                      </td>
+                    </tr>
+                 </tbody>
+               </table>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="metodoCarga !== 'recepcion_listas' && datosExtraidos && datosExtraidos.length > 0" class="mt-8">
           
           <div class="flex justify-between mb-6 border-b border-gray-200 pb-4">
             <div class="flex space-x-4">
@@ -841,6 +1040,7 @@ const toggleEntregaLista = (numEmp, entrego) => {
               
         </div>
       </div>
+
       <div v-else-if="vistaActiva === 'eventos'">
         <Attendance />
       </div>
@@ -885,5 +1085,12 @@ const toggleEntregaLista = (numEmp, entrego) => {
   --easy-table-body-row-font-size: 13px;
   --easy-table-border: 1px solid #e2e8f0;
   --easy-table-row-border: 1px solid #e2e8f0;
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>
